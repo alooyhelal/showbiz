@@ -53,6 +53,7 @@
   .couponrow button { white-space:nowrap; }
   .narrow { max-width:460px; margin:0 auto; }
   .hidden { display:none !important; }
+  .otp { letter-spacing:8px; font-size:22px; text-align:center; direction:ltr; }
   #debug { position:fixed; bottom:0; left:0; right:0; background:#000; color:#0f0; font:12px monospace; padding:8px; direction:ltr; white-space:pre-wrap; max-height:40vh; overflow:auto; z-index:30; }
 </style>
 </head>
@@ -94,16 +95,13 @@
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
-  const SITE_URL = "https://alooyhelal.github.io/showbiz/";
-  const REQUIRE_PHONE = true; // false للتجربة لين تترقى Twilio
-  const RATE_BHD = 0.377;     // للحاسبة فقط
+  const REQUIRE_PHONE = false; // true بعد ما تترقى Twilio وتفعّل SMS
+  const RATE_BHD = 0.377;      // للحاسبة فقط
   const COUPONS = { TEST10: 0.10 }; // كود تجريبي
   const SLIDE_MS = 5000;
   const PENDING_KEY = "showbiz_signup";
 
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { flowType: "implicit", detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
-  });
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const COUNTRIES = {
     BH: { flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"},      sym:{ar:"د.ب", en:"BD"},  dec:3, rate:0.377,  base:2.2 },
@@ -134,23 +132,22 @@
       address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع", backShort:"رجوع",
       done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم حفظ الطلب في هذا المتصفح فقط",
       loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...", wait:"لحظة...",
-      noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول", remove:"حذف",
+      noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول",
       dims:"الأبعاد", weight:"الوزن", noDesc:"لا توجد تفاصيل إضافية", defaultVariant:"افتراضي",
       login:"تسجيل الدخول", logout:"تسجيل الخروج", account:"حسابي", myOrders:"طلباتي", noOrders:"ما عندك طلبات بعد",
       ordersErr:"تعذر تحميل الطلبات", editProfile:"تعديل بياناتي", save:"حفظ", saved:"تم الحفظ",
       needLogin:"سجّل دخولك أو أنشئ حساب لإتمام الطلب", loginTitle:"تسجيل الدخول", email:"البريد الإلكتروني",
       password:"كلمة المرور", loginBtn:"دخول", noAccount:"ليس لدي حساب، أنشئ حساب", haveAccount:"عندي حساب، سجّل دخول",
       signupTitle:"إنشاء حساب جديد", stepEmail:"1) البريد الإلكتروني", stepPhone:"2) رقم الجوال", stepDetails:"3) بيانات الحساب",
-      sendLink:"إرسال رابط التحقق", linkSent:"أرسلنا رابط التحقق إلى بريدك. اضغط الرابط ثم ارجع لهذي الصفحة من نفس المتصفح",
-      emailOk:"تم التحقق من بريدك الإلكتروني ✅", checkNow:"تحقق من الحالة", notYet:"لم يتم التحقق بعد. اضغط الرابط في الإيميل من نفس المتصفح ثم حاول مرة ثانية",
-      linkExpired:"انتهت صلاحية الرابط أو استُخدم قبل. أرسل رابط جديد", linkBad:"تعذر التحقق من الرابط، أرسل رابط جديد",
+      sendCode:"إرسال رمز التحقق", codeSent:"أرسلنا رمز من 6 أرقام إلى بريدك", codeHint:"اكتب الرمز اللي وصلك في الإيميل",
+      verifyEmail:"تحقق من البريد", resendCode:"إعادة إرسال الرمز", emailOk:"تم التحقق من بريدك الإلكتروني ✅",
       change:"تغيير", lockedStep:"أكمل الخطوة اللي قبلها أولًا", skipPhone:"التحقق من الجوال غير مفعّل حاليًا",
-      sendSms:"إرسال رمز التحقق", smsSent:"تم إرسال الرمز إلى جوالك", enterCode:"أدخل رمز التحقق", verify:"تحقق",
+      sendSms:"إرسال رمز التحقق", smsSent:"تم إرسال الرمز إلى جوالك", verify:"تحقق",
       firstName:"الاسم الأول", lastName:"الاسم الثاني", confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب",
-      emailBad:"البريد الإلكتروني غير صحيح", phoneBad:"رقم الجوال غير صحيح", badCode:"رمز التحقق غير صحيح أو منتهي",
+      emailBad:"البريد الإلكتروني غير صحيح", phoneBad:"رقم الجوال غير صحيح", badCode:"الرمز غير صحيح أو منتهي، اطلب رمز جديد",
       namesReq:"الاسم الأول والثاني مطلوبين", passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر",
       passMismatch:"كلمتا المرور غير متطابقتين", loginFail:"البريد أو كلمة المرور غير صحيحة",
-      rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول", signedUp:"تم إنشاء الحساب بنجاح"
+      rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول"
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
@@ -163,23 +160,22 @@
       address:"Full address", confirm:"Confirm order", back:"Back", backShort:"Back",
       done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
       loadErr:"Could not load products, please try again", loading:"Loading...", wait:"Please wait...",
-      noProducts:"No products available right now", fillAll:"Please fill all fields", remove:"Remove",
+      noProducts:"No products available right now", fillAll:"Please fill all fields",
       dims:"Dimensions", weight:"Weight", noDesc:"No extra details", defaultVariant:"Default",
       login:"Log in", logout:"Log out", account:"My account", myOrders:"My orders", noOrders:"You have no orders yet",
       ordersErr:"Could not load orders", editProfile:"Edit my details", save:"Save", saved:"Saved",
       needLogin:"Log in or create an account to complete your order", loginTitle:"Log in", email:"Email",
       password:"Password", loginBtn:"Log in", noAccount:"No account? Create one", haveAccount:"I have an account, log in",
       signupTitle:"Create a new account", stepEmail:"1) Email", stepPhone:"2) Mobile number", stepDetails:"3) Account details",
-      sendLink:"Send verification link", linkSent:"We sent a verification link to your email. Click it, then come back to this page in the same browser",
-      emailOk:"Your email is verified ✅", checkNow:"Check status", notYet:"Not verified yet. Open the link from the email in this same browser, then try again",
-      linkExpired:"The link expired or was already used. Send a new one", linkBad:"Could not verify the link, please send a new one",
+      sendCode:"Send verification code", codeSent:"We sent a 6-digit code to your email", codeHint:"Enter the code from your email",
+      verifyEmail:"Verify email", resendCode:"Resend code", emailOk:"Your email is verified ✅",
       change:"Change", lockedStep:"Complete the previous step first", skipPhone:"Phone verification is currently off",
-      sendSms:"Send verification code", smsSent:"Code sent to your mobile", enterCode:"Enter verification code", verify:"Verify",
+      sendSms:"Send verification code", smsSent:"Code sent to your mobile", verify:"Verify",
       firstName:"First name", lastName:"Last name", confirmPass:"Confirm password", createBtn:"Create account",
-      emailBad:"Invalid email address", phoneBad:"Invalid mobile number", badCode:"Invalid or expired code",
+      emailBad:"Invalid email address", phoneBad:"Invalid mobile number", badCode:"Code is invalid or expired, request a new one",
       namesReq:"First and last name are required", passShort:"Password must be 8 characters or more",
       passMismatch:"Passwords do not match", loginFail:"Email or password is incorrect",
-      rateLimit:"Too many attempts, wait a moment and try again", signedUp:"Account created successfully"
+      rateLimit:"Too many attempts, wait a moment and try again"
     }
   };
 
@@ -189,7 +185,7 @@
   if (!Array.isArray(state.cart)) state.cart = [];
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch(e) {} }
 
-  const blankPending = () => ({ email:"", linkSent:false, dial:"+973", phone:"", otpSent:false, full:"", editPhone:false, first:"", last:"" });
+  const blankPending = () => ({ email:"", codeSent:false, dial:"+973", phone:"", otpSent:false, full:"", editPhone:false, first:"", last:"" });
   let pending = blankPending();
   try { Object.assign(pending, JSON.parse(localStorage.getItem(PENDING_KEY) || "{}")); } catch(e) {}
   function savePending() { try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch(e) {} }
@@ -210,7 +206,6 @@
   let ordersFailed = false;
   let lastSaveOk = true;
   let debugOn = false;
-  let authReady = false;
 
   // ===== مساعدات =====
   const t = (k) => T[state.lang][k];
@@ -325,50 +320,18 @@
   async function refreshAuth() {
     await loadProfile();
     if (me && me.email_confirmed_at) {
-      const wasLinkSent = pending.linkSent;
       pending.email = me.email || pending.email;
-      pending.linkSent = true;
+      pending.codeSent = false;
       savePending();
-      if (!wasLinkSent || view === "signup") notice = t("emailOk");
     }
-    if (me && !profile && view !== "signup") {
-      view = "signup";
-    }
+    if (me && !profile && view !== "signup") view = "signup";
   }
 
-  // أول تحميل: نقرأ الجلسة (ومنها جلسة رابط التحقق) قبل ما نرسم الصفحة
   async function initAuth() {
-    const hash = location.hash || "";
-    const fromLink = hash.includes("access_token") || hash.includes("type=signup") || hash.includes("type=magiclink");
-    const errMatch = hash.match(/error_description=([^&]+)/);
     try {
       const { data: { session } } = await sb.auth.getSession();
-      if (session) {
-        await refreshAuth();
-        if (fromLink || pending.linkSent) {
-          view = (me && profile) ? "account" : "signup";
-          notice = t("emailOk");
-        }
-      } else if (errMatch) {
-        const msg = decodeURIComponent(errMatch[1].replace(/\+/g, " "));
-        view = "signup";
-        notice = /expired|used/i.test(msg) ? t("linkExpired") : t("linkBad");
-      }
+      if (session) await refreshAuth();
     } catch (e) {}
-    if (location.hash) {
-      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
-    }
-    authReady = true;
-  }
-
-  async function checkNow() {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      await refreshAuth();
-      render();
-    } else {
-      setNotice(t("notYet"));
-    }
   }
 
   async function loadOrders() {
@@ -422,7 +385,6 @@
     await loadProfile();
     if (!profile) {
       pending.email = me.email || email;
-      pending.linkSent = true;
       savePending();
       return go("signup", "");
     }
@@ -438,16 +400,24 @@
     const phoneOK = !!(me && me.phone_confirmed_at) && !pending.editPhone;
     const detailsOpen = emailOK && (!REQUIRE_PHONE || phoneOK);
 
-    // الخطوة 1: الإيميل
+    // الخطوة 1: الإيميل برمز OTP
     let s1;
     if (emailOK) {
       s1 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(me.email)}</span></span>
               <button class="linkbtn" data-action="changeEmail">${L.change}</button></div>`;
-    } else {
+    } else if (!pending.codeSent) {
       s1 = `<input id="sEmail" type="email" dir="ltr" placeholder="${L.email}" value="${esc(pending.email)}">
-            <button data-action="sendLink" style="width:100%">${L.sendLink}</button>
-            ${pending.linkSent ? `<p class="muted">${L.linkSent}</p>
-              <button class="ghost" data-action="checkNow" style="width:100%">${L.checkNow}</button>` : ""}`;
+            <button data-action="sendCode" style="width:100%">${L.sendCode}</button>`;
+    } else {
+      s1 = `<p class="muted">${L.codeSent} <span dir="ltr">(${esc(pending.email)})</span></p>
+            <input id="sEmailCode" class="otp" inputmode="numeric" maxlength="6" placeholder="123456">
+            <p class="muted">${L.codeHint}</p>
+            <button data-action="verifyEmail" style="width:100%">${L.verifyEmail}</button>
+            <p>
+              <button class="linkbtn" data-action="sendCode">${L.resendCode}</button>
+              &nbsp;
+              <button class="linkbtn" data-action="changeEmail">${L.change}</button>
+            </p>`;
     }
 
     // الخطوة 2: الجوال
@@ -470,7 +440,7 @@
             <button data-action="sendSms" style="width:100%">${L.sendSms}</button>`;
     } else {
       s2 = `<p class="muted" dir="ltr">${esc(pending.full)}</p>
-            <input id="sCode" inputmode="numeric" dir="ltr" maxlength="6" placeholder="123456">
+            <input id="sCode" class="otp" inputmode="numeric" dir="ltr" maxlength="6" placeholder="123456">
             <button data-action="verifySms" style="width:100%">${L.verify}</button>
             <p><button class="linkbtn" data-action="changePhone">${L.change}</button></p>`;
     }
@@ -497,21 +467,37 @@
       </div>`;
   }
 
-  async function sendLink() {
+  // إرسال رمز OTP للإيميل (يشتغل من أي جهاز أو متصفح)
+  async function sendCode() {
     const L = T[state.lang];
-    const email = (pending.email || "").trim();
+    const email = (document.getElementById("sEmail")?.value || pending.email || "").trim();
     if (!isEmail(email)) return setNotice(L.emailBad);
     setNotice(L.wait);
     const { error } = await sb.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true, emailRedirectTo: SITE_URL }
+      options: { shouldCreateUser: true }
     });
     if (error) return setNotice(errMsg(error));
     pending.email = email;
-    pending.linkSent = true;
+    pending.codeSent = true;
     savePending();
+    notice = L.codeSent;
     render();
-    setNotice(L.linkSent);
+  }
+
+  // التحقق من الرمز المكتوب
+  async function verifyEmail() {
+    const L = T[state.lang];
+    const code = (document.getElementById("sEmailCode")?.value || "").trim();
+    if (!/^\d{6}$/.test(code)) return setNotice(L.badCode);
+    setNotice(L.wait);
+    const { error } = await sb.auth.verifyOtp({ email: pending.email, token: code, type: "email" });
+    if (error) return setNotice(errMsg(error));
+    pending.codeSent = false;
+    savePending();
+    await refreshAuth();
+    notice = L.emailOk;
+    render();
   }
 
   async function changeEmail() {
@@ -519,8 +505,9 @@
     me = null;
     profile = null;
     pending.email = "";
-    pending.linkSent = false;
+    pending.codeSent = false;
     savePending();
+    notice = "";
     render();
   }
 
@@ -535,8 +522,8 @@
     pending.full = full;
     pending.otpSent = true;
     savePending();
+    notice = L.smsSent;
     render();
-    setNotice(L.smsSent);
   }
 
   async function verifySms() {
@@ -892,7 +879,6 @@
       country: state.country,
       view: view,
       products: products.length,
-      authReady: authReady,
       loggedIn: !!me,
       emailVerified: !!(me && me.email_confirmed_at),
       phoneVerified: !!(me && me.phone_confirmed_at),
@@ -1026,8 +1012,8 @@
       go("checkout", ""); return;
     }
     if (a === "confirm") { await confirmOrder(); return; }
-    if (a === "sendLink") { await sendLink(); return; }
-    if (a === "checkNow") { await checkNow(); return; }
+    if (a === "sendCode") { await sendCode(); return; }
+    if (a === "verifyEmail") { await verifyEmail(); return; }
     if (a === "changeEmail") { await changeEmail(); return; }
     if (a === "sendSms") { await sendSms(); return; }
     if (a === "verifySms") { await verifySms(); return; }
@@ -1042,7 +1028,7 @@
     if (b) handleAction(b.dataset.action, b.dataset);
   });
 
-  // حفظ ما يكتبه المستخدم (بدون كلمات المرور)
+  // حفظ ما يكتبه المستخدم (بدون كلمات المرور ولا الرموز)
   document.getElementById("view").addEventListener("input", (e) => {
     const id = e.target.id;
     if (id === "sEmail") { pending.email = e.target.value.trim(); savePending(); }
@@ -1141,16 +1127,6 @@
       }
     });
   }, SLIDE_MS);
-
-  // أثناء انتظار الرابط: نفحص كل 3 ثواني إذا الزبون ضغط الرابط في نفس المتصفح
-  setInterval(async () => {
-    if (view !== "signup" || !pending.linkSent || (me && me.email_confirmed_at)) return;
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      await refreshAuth();
-      render();
-    }
-  }, 3000);
 
   sb.auth.onAuthStateChange(async (_event, session) => {
     if (session && session.user) {
