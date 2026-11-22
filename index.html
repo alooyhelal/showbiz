@@ -5,30 +5,52 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Showbiz</title>
 <style>
-  :root { --bg:#fafafa; --fg:#222; --card:#fff; --line:#e5e5e5; --btn:#111; --btnfg:#fff; --price:#e8590c; --muted:#777; }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { --bg:#111; --fg:#eee; --card:#1c1c1c; --line:#333; --btn:#fff; --btnfg:#111; --price:#ff922b; --muted:#999; }
-  }
-  :root[data-theme="dark"] { --bg:#111; --fg:#eee; --card:#1c1c1c; --line:#333; --btn:#fff; --btnfg:#111; --price:#ff922b; --muted:#999; }
-  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,sans-serif; }
-  header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line); }
-  main { padding:16px; max-width:960px; margin:auto; }
-  select, input { padding:9px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--fg); width:100%; box-sizing:border-box; margin-bottom:8px; }
-  header select { width:auto; }
-  button { padding:10px 14px; border:0; border-radius:8px; background:var(--btn); color:var(--btnfg); cursor:pointer; }
+  :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --btn:#4a8fe0; --orange:#f59e4b; --dot:#3a4a68; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+  header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px 16px; background:#0d1728; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  main { padding:16px; max-width:1000px; margin:auto; }
+  select, input { padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--card2); color:var(--fg); width:100%; box-sizing:border-box; margin-bottom:8px; font-size:15px; }
+  header select { width:auto; margin:0; }
+  button { padding:10px 14px; border:0; border-radius:10px; background:var(--btn); color:#fff; cursor:pointer; font-size:14px; }
   button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); }
-  button.linkbtn { background:none; color:var(--price); padding:4px; text-decoration:underline; }
+  button.btn-orange { background:var(--orange); color:#111; font-weight:bold; }
+  button.linkbtn { background:none; color:var(--orange); padding:4px; text-decoration:underline; }
   button:disabled { opacity:.5; cursor:not-allowed; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; }
-  .card img { width:100%; height:200px; object-fit:contain; background:#f4f4f4; border-radius:8px; }
-  .price { color:var(--price); font-weight:bold; margin:6px 0; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .pad { padding:14px; margin-bottom:12px; }
+  .pimg { height:210px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; }
+  .pimg img { width:100%; height:100%; object-fit:contain; transition:opacity .4s; }
+  .pbody { padding:12px 14px 14px; }
+  .pname { font-size:15px; line-height:1.5; margin-bottom:6px; }
+  .price { color:var(--blue); font-weight:bold; font-size:17px; }
+  .row2 { display:flex; gap:8px; margin-top:10px; }
+  .row2 button { flex:1; }
+  .dots { display:flex; gap:6px; justify-content:center; padding:8px 0 0; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--dot); display:inline-block; }
+  .dot.on { background:var(--blue); }
   .muted { color:var(--muted); font-size:13px; }
   .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; flex-wrap:wrap; }
-  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:16px; overflow:auto; }
-  .modal { background:var(--card); color:var(--fg); padding:20px; border-radius:12px; width:100%; max-width:420px; box-sizing:border-box; }
+  .row.total { border-top:1px solid var(--line); margin-top:6px; padding-top:12px; font-size:17px; }
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:12px; overflow:auto; z-index:20; }
+  .modal { background:var(--card); color:var(--fg); padding:18px; border-radius:18px; width:100%; max-width:440px; box-sizing:border-box; position:relative; }
+  .gallery { position:relative; height:300px; background:#f3f4f6; border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .gallery img { width:100%; height:100%; object-fit:contain; transition:opacity .4s; }
+  .nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.45); color:#fff; padding:6px 12px; }
+  .nav.prev { left:8px; }
+  .nav.next { right:8px; }
+  .xbtn { position:absolute; top:10px; left:10px; background:rgba(0,0,0,.55); color:#fff; padding:4px 10px; z-index:2; }
+  .qtyrow { display:flex; justify-content:space-between; align-items:center; margin:12px 0; }
+  .qtyctl button { padding:6px 12px; }
+  .crow { display:flex; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+  .crow:last-child { border-bottom:0; }
+  .crow img { width:72px; height:72px; object-fit:contain; background:#f3f4f6; border-radius:10px; }
+  .cinfo { flex:1; }
+  .couponrow { display:flex; gap:8px; }
+  .couponrow input { margin:0; }
+  .couponrow button { white-space:nowrap; }
   .hidden { display:none !important; }
-  #debug { position:fixed; bottom:0; left:0; right:0; background:#000; color:#0f0; font:12px monospace; padding:8px; direction:ltr; white-space:pre-wrap; max-height:40vh; overflow:auto; }
+  #debug { position:fixed; bottom:0; left:0; right:0; background:#000; color:#0f0; font:12px monospace; padding:8px; direction:ltr; white-space:pre-wrap; max-height:40vh; overflow:auto; z-index:30; }
 </style>
 </head>
 <body>
@@ -72,6 +94,8 @@
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
   const REQUIRE_PHONE = true; // false للتجربة لين تترقى Twilio
   const RATE_BHD = 0.377;     // للحاسبة فقط
+  const COUPONS = { TEST10: 0.10 }; // كود تجريبي: خصم 10%
+  const SLIDE_MS = 5000;
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -95,13 +119,17 @@
   const T = {
     ar: {
       siteName:"Showbiz", welcome:"مرحبًا بك", chooseCountry:"اختر الدولة", chooseLang:"اختر اللغة", go:"متابعة",
-      choose:"اختر اللون والنمط", chooseOpt:"اختر اللون / النمط", add:"أضف للسلة", close:"إغلاق",
-      cart:"السلة", empty:"السلة فارغة", total:"المجموع", shippingNote:"رسوم التوصيل تُضاف عند تحديد المنطقة",
-      shipping:"رسوم التوصيل", grand:"الإجمالي", checkout:"إتمام الطلب", name:"الاسم", area:"المنطقة",
-      areaPh:"اختر المنطقة أو المدينة", address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع",
+      details:"التفاصيل", detailsTitle:"تفاصيل المنتج", chooseOpt:"اختر اللون / النمط", add:"إضافة للسلة", close:"إغلاق",
+      qty:"الكمية", cart:"السلة", cartTitle:"سلة المشتريات", empty:"السلة فارغة", total:"المجموع", grand:"الإجمالي",
+      productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"رسوم التوصيل", shipLater:"تُحدد بعد اختيار المنطقة",
+      shippingNote:"رسوم التوصيل تُضاف عند تحديد المنطقة", coupon:"هل لديك كود خصم؟", apply:"تطبيق",
+      couponBad:"كود الخصم غير صحيح", couponOk:"تم تطبيق كود الخصم", removeCoupon:"إزالة الكود",
+      keepShopping:"متابعة التسوق", checkout:"إتمام الطلب", name:"الاسم", area:"المنطقة", areaPh:"اختر المنطقة أو المدينة",
+      address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع", backShort:"رجوع",
       done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم حفظ الطلب في هذا المتصفح فقط",
       loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...", wait:"لحظة...",
       noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول", remove:"حذف",
+      dims:"الأبعاد", weight:"الوزن", noDesc:"لا توجد تفاصيل إضافية",
       login:"تسجيل الدخول", logout:"تسجيل الخروج", account:"حسابي", myOrders:"طلباتي", noOrders:"ما عندك طلبات بعد",
       ordersErr:"تعذر تحميل الطلبات", editProfile:"تعديل بياناتي", save:"حفظ", saved:"تم الحفظ",
       firstName:"الاسم الأول", lastName:"الاسم الثاني", needLogin:"سجّل دخولك أو أنشئ حساب لإتمام الطلب",
@@ -114,17 +142,22 @@
       namesReq:"الاسم الأول والثاني مطلوبين", passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر",
       passMismatch:"كلمتا المرور غير متطابقتين", badCode:"رمز التحقق غير صحيح أو منتهي",
       loginFail:"البريد أو كلمة المرور غير صحيحة", rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول",
-      alreadyExists:"هذا الحساب موجود، تم تسجيل دخولك", signedUp:"تم إنشاء الحساب بنجاح"
+      alreadyExists:"هذا الحساب موجود، تم تسجيل دخولك", signedUp:"تم إنشاء الحساب بنجاح",
+      defaultVariant:"افتراضي"
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
-      choose:"Choose color & style", chooseOpt:"Choose color / style", add:"Add to cart", close:"Close",
-      cart:"Cart", empty:"Your cart is empty", total:"Subtotal", shippingNote:"Delivery fee is added once you select your area",
-      shipping:"Delivery fee", grand:"Total", checkout:"Checkout", name:"Name", area:"Area",
-      areaPh:"Please select your area or city", address:"Full address", confirm:"Confirm order", back:"Back",
+      details:"Details", detailsTitle:"Product details", chooseOpt:"Choose color / style", add:"Add to cart", close:"Close",
+      qty:"Quantity", cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty", total:"Subtotal", grand:"Total",
+      productsVal:"Products", discount:"Discount", shipping:"Delivery fee", shipLater:"Set after choosing area",
+      shippingNote:"Delivery fee is added once you select your area", coupon:"Have a discount code?", apply:"Apply",
+      couponBad:"Invalid discount code", couponOk:"Discount code applied", removeCoupon:"Remove code",
+      keepShopping:"Keep shopping", checkout:"Checkout", name:"Name", area:"Area", areaPh:"Please select your area or city",
+      address:"Full address", confirm:"Confirm order", back:"Back", backShort:"Back",
       done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
       loadErr:"Could not load products, please try again", loading:"Loading...", wait:"Please wait...",
       noProducts:"No products available right now", fillAll:"Please fill all fields", remove:"Remove",
+      dims:"Dimensions", weight:"Weight", noDesc:"No extra details",
       login:"Log in", logout:"Log out", account:"My account", myOrders:"My orders", noOrders:"You have no orders yet",
       ordersErr:"Could not load orders", editProfile:"Edit my details", save:"Save", saved:"Saved",
       firstName:"First name", lastName:"Last name", needLogin:"Log in or create an account to complete your order",
@@ -137,12 +170,13 @@
       namesReq:"First and last name are required", passShort:"Password must be 8 characters or more",
       passMismatch:"Passwords do not match", badCode:"Invalid or expired code",
       loginFail:"Email or password is incorrect", rateLimit:"Too many attempts, wait a moment and try again",
-      alreadyExists:"This account already exists, you are now logged in", signedUp:"Account created successfully"
+      alreadyExists:"This account already exists, you are now logged in", signedUp:"Account created successfully",
+      defaultVariant:"Default"
     }
   };
 
   // ===== الحالة =====
-  let state = { country:"BH", lang:"ar", cart:[], area:null, seen:false };
+  let state = { country:"BH", lang:"ar", cart:[], area:null, seen:false, coupon:null };
   try { Object.assign(state, JSON.parse(localStorage.getItem("showbiz_state") || "{}")); } catch(e) {}
   if (!Array.isArray(state.cart)) state.cart = [];
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch(e) {} }
@@ -151,8 +185,8 @@
   let loaded = false;
   let loadError = false;
   let view = "shop";
-  let currentPid = null;
-  let currentVid = null;
+  let modal = null;      // { pid, vid, qty, idx, paused, details }
+  let cardIdx = {};      // فهرس الصورة الحالية لكل بطاقة
   let me = null;
   let profile = null;
   let accountOrders = null;
@@ -170,7 +204,7 @@
 
   function fmt(amount) {
     const c = COUNTRIES[state.country];
-    const n = amount.toFixed(c.dec);
+    const n = Number(amount).toFixed(c.dec);
     return state.lang === "ar" ? `${n} ${c.sym.ar}` : `${c.sym.en} ${n}`;
   }
   function fmtFor(code, amount) {
@@ -179,7 +213,13 @@
     return state.lang === "ar" ? `${n} ${c.sym.ar}` : `${c.sym.en} ${n}`;
   }
 
-  const variantLabel = (v) => String(v.key).replace(/-/g, " · ");
+  const variantLabel = (v) => v.key ? String(v.key).replace(/-/g, " · ") : t("defaultVariant");
+
+  function stripHTML(html) {
+    if (!html) return "";
+    const doc = new DOMParser().parseFromString(String(html), "text/html");
+    return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
+  }
 
   function findVariant(vid) {
     for (const p of products) {
@@ -196,6 +236,7 @@
   }
   const cartCount = () => state.cart.reduce((s, i) => s + i.qty, 0);
   const subtotalUSD = () => cartLines().reduce((s, l) => s + l.v.price * l.qty, 0);
+  const discountUSD = () => subtotalUSD() * (COUPONS[state.coupon] || 0);
 
   // ===== الحاسبة =====
   function shippingCalc() {
@@ -209,7 +250,7 @@
     const chargeable = Math.max(actualKg, volKg);
     const base = COUNTRIES[state.country].base;
     const shipBHD = base + Math.max(0, chargeable - 1) * 0.5; // تجريبي
-    const orderBHD = subtotalUSD() * RATE_BHD;
+    const orderBHD = (subtotalUSD() - discountUSD()) * RATE_BHD;
     const riskBHD = Math.max(orderBHD * 0.15, 0.3); // داخلي فقط
     return { actualKg, volKg, chargeable, shipBHD, riskBHD };
   }
@@ -222,9 +263,18 @@
       const res = await fetch(WORKER_URL + "?action=list");
       const d = await res.json();
       if (!Array.isArray(d.products)) throw new Error("bad");
-      products = d.products
-        .map(p => ({ ...p, variants: (p.variants || []).filter(v => v.price != null) }))
-        .filter(p => p.variants.length > 0);
+      products = d.products.map(p => {
+        let variants = (p.variants || []).filter(v => v.price != null);
+        // إذا المنتج ما له خيارات، نستخدم سعره الأساسي كخيار واحد
+        if (!variants.length) {
+          const base = parseFloat(String(p.sellPrice || "").split("-")[0]);
+          if (!isNaN(base)) {
+            variants = [{ vid: "base-" + p.pid, key: "", sku: p.sku, price: base, image: p.image, weightG: p.weightG, dimsCm: p.dimsCm }];
+          }
+        }
+        const images = (p.images && p.images.length) ? p.images : [p.image].filter(Boolean);
+        return { ...p, images, variants };
+      }).filter(p => p.variants.length > 0);
     } catch (e) {
       loadError = true;
       products = [];
@@ -390,7 +440,7 @@
     const { error } = await sb.auth.verifyOtp({ email: auth.email, token: code, type: "email" });
     if (error) return setMsg(errMsg(error));
     await loadProfile();
-    if (profile) { // الحساب موجود أصلًا
+    if (profile) {
       setMsg(L.alreadyExists);
       await afterAuthSuccess();
       return;
@@ -468,6 +518,111 @@
     render();
   }
 
+  // ===== المنتجات والنافذة =====
+  function galleryFor(p, v) {
+    const arr = [v && v.image, ...(p.images || []), p.image].filter(Boolean);
+    return [...new Set(arr)];
+  }
+
+  function curModal() {
+    if (!modal) return null;
+    const p = products.find(x => x.pid === modal.pid);
+    if (!p) return null;
+    const v = p.variants.find(x => x.vid === modal.vid) || p.variants[0];
+    return { p, v };
+  }
+
+  function openProduct(pid) {
+    const p = products.find(x => x.pid === pid);
+    if (!p) return;
+    modal = { pid: p.pid, vid: p.variants[0].vid, qty: 1, idx: 0, paused: false, details: false };
+    renderModal();
+  }
+
+  function detailsHTML(p, v) {
+    const L = T[state.lang];
+    const d = v.dimsCm || p.dimsCm;
+    const dims = d ? d.map(x => Number(x).toFixed(1)).join(" × ") + " cm" : "—";
+    const w = v.weightG || p.weightG;
+    const txt = stripHTML(p.description);
+    return `
+      <h4 style="margin:4px 0 10px">${L.detailsTitle}</h4>
+      <div class="row"><span class="muted">${L.dims}</span><span>${dims}</span></div>
+      <div class="row"><span class="muted">${L.weight}</span><span>${w ? w + " g" : "—"}</span></div>
+      <p style="line-height:1.8;font-size:14px;color:var(--muted)">${esc(txt ? txt.slice(0, 1500) : L.noDesc)}</p>
+      <button class="ghost" data-action="mback" style="width:100%">${L.backShort}</button>`;
+  }
+
+  function renderModal() {
+    const box = document.getElementById("pmodal");
+    const c = curModal();
+    if (!c) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+    const { p, v } = c;
+    const L = T[state.lang];
+    const g = galleryFor(p, v);
+    if (modal.idx >= g.length) modal.idx = 0;
+
+    const nav = g.length > 1
+      ? `<button class="nav prev" data-action="mprev">‹</button><button class="nav next" data-action="mnext">›</button>`
+      : "";
+    const dots = g.length > 1
+      ? `<div class="dots">${g.map((_, i) => `<span class="dot ${i === modal.idx ? "on" : ""}"></span>`).join("")}</div>`
+      : "";
+
+    let body;
+    if (modal.details) {
+      body = detailsHTML(p, v);
+    } else {
+      const opts = p.variants.length > 1
+        ? `<label class="muted">${L.chooseOpt}</label>
+           <select id="mVariant">${p.variants.map(x =>
+              `<option value="${esc(x.vid)}" ${x.vid === v.vid ? "selected" : ""}>${esc(variantLabel(x))}</option>`
+            ).join("")}</select>`
+        : (v.key ? `<div class="muted">${esc(variantLabel(v))}</div>` : "");
+      body = `
+        <div class="price">${fmt(localPrice(v.price))}</div>
+        ${opts}
+        <div class="qtyrow">
+          <span>${L.qty}</span>
+          <span class="qtyctl"><button class="ghost" data-action="mqdec">−</button> <strong>${modal.qty}</strong> <button class="ghost" data-action="mqinc">+</button></span>
+        </div>
+        <button class="btn-orange" id="mAdd" style="width:100%">${L.add}</button>
+        <button class="ghost" data-action="mdetails" style="width:100%;margin-top:8px">${L.details}</button>`;
+    }
+
+    box.innerHTML = `
+      <div class="modal">
+        <button class="xbtn" data-action="closeModal">✕</button>
+        <div class="gallery">
+          ${g.length ? `<img id="mImg" src="${esc(g[modal.idx])}" alt="">` : ""}
+          ${nav}
+        </div>
+        ${dots}
+        <h3 style="margin:12px 0 6px">${esc(p.nameEn)}</h3>
+        ${body}
+      </div>`;
+    box.classList.remove("hidden");
+  }
+
+  function addLine(vid, qty) {
+    const i = state.cart.find(x => x.vid === vid);
+    if (i) i.qty += qty; else state.cart.push({ vid, qty });
+    save();
+  }
+
+  // ===== الكوبون =====
+  function applyCoupon() {
+    const code = (document.getElementById("cpn")?.value || "").trim().toUpperCase();
+    if (COUPONS[code]) {
+      state.coupon = code;
+      save();
+      render();
+      document.getElementById("cpnMsg").textContent = t("couponOk");
+    } else {
+      document.getElementById("cpnMsg").textContent = t("couponBad");
+    }
+  }
+
   // ===== العرض =====
   function fillCountrySelects() {
     ["countrySel", "gCountry"].forEach(id => {
@@ -504,41 +659,26 @@
     if (!loaded) return `<p>${t("loading")}</p>`;
     if (loadError) return `<p>${t("loadErr")}</p>`;
     if (!products.length) return `<p>${t("noProducts")}</p>`;
-    return `<div class="grid">` + products.map(p => `
-      <div class="card">
-        ${p.image ? `<img src="${esc(p.image)}" alt="">` : ""}
-        <div style="margin-top:8px">${esc(p.nameEn)}</div>
-        <div class="price">${priceRange(p)}</div>
-        <button data-action="open" data-pid="${esc(p.pid)}">${t("choose")}</button>
-      </div>`).join("") + `</div>`;
-  }
-
-  function renderModal() {
-    const box = document.getElementById("pmodal");
-    const p = products.find(x => x.pid === currentPid);
-    if (!p) {
-      box.classList.add("hidden");
-      box.innerHTML = "";
-      return;
-    }
-    const v = p.variants.find(x => x.vid === currentVid) || p.variants[0];
-    currentVid = v.vid;
-    const opts = p.variants.map(x =>
-      `<option value="${esc(x.vid)}" ${x.vid === v.vid ? "selected" : ""}>${esc(variantLabel(x))}</option>`
-    ).join("");
-    box.innerHTML = `
-      <div class="modal">
-        <img src="${esc(v.image || p.image)}" alt="" style="width:100%;height:220px;object-fit:contain;background:#f4f4f4;border-radius:8px">
-        <h3 style="margin:10px 0">${esc(p.nameEn)}</h3>
-        <label class="muted">${t("chooseOpt")}</label>
-        <select id="mVariant">${opts}</select>
-        <div class="price">${fmt(localPrice(v.price))}</div>
-        <div style="display:flex;gap:8px">
-          <button id="mAdd" style="flex:1">${t("add")}</button>
-          <button class="ghost" data-action="closeModal">${t("close")}</button>
-        </div>
-      </div>`;
-    box.classList.remove("hidden");
+    return `<div class="grid">` + products.map(p => {
+      const idx = cardIdx[p.pid] || 0;
+      const img = p.images[idx] || p.image || "";
+      const dots = p.images.length > 1
+        ? `<div class="dots">${p.images.map((_, i) => `<span class="dot ${i === idx ? "on" : ""}" data-cd="${esc(p.pid)}"></span>`).join("")}</div>`
+        : "";
+      return `
+        <div class="card">
+          <div class="pimg">${img ? `<img id="c-${esc(p.pid)}" src="${esc(img)}" alt="">` : ""}</div>
+          ${dots}
+          <div class="pbody">
+            <div class="pname">${esc(p.nameEn)}</div>
+            <div class="price">${priceRange(p)}</div>
+            <div class="row2">
+              <button class="ghost" data-action="open" data-pid="${esc(p.pid)}">${t("details")}</button>
+              <button data-action="quickAdd" data-pid="${esc(p.pid)}">${t("add")}</button>
+            </div>
+          </div>
+        </div>`;
+    }).join("") + `</div>`;
   }
 
   function viewCart() {
@@ -546,60 +686,87 @@
     if (!lines.length) {
       return `<p>${t("empty")}</p><button class="ghost" data-action="shop">${t("back")}</button>`;
     }
-    return lines.map(l => `
-      <div class="card" style="margin-bottom:12px">
-        <div class="row"><strong>${esc(l.p.nameEn)}</strong><span class="muted">${esc(variantLabel(l.v))}</span></div>
-        <div class="row">
-          <span>${fmt(localPrice(l.v.price))}</span>
-          <span>
+    const rows = lines.map(l => `
+      <div class="crow">
+        <img src="${esc(l.v.image || l.p.image)}" alt="">
+        <div class="cinfo">
+          <div class="pname">${esc(l.p.nameEn)}</div>
+          ${l.v.key ? `<div class="muted">${esc(variantLabel(l.v))}</div>` : ""}
+          <div class="price">${fmt(localPrice(l.v.price))}</div>
+          <div class="qtyctl">
             <button class="ghost" data-action="dec" data-vid="${esc(l.vid)}">−</button>
             ${l.qty}
             <button class="ghost" data-action="inc" data-vid="${esc(l.vid)}">+</button>
-            <button class="ghost" data-action="rm" data-vid="${esc(l.vid)}">${t("remove")}</button>
-          </span>
+          </div>
         </div>
-      </div>`).join("") + `
-      <div class="row"><strong>${t("total")}</strong><strong>${fmt(localPrice(subtotalUSD()))}</strong></div>
-      <p class="muted">${t("shippingNote")}</p>
-      <button data-action="checkout" style="width:100%">${t("checkout")}</button>`;
+        <button class="ghost" data-action="rm" data-vid="${esc(l.vid)}">✕</button>
+      </div>`).join("");
+
+    const disc = discountUSD();
+    const couponLine = state.coupon
+      ? `<div class="row"><span class="muted">${esc(state.coupon)}</span><button class="linkbtn" data-action="removeCoupon">${t("removeCoupon")}</button></div>`
+      : `<div class="couponrow">
+           <input id="cpn" placeholder="${t("coupon")}">
+           <button class="ghost" data-action="applyCoupon">${t("apply")}</button>
+         </div>
+         <p id="cpnMsg" class="muted"></p>`;
+
+    return `
+      <h3>${t("cartTitle")}</h3>
+      <div class="card pad">${rows}</div>
+      <div class="card pad">
+        ${couponLine}
+        <div class="row"><span>${t("productsVal")}</span><span>${fmt(localPrice(subtotalUSD()))}</span></div>
+        ${disc > 0 ? `<div class="row"><span>${t("discount")}</span><span>- ${fmt(localPrice(disc))}</span></div>` : ""}
+        <div class="row"><span>${t("shipping")}</span><span class="muted">${t("shipLater")}</span></div>
+        <div class="row total"><strong>${t("grand")}</strong><strong class="price">${fmt(localPrice(subtotalUSD() - disc))}</strong></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="ghost" data-action="shop" style="flex:1">${t("keepShopping")}</button>
+        <button class="btn-orange" data-action="checkout" style="flex:1">${t("checkout")}</button>
+      </div>`;
   }
 
   function viewCheckout() {
-    const areaList = AREAS[state.country][state.lang];
-    const areas = areaList.map(a => `<option value="${esc(a)}" ${state.area === a ? "selected" : ""}>${esc(a)}</option>`).join("");
+    const areas = AREAS[state.country][state.lang]
+      .map(a => `<option value="${esc(a)}" ${state.area === a ? "selected" : ""}>${esc(a)}</option>`).join("");
     const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
     return `
       <h3>${t("checkout")}</h3>
-      <div class="card" style="margin-bottom:12px">
+      <div class="card pad">
         <div>${esc(name || me?.email || "")}</div>
         <div class="muted" dir="ltr">${esc(profile?.phone || me?.phone || "")}</div>
       </div>
       <select id="fArea"><option value="">${t("areaPh")}</option>${areas}</select>
       <input id="fAddr" placeholder="${t("address")}">
-      <div id="summary"></div>
+      <div class="card pad" id="summary"></div>
       <p id="formMsg" class="muted"></p>
-      <button data-action="confirm" style="width:100%">${t("confirm")}</button>
+      <button class="btn-orange" data-action="confirm" style="width:100%">${t("confirm")}</button>
       <p><button class="ghost" data-action="cart">${t("back")}</button></p>`;
   }
 
   function summaryHTML() {
-    const subtotal = localPrice(subtotalUSD());
+    const sub = localPrice(subtotalUSD());
+    const disc = localPrice(discountUSD());
+    const discRow = disc > 0 ? `<div class="row"><span>${t("discount")}</span><span>- ${fmt(disc)}</span></div>` : "";
     if (!state.area) {
-      return `<div class="row"><span>${t("total")}</span><span>${fmt(subtotal)}</span></div>
+      return `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>
+              ${discRow}
               <p class="muted">${t("shippingNote")}</p>`;
     }
     const s = shippingCalc();
     const ship = shipLocal(s.shipBHD);
-    return `<div class="row"><span>${t("total")}</span><span>${fmt(subtotal)}</span></div>
+    return `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>
+            ${discRow}
             <div class="row"><span>${t("shipping")}</span><span>${fmt(ship)}</span></div>
-            <div class="row"><strong>${t("grand")}</strong><strong>${fmt(subtotal + ship)}</strong></div>`;
+            <div class="row total"><strong>${t("grand")}</strong><strong class="price">${fmt(sub - disc + ship)}</strong></div>`;
   }
 
   function ordersHTML() {
     if (ordersFailed) return `<p class="muted">${t("ordersErr")}</p>`;
     if (!accountOrders || !accountOrders.length) return `<p class="muted">${t("noOrders")}</p>`;
     return accountOrders.map(o => `
-      <div class="card" style="margin-bottom:8px">
+      <div class="card pad">
         <div class="row"><strong>#${esc(String(o.id).slice(0, 8))}</strong><span class="muted">${esc(String(o.created_at || "").slice(0, 10))}</span></div>
         <div class="row"><span>${esc(o.status || "")}</span><strong>${fmtFor(o.country, o.total)}</strong></div>
       </div>`).join("");
@@ -609,7 +776,7 @@
     if (!me) return `<p>${t("needLogin")}</p><button data-action="login">${t("login")}</button>`;
     const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
     return `
-      <div class="card" style="margin-bottom:16px">
+      <div class="card pad">
         <strong>${esc(name || me.email)}</strong>
         <div class="muted" dir="ltr">${esc(me.email)}</div>
         ${profile?.phone ? `<div class="muted" dir="ltr">${esc(profile.phone)}</div>` : ""}
@@ -632,6 +799,7 @@
       country: state.country,
       products: products.length,
       loggedIn: !!me,
+      coupon: state.coupon,
       actualKg: s.actualKg.toFixed(3),
       volumetricKg: s.volKg.toFixed(3),
       chargeableKg: s.chargeable.toFixed(3),
@@ -673,6 +841,7 @@
 
     const s = shippingCalc();
     const subtotal = localPrice(subtotalUSD());
+    const discount = localPrice(discountUSD());
     const ship = shipLocal(s.shipBHD);
     const row = {
       user_id: me.id,
@@ -681,9 +850,11 @@
       items: cartLines().map(l => ({ pid: l.p.pid, vid: l.vid, sku: l.v.sku, name: l.p.nameEn, variant: l.v.key, qty: l.qty, unitUSD: l.v.price })),
       shipping_address: { area: state.area, address: addr },
       contact: { name: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim(), phone: profile?.phone || null },
+      coupon: state.coupon,
       subtotal: subtotal,
+      discount: discount,
       shipping: ship,
-      total: subtotal + ship,
+      total: subtotal - discount + ship,
       internal_risk_bhd: s.riskBHD
     };
 
@@ -704,6 +875,7 @@
 
     state.cart = [];
     state.area = null;
+    state.coupon = null;
     save();
     view = "done";
     render();
@@ -711,15 +883,27 @@
 
   // ===== الأحداث =====
   async function handleAction(a, ds) {
-    if (a === "open") {
+    if (a === "open") { openProduct(ds.pid); return; }
+    if (a === "quickAdd") {
       const p = products.find(x => x.pid === ds.pid);
       if (!p) return;
-      currentPid = p.pid;
-      currentVid = null;
-      renderModal();
+      if (p.variants.length === 1) { addLine(p.variants[0].vid, 1); render(); }
+      else openProduct(p.pid);
       return;
     }
-    if (a === "closeModal") { currentPid = null; currentVid = null; renderModal(); return; }
+    if (a === "closeModal") { modal = null; renderModal(); return; }
+    if (a === "mprev" || a === "mnext") {
+      const c = curModal(); if (!c) return;
+      const g = galleryFor(c.p, c.v);
+      modal.idx = (modal.idx + (a === "mnext" ? 1 : -1) + g.length) % g.length;
+      modal.paused = true;
+      renderModal(); return;
+    }
+    if (a === "mqinc") { if (modal.qty < 99) modal.qty++; renderModal(); return; }
+    if (a === "mqdec") { if (modal.qty > 1) modal.qty--; renderModal(); return; }
+    if (a === "mdetails") { modal.details = true; renderModal(); return; }
+    if (a === "mback") { modal.details = false; renderModal(); return; }
+
     if (a === "inc" || a === "dec" || a === "rm") {
       const i = state.cart.find(x => x.vid === ds.vid);
       if (!i) return;
@@ -728,6 +912,8 @@
       if (a === "rm" || i.qty <= 0) state.cart = state.cart.filter(x => x.vid !== ds.vid);
       save(); render(); return;
     }
+    if (a === "applyCoupon") { applyCoupon(); return; }
+    if (a === "removeCoupon") { state.coupon = null; save(); render(); return; }
     if (a === "cart") { view = "cart"; render(); return; }
     if (a === "shop") { view = "shop"; render(); return; }
     if (a === "login") { openAuth("login"); return; }
@@ -750,14 +936,12 @@
     if (b) handleAction(b.dataset.action, b.dataset);
   });
 
-  document.getElementById("pmodal").addEventListener("click", async (e) => {
-    if (e.target.id === "pmodal") { currentPid = null; currentVid = null; renderModal(); return; }
+  document.getElementById("pmodal").addEventListener("click", (e) => {
+    if (e.target.id === "pmodal") { modal = null; renderModal(); return; }
     if (e.target.id === "mAdd") {
-      if (!currentVid) return;
-      const i = state.cart.find(x => x.vid === currentVid);
-      if (i) i.qty++; else state.cart.push({ vid: currentVid, qty: 1 });
-      save();
-      currentPid = null; currentVid = null;
+      const c = curModal(); if (!c) return;
+      addLine(c.v.vid, modal.qty);
+      modal = null;
       render();
       return;
     }
@@ -766,7 +950,12 @@
   });
 
   document.getElementById("pmodal").addEventListener("change", (e) => {
-    if (e.target.id === "mVariant") { currentVid = e.target.value; renderModal(); }
+    if (e.target.id === "mVariant" && modal) {
+      modal.vid = e.target.value;
+      modal.idx = 0;
+      modal.paused = true; // نثبّت صورة الخيار المختار
+      renderModal();
+    }
   });
 
   document.getElementById("view").addEventListener("change", (e) => {
@@ -827,6 +1016,30 @@
       updateDebug();
     }
   });
+
+  // تبديل صور البطاقات والنافذة كل 5 ثواني
+  setInterval(() => {
+    if (modal && !modal.paused && !modal.details) {
+      const c = curModal();
+      if (c) {
+        const g = galleryFor(c.p, c.v);
+        if (g.length > 1) {
+          modal.idx = (modal.idx + 1) % g.length;
+          const img = document.getElementById("mImg");
+          if (img) img.src = g[modal.idx];
+          document.querySelectorAll("#pmodal .dot").forEach((el, i) => el.classList.toggle("on", i === modal.idx));
+        }
+      }
+    }
+    products.forEach(p => {
+      if (p.images.length > 1) {
+        cardIdx[p.pid] = ((cardIdx[p.pid] || 0) + 1) % p.images.length;
+        const img = document.getElementById("c-" + p.pid);
+        if (img) img.src = p.images[cardIdx[p.pid]];
+        document.querySelectorAll(`[data-cd="${p.pid}"]`).forEach((el, i) => el.classList.toggle("on", i === cardIdx[p.pid]));
+      }
+    });
+  }, SLIDE_MS);
 
   sb.auth.onAuthStateChange(async (_event, session) => {
     const prev = me && me.id;
