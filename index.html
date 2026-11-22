@@ -101,7 +101,9 @@
   const SLIDE_MS = 5000;
   const PENDING_KEY = "showbiz_signup";
 
-  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { flowType: "implicit", detectSessionInUrl: true, persistSession: true, autoRefreshToken: true }
+  });
 
   const COUNTRIES = {
     BH: { flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"},      sym:{ar:"د.ب", en:"BD"},  dec:3, rate:0.377,  base:2.2 },
@@ -139,7 +141,9 @@
       needLogin:"سجّل دخولك أو أنشئ حساب لإتمام الطلب", loginTitle:"تسجيل الدخول", email:"البريد الإلكتروني",
       password:"كلمة المرور", loginBtn:"دخول", noAccount:"ليس لدي حساب، أنشئ حساب", haveAccount:"عندي حساب، سجّل دخول",
       signupTitle:"إنشاء حساب جديد", stepEmail:"1) البريد الإلكتروني", stepPhone:"2) رقم الجوال", stepDetails:"3) بيانات الحساب",
-      sendLink:"إرسال رابط التحقق", linkSent:"أرسلنا رابط التحقق إلى بريدك. اضغط الرابط ثم ارجع لهذي الصفحة",
+      sendLink:"إرسال رابط التحقق", linkSent:"أرسلنا رابط التحقق إلى بريدك. اضغط الرابط ثم ارجع لهذي الصفحة من نفس المتصفح",
+      emailOk:"تم التحقق من بريدك الإلكتروني ✅", checkNow:"تحقق من الحالة", notYet:"لم يتم التحقق بعد. اضغط الرابط في الإيميل من نفس المتصفح ثم حاول مرة ثانية",
+      linkExpired:"انتهت صلاحية الرابط أو استُخدم قبل. أرسل رابط جديد", linkBad:"تعذر التحقق من الرابط، أرسل رابط جديد",
       change:"تغيير", lockedStep:"أكمل الخطوة اللي قبلها أولًا", skipPhone:"التحقق من الجوال غير مفعّل حاليًا",
       sendSms:"إرسال رمز التحقق", smsSent:"تم إرسال الرمز إلى جوالك", enterCode:"أدخل رمز التحقق", verify:"تحقق",
       firstName:"الاسم الأول", lastName:"الاسم الثاني", confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب",
@@ -166,7 +170,9 @@
       needLogin:"Log in or create an account to complete your order", loginTitle:"Log in", email:"Email",
       password:"Password", loginBtn:"Log in", noAccount:"No account? Create one", haveAccount:"I have an account, log in",
       signupTitle:"Create a new account", stepEmail:"1) Email", stepPhone:"2) Mobile number", stepDetails:"3) Account details",
-      sendLink:"Send verification link", linkSent:"We sent a verification link to your email. Click it, then come back to this page",
+      sendLink:"Send verification link", linkSent:"We sent a verification link to your email. Click it, then come back to this page in the same browser",
+      emailOk:"Your email is verified ✅", checkNow:"Check status", notYet:"Not verified yet. Open the link from the email in this same browser, then try again",
+      linkExpired:"The link expired or was already used. Send a new one", linkBad:"Could not verify the link, please send a new one",
       change:"Change", lockedStep:"Complete the previous step first", skipPhone:"Phone verification is currently off",
       sendSms:"Send verification code", smsSent:"Code sent to your mobile", enterCode:"Enter verification code", verify:"Verify",
       firstName:"First name", lastName:"Last name", confirmPass:"Confirm password", createBtn:"Create account",
@@ -204,6 +210,7 @@
   let ordersFailed = false;
   let lastSaveOk = true;
   let debugOn = false;
+  let authReady = false;
 
   // ===== مساعدات =====
   const t = (k) => T[state.lang][k];
@@ -314,17 +321,53 @@
     }
   }
 
-  // بعد أي تغيير في الدخول: إذا الحساب بدون بيانات، نفتح صفحة الإنشاء
+  // يحدّث الحالة بعد أي تغيير في الدخول
   async function refreshAuth() {
     await loadProfile();
     if (me && me.email_confirmed_at) {
+      const wasLinkSent = pending.linkSent;
       pending.email = me.email || pending.email;
       pending.linkSent = true;
       savePending();
+      if (!wasLinkSent || view === "signup") notice = t("emailOk");
     }
     if (me && !profile && view !== "signup") {
       view = "signup";
-      notice = "";
+    }
+  }
+
+  // أول تحميل: نقرأ الجلسة (ومنها جلسة رابط التحقق) قبل ما نرسم الصفحة
+  async function initAuth() {
+    const hash = location.hash || "";
+    const fromLink = hash.includes("access_token") || hash.includes("type=signup") || hash.includes("type=magiclink");
+    const errMatch = hash.match(/error_description=([^&]+)/);
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) {
+        await refreshAuth();
+        if (fromLink || pending.linkSent) {
+          view = (me && profile) ? "account" : "signup";
+          notice = t("emailOk");
+        }
+      } else if (errMatch) {
+        const msg = decodeURIComponent(errMatch[1].replace(/\+/g, " "));
+        view = "signup";
+        notice = /expired|used/i.test(msg) ? t("linkExpired") : t("linkBad");
+      }
+    } catch (e) {}
+    if (location.hash) {
+      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    }
+    authReady = true;
+  }
+
+  async function checkNow() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      await refreshAuth();
+      render();
+    } else {
+      setNotice(t("notYet"));
     }
   }
 
@@ -403,7 +446,8 @@
     } else {
       s1 = `<input id="sEmail" type="email" dir="ltr" placeholder="${L.email}" value="${esc(pending.email)}">
             <button data-action="sendLink" style="width:100%">${L.sendLink}</button>
-            ${pending.linkSent ? `<p class="muted">${L.linkSent}</p>` : ""}`;
+            ${pending.linkSent ? `<p class="muted">${L.linkSent}</p>
+              <button class="ghost" data-action="checkNow" style="width:100%">${L.checkNow}</button>` : ""}`;
     }
 
     // الخطوة 2: الجوال
@@ -848,9 +892,11 @@
       country: state.country,
       view: view,
       products: products.length,
+      authReady: authReady,
       loggedIn: !!me,
       emailVerified: !!(me && me.email_confirmed_at),
       phoneVerified: !!(me && me.phone_confirmed_at),
+      hasProfile: !!profile,
       coupon: state.coupon,
       chargeableKg: s.chargeable.toFixed(3),
       shippingBHD: s.shipBHD.toFixed(3),
@@ -981,6 +1027,7 @@
     }
     if (a === "confirm") { await confirmOrder(); return; }
     if (a === "sendLink") { await sendLink(); return; }
+    if (a === "checkNow") { await checkNow(); return; }
     if (a === "changeEmail") { await changeEmail(); return; }
     if (a === "sendSms") { await sendSms(); return; }
     if (a === "verifySms") { await verifySms(); return; }
@@ -1095,7 +1142,7 @@
     });
   }, SLIDE_MS);
 
-  // أثناء انتظار الرابط: نتحقق كل 3 ثواني إذا الزبون ضغط الرابط
+  // أثناء انتظار الرابط: نفحص كل 3 ثواني إذا الزبون ضغط الرابط في نفس المتصفح
   setInterval(async () => {
     if (view !== "signup" || !pending.linkSent || (me && me.email_confirmed_at)) return;
     const { data: { session } } = await sb.auth.getSession();
@@ -1120,6 +1167,7 @@
   fillCountrySelects();
   render();
   loadProducts();
+  initAuth().then(() => render());
 </script>
 </body>
 </html>
