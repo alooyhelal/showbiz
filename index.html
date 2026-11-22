@@ -1,58 +1,405 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Showbiz - تجربة</title>
-  <style>
-    body { font-family: sans-serif; margin: 0; padding: 16px; background: #fafafa; color: #222; }
-    h1 { font-size: 22px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-    .card { background: #fff; border: 1px solid #eee; border-radius: 12px; padding: 12px; }
-    .card img { width: 100%; height: 180px; object-fit: contain; background: #f4f4f4; border-radius: 8px; }
-    .title { font-size: 15px; margin: 10px 0 6px; min-height: 40px; }
-    .price { font-weight: bold; color: #e8590c; }
-    .sku { font-size: 12px; color: #888; direction: ltr; }
-    button { width: 100%; padding: 10px; margin-top: 8px; border: 0; border-radius: 8px; background: #111; color: #fff; cursor: pointer; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Showbiz</title>
+<style>
+  :root { --bg:#fafafa; --fg:#222; --card:#fff; --line:#e5e5e5; --btn:#111; --btnfg:#fff; --price:#e8590c; --muted:#777; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#111; --fg:#eee; --card:#1c1c1c; --line:#333; --btn:#fff; --btnfg:#111; --price:#ff922b; --muted:#999; }
+  }
+  :root[data-theme="dark"] { --bg:#111; --fg:#eee; --card:#1c1c1c; --line:#333; --btn:#fff; --btnfg:#111; --price:#ff922b; --muted:#999; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,sans-serif; }
+  header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line); }
+  main { padding:16px; max-width:960px; margin:auto; }
+  select, input { padding:9px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--fg); width:100%; box-sizing:border-box; margin-bottom:8px; }
+  header select { width:auto; }
+  button { padding:10px 14px; border:0; border-radius:8px; background:var(--btn); color:var(--btnfg); cursor:pointer; }
+  button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; }
+  .card img { width:100%; height:200px; object-fit:contain; background:#f4f4f4; border-radius:8px; }
+  .price { color:var(--price); font-weight:bold; margin:6px 0; }
+  .muted { color:var(--muted); font-size:13px; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; flex-wrap:wrap; }
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .modal { background:var(--card); color:var(--fg); padding:20px; border-radius:12px; width:100%; max-width:420px; box-sizing:border-box; }
+  .hidden { display:none !important; }
+  #debug { position:fixed; bottom:0; left:0; right:0; background:#000; color:#0f0; font:12px monospace; padding:8px; direction:ltr; white-space:pre-wrap; max-height:40vh; overflow:auto; }
+</style>
 </head>
 <body>
-  <h1>منتجات Showbiz</h1>
-  <div class="grid" id="products"></div>
 
-  <script>
-    // منتجات تجريبية ثابتة (بدون أي مفتاح API)
-    // الأسعار والصور مأخوذة من صفحة CJ للتجربة فقط، ويجب التحقق منها قبل النشر
-    const products = [
-      {
-        sku: "CJQCQCCZ00034",
-        title: "مكنسة كهربائية لاسلكية للسيارة ومحمولة باليد",
-        price: "$2.25 - $7.46",
-        image: "https://placehold.co/400x400?text=CJ+Product"
-      },
-      {
-        sku: "TEST-SKU-0002",
-        title: "منتج تجريبي ثاني",
-        price: "$10.00",
-        image: "https://placehold.co/400x400?text=Product+2"
-      }
-    ];
+<header>
+  <strong id="siteName">Showbiz</strong>
+  <div>
+    <select id="countrySel"></select>
+    <button class="ghost" id="langBtn">English</button>
+    <button class="ghost" id="cartBtn">السلة (0)</button>
+  </div>
+</header>
 
-    const container = document.getElementById("products");
+<main><div id="view"></div></main>
 
-    products.forEach((p) => {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.innerHTML = `
-        <img src="${p.image}" alt="">
-        <div class="title"></div>
-        <div class="price">${p.price}</div>
-        <div class="sku">${p.sku}</div>
-        <button>أضف للسلة</button>
-      `;
-      card.querySelector(".title").textContent = p.title;
-      container.appendChild(card);
+<div class="overlay hidden" id="gate">
+  <div class="modal">
+    <h3 id="gTitle"></h3>
+    <label id="gCountryLbl"></label>
+    <select id="gCountry"></select>
+    <label id="gLangLbl"></label>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="ghost" data-glang="ar">العربية</button>
+      <button class="ghost" data-glang="en">English</button>
+    </div>
+    <button id="gGo" style="width:100%"></button>
+  </div>
+</div>
+
+<div id="debug" class="hidden"></div>
+
+<script>
+  // ===== الإعدادات =====
+  const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
+  const RATE_BHD = 0.377; // كم دينار بحريني = 1 دولار (حدّثه حسب السعر الحالي)
+
+  // أسعار البيع بالدولار (تحددها أنت) + الوزن والأبعاد للحاسبة
+  const PRODUCT_CONFIG = [
+    {
+      pid: "C45CC908-5C1D-4104-BEA3-BFC82D3DA44C",
+      nameAr: "مكنسة سيارة لاسلكية محمولة",
+      nameEn: "Wireless Car Vacuum Cleaner",
+      priceUSD: 15.45,
+      kg: 0.85,              // أعلى وزن من CJ (850 جم)، احتياط
+      dims: [18.5, 15.5, 6.5] // سم
+    }
+  ];
+
+  const COUNTRIES = {
+    BH: { flag:"🇧🇭", name:{ar:"البحرين", en:"Bahrain"},      sym:{ar:"د.ب", en:"BD"},  dec:3, rate:0.377,  base:2.2,
+          areas:["المنامة","المحرق","الرفاع","مدينة عيسى","سترة","أخرى"] },
+    SA: { flag:"🇸🇦", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"SAR", en:"SAR"}, dec:2, rate:3.75,   base:3.3,
+          areas:["الرياض","جدة","الدمام","مكة المكرمة","المدينة المنورة","أخرى"] },
+    AE: { flag:"🇦🇪", name:{ar:"الإمارات", en:"UAE"},         sym:{ar:"AED", en:"AED"}, dec:2, rate:3.6725, base:3.3,
+          areas:["دبي","أبوظبي","الشارقة","عجمان","أخرى"] },
+    KW: { flag:"🇰🇼", name:{ar:"الكويت", en:"Kuwait"},       sym:{ar:"د.ك", en:"KD"},  dec:3, rate:0.307,  base:3.3,
+          areas:["الكويت","حولي","الفروانية","الجهراء","أخرى"] },
+    QA: { flag:"🇶🇦", name:{ar:"قطر", en:"Qatar"},           sym:{ar:"ر.ق", en:"QR"},  dec:2, rate:3.64,   base:3.3,
+          areas:["الدوحة","الريان","الوكرة","أخرى"] },
+    OM: { flag:"🇴🇲", name:{ar:"عُمان", en:"Oman"},          sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385,  base:3.3,
+          areas:["مسقط","صلالة","صحار","أخرى"] }
+  };
+
+  const T = {
+    ar: {
+      siteName:"Showbiz", welcome:"مرحبًا بك", chooseCountry:"اختر الدولة", chooseLang:"اختر اللغة", go:"متابعة",
+      add:"أضف للسلة", cart:"السلة", empty:"السلة فارغة", total:"المجموع", shippingNote:"رسوم التوصيل تُضاف عند تحديد المنطقة",
+      shipping:"رسوم التوصيل", grand:"الإجمالي", checkout:"إتمام الطلب", name:"الاسم", phone:"رقم الجوال (+973...)",
+      area:"المنطقة", areaPh:"يرجى اختيار المنطقة أو المدينة", address:"العنوان التفصيلي", confirm:"تأكيد الطلب",
+      back:"رجوع", done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", loadErr:"تعذر تحميل المنتج", loading:"جاري التحميل...",
+      fillAll:"املأ كل الحقول", phoneBad:"الرقم لازم يكون بصيغة دولية مثل +97336123456", remove:"حذف"
+    },
+    en: {
+      siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
+      add:"Add to cart", cart:"Cart", empty:"Your cart is empty", total:"Subtotal", shippingNote:"Delivery fee is added once you select your area",
+      shipping:"Delivery fee", grand:"Total", checkout:"Checkout", name:"Full name", phone:"Mobile (+973...)",
+      area:"Area", areaPh:"Please select your area or city", address:"Full address", confirm:"Confirm order",
+      back:"Back", done:"Test order saved (not sent to CJ)", loadErr:"Could not load product", loading:"Loading...",
+      fillAll:"Please fill all fields", phoneBad:"Phone must be in international format, e.g. +97336123456", remove:"Remove"
+    }
+  };
+
+  // ===== الحالة =====
+  let state = { country:"BH", lang:"ar", cart:[], area:null, seen:false };
+  try { Object.assign(state, JSON.parse(localStorage.getItem("showbiz_state") || "{}")); } catch(e) {}
+  function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch(e) {} }
+
+  let products = [];
+  let loaded = false;
+  let view = "shop";
+  let debugOn = false;
+
+  // ===== مساعدات =====
+  const t = (k) => T[state.lang][k];
+  const cfgOf = (pid) => PRODUCT_CONFIG.find(p => p.pid === pid);
+  const productById = (pid) => products.find(p => p.pid === pid);
+  const cartCount = () => state.cart.reduce((s, i) => s + i.qty, 0);
+  const usdTotal = () => state.cart.reduce((s, i) => s + cfgOf(i.pid).priceUSD * i.qty, 0);
+  const localRate = () => COUNTRIES[state.country].rate;
+
+  function formatLocal(amount) {
+    const c = COUNTRIES[state.country];
+    const n = amount.toFixed(c.dec);
+    return state.lang === "ar" ? `${n} ${c.sym.ar}` : `${c.sym.en} ${n}`;
+  }
+
+  function productName(pid) {
+    const c = cfgOf(pid);
+    const p = productById(pid);
+    if (state.lang === "ar") return c.nameAr;
+    return (p && p.nameEn) || c.nameEn;
+  }
+
+  // ===== الحاسبة =====
+  function shippingCalc() {
+    let actualKg = 0, volKg = 0;
+    state.cart.forEach(i => {
+      const c = cfgOf(i.pid);
+      actualKg += c.kg * i.qty;
+      volKg += (c.dims[0] * c.dims[1] * c.dims[2] / 5000) * i.qty;
     });
-  </script>
+    const chargeable = Math.max(actualKg, volKg);
+    const base = COUNTRIES[state.country].base;
+    const shipBHD = base + Math.max(0, chargeable - 1) * 0.5; // 0.500 لكل كجم فوق 1 كجم (قيمة تجريبية)
+    const orderBHD = usdTotal() * RATE_BHD;
+    const riskBHD = Math.max(orderBHD * 0.15, 0.3); // داخلي فقط، لا يظهر للزبون
+    return { actualKg, volKg, chargeable, shipBHD, riskBHD };
+  }
+
+  // تحويل مبلغ الشحن من الدينار البحريني إلى عملة الدولة المختارة
+  const shipLocal = (bhd) => bhd * (localRate() / RATE_BHD);
+
+  // ===== تحميل المنتجات من الـ Worker =====
+  async function loadProducts() {
+    products = [];
+    for (const cfg of PRODUCT_CONFIG) {
+      try {
+        const res = await fetch(WORKER_URL + "?pid=" + encodeURIComponent(cfg.pid));
+        const d = await res.json();
+        if (d.error || d.result === false) throw new Error("bad");
+        const imgs = typeof d.productImage === "string" ? JSON.parse(d.productImage) : (d.productImage || []);
+        products.push({ pid: cfg.pid, nameEn: d.productNameEn || "", image: imgs[0] || "", error: false });
+      } catch (e) {
+        products.push({ pid: cfg.pid, nameEn: "", image: "", error: true });
+      }
+    }
+  }
+
+  // ===== العرض =====
+  function fillCountrySelects() {
+    ["countrySel", "gCountry"].forEach(id => {
+      const sel = document.getElementById(id);
+      sel.innerHTML = "";
+      Object.entries(COUNTRIES).forEach(([code, c]) => {
+        const o = document.createElement("option");
+        o.value = code;
+        o.textContent = `${c.flag} ${c.name[state.lang]}`;
+        sel.appendChild(o);
+      });
+      sel.value = state.country;
+    });
+  }
+
+  function renderGate() {
+    const L = T[state.lang];
+    document.getElementById("gTitle").textContent = L.welcome;
+    document.getElementById("gCountryLbl").textContent = L.chooseCountry;
+    document.getElementById("gLangLbl").textContent = L.chooseLang;
+    document.getElementById("gGo").textContent = L.go;
+    document.getElementById("gate").classList.toggle("hidden", state.seen);
+  }
+
+  function viewShop() {
+    if (!loaded) return `<p>${t("loading")}</p>`;
+    return `<div class="grid">` + products.map(p => {
+      const c = cfgOf(p.pid);
+      return `<div class="card">
+        ${p.image ? `<img src="${p.image}" alt="">` : ""}
+        <div style="margin-top:8px">${productName(p.pid)}</div>
+        <div class="price">${formatLocal(c.priceUSD * localRate())}</div>
+        ${p.error ? `<p class="muted">${t("loadErr")}</p>` : ""}
+        <button data-action="add" data-pid="${p.pid}" ${p.error ? "disabled" : ""}>${t("add")}</button>
+      </div>`;
+    }).join("") + `</div>`;
+  }
+
+  function viewCart() {
+    if (!state.cart.length) {
+      return `<p>${t("empty")}</p><button class="ghost" data-action="shop">${t("back")}</button>`;
+    }
+    const rows = state.cart.map(i => {
+      const c = cfgOf(i.pid);
+      return `<div class="card" style="margin-bottom:12px">
+        <div>${productName(i.pid)}</div>
+        <div class="row">
+          <span>${formatLocal(c.priceUSD * localRate())}</span>
+          <span>
+            <button class="ghost" data-action="dec" data-pid="${i.pid}">−</button>
+            ${i.qty}
+            <button class="ghost" data-action="inc" data-pid="${i.pid}">+</button>
+            <button class="ghost" data-action="rm" data-pid="${i.pid}">${t("remove")}</button>
+          </span>
+        </div>
+      </div>`;
+    }).join("");
+    return rows + `
+      <div class="row"><strong>${t("total")}</strong><strong>${formatLocal(usdTotal() * localRate())}</strong></div>
+      <p class="muted">${t("shippingNote")}</p>
+      <button data-action="checkout" style="width:100%">${t("checkout")}</button>`;
+  }
+
+  function viewCheckout() {
+    const areas = COUNTRIES[state.country].areas
+      .map(a => `<option value="${a}" ${state.area === a ? "selected" : ""}>${a}</option>`).join("");
+    return `
+      <h3>${t("checkout")}</h3>
+      <input id="fName" placeholder="${t("name")}">
+      <input id="fPhone" type="tel" dir="ltr" placeholder="+973XXXXXXXX">
+      <select id="fArea"><option value="">${t("areaPh")}</option>${areas}</select>
+      <input id="fAddr" placeholder="${t("address")}">
+      <div id="summary"></div>
+      <p id="formMsg" class="muted"></p>
+      <button data-action="confirm" style="width:100%">${t("confirm")}</button>
+      <p><button class="ghost" data-action="cart">${t("back")}</button></p>`;
+  }
+
+  function summaryHTML() {
+    const subtotal = usdTotal() * localRate();
+    if (!state.area) {
+      return `<div class="row"><span>${t("total")}</span><span>${formatLocal(subtotal)}</span></div>
+              <p class="muted">${t("shippingNote")}</p>`;
+    }
+    const s = shippingCalc();
+    const ship = shipLocal(s.shipBHD);
+    return `<div class="row"><span>${t("total")}</span><span>${formatLocal(subtotal)}</span></div>
+            <div class="row"><span>${t("shipping")}</span><span>${formatLocal(ship)}</span></div>
+            <div class="row"><strong>${t("grand")}</strong><strong>${formatLocal(subtotal + ship)}</strong></div>`;
+  }
+
+  function confirmOrder() {
+    const name = document.getElementById("fName").value.trim();
+    const phone = document.getElementById("fPhone").value.trim();
+    const addr = document.getElementById("fAddr").value.trim();
+    const msg = document.getElementById("formMsg");
+    if (!name || !phone || !state.area || !addr) { msg.textContent = t("fillAll"); return; }
+    if (!/^\+[1-9]\d{6,14}$/.test(phone)) { msg.textContent = t("phoneBad"); return; }
+
+    const s = shippingCalc();
+    const subtotal = usdTotal() * localRate();
+    const ship = shipLocal(s.shipBHD);
+    const order = {
+      id: Date.now(), created: new Date().toISOString(),
+      country: state.country, lang: state.lang,
+      items: state.cart, name, phone, area: state.area, address: addr,
+      subtotal, shipping: ship, total: subtotal + ship,
+      internal_risk_bhd: s.riskBHD,
+      status: "test-not-sent-to-cj"
+    };
+    try {
+      const arr = JSON.parse(localStorage.getItem("showbiz_orders") || "[]");
+      arr.push(order);
+      localStorage.setItem("showbiz_orders", JSON.stringify(arr));
+    } catch (e) {}
+
+    state.cart = [];
+    state.area = null;
+    save();
+    view = "done";
+    render();
+  }
+
+  function updateDebug() {
+    const d = document.getElementById("debug");
+    if (!(debugOn || location.hash === "#debug")) { d.classList.add("hidden"); return; }
+    d.classList.remove("hidden");
+    const s = shippingCalc();
+    d.textContent = JSON.stringify({
+      country: state.country,
+      actualKg: s.actualKg.toFixed(3),
+      volumetricKg: s.volKg.toFixed(3),
+      chargeableKg: s.chargeable.toFixed(3),
+      shippingBHD: s.shipBHD.toFixed(3),
+      riskBHD_internal: s.riskBHD.toFixed(3),
+      area: state.area
+    }, null, 1);
+  }
+
+  function render() {
+    document.documentElement.lang = state.lang;
+    document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
+    document.getElementById("langBtn").textContent = state.lang === "ar" ? "English" : "العربية";
+    document.getElementById("cartBtn").textContent = `${t("cart")} (${cartCount()})`;
+    document.getElementById("siteName").textContent = t("siteName");
+
+    let html;
+    if (view === "cart") html = viewCart();
+    else if (view === "checkout") html = viewCheckout();
+    else if (view === "done") html = `<p>${t("done")}</p><button data-action="shop">${t("back")}</button>`;
+    else html = viewShop();
+    document.getElementById("view").innerHTML = html;
+
+    if (view === "checkout") document.getElementById("summary").innerHTML = summaryHTML();
+    renderGate();
+    updateDebug();
+  }
+
+  // ===== الأحداث =====
+  document.getElementById("view").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-action]");
+    if (!b) return;
+    const a = b.dataset.action, pid = b.dataset.pid;
+
+    if (a === "confirm") { confirmOrder(); return; }
+    if (a === "add") {
+      const i = state.cart.find(x => x.pid === pid);
+      if (i) i.qty++; else state.cart.push({ pid, qty: 1 });
+    }
+    if (a === "inc") { const i = state.cart.find(x => x.pid === pid); if (i) i.qty++; }
+    if (a === "dec") {
+      const i = state.cart.find(x => x.pid === pid);
+      if (i) { i.qty--; if (i.qty <= 0) state.cart = state.cart.filter(x => x.pid !== pid); }
+    }
+    if (a === "rm") state.cart = state.cart.filter(x => x.pid !== pid);
+    if (a === "checkout" && state.cart.length) view = "checkout";
+    if (a === "cart") view = "cart";
+    if (a === "shop") view = "shop";
+
+    save();
+    render();
+  });
+
+  document.getElementById("view").addEventListener("change", (e) => {
+    if (e.target.id === "fArea") {
+      state.area = e.target.value || null;
+      save();
+      document.getElementById("summary").innerHTML = summaryHTML();
+      updateDebug();
+    }
+  });
+
+  document.getElementById("countrySel").addEventListener("change", (e) => {
+    state.country = e.target.value; state.area = null; save(); fillCountrySelects(); render();
+  });
+  document.getElementById("gCountry").addEventListener("change", (e) => {
+    state.country = e.target.value; state.area = null; save(); fillCountrySelects(); render();
+  });
+  document.getElementById("langBtn").addEventListener("click", () => {
+    state.lang = state.lang === "ar" ? "en" : "ar"; save(); fillCountrySelects(); render();
+  });
+  document.querySelectorAll("[data-glang]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.lang = btn.dataset.glang; save(); fillCountrySelects(); render();
+    });
+  });
+  document.getElementById("gGo").addEventListener("click", () => {
+    state.seen = true; save(); render();
+  });
+  document.getElementById("cartBtn").addEventListener("click", () => {
+    view = "cart"; render();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "d") {
+      e.preventDefault();
+      debugOn = !debugOn;
+      updateDebug();
+    }
+  });
+
+  // ===== البدء =====
+  fillCountrySelects();
+  render();
+  loadProducts().then(() => { loaded = true; render(); });
+</script>
 </body>
 </html>
