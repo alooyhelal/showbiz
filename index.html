@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Showbiz</title>
 <style>
-  :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --btn:#4a8fe0; --orange:#f59e4b; --dot:#3a4a68; }
+  :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --btn:#4a8fe0; --orange:#f59e4b; --dot:#3a4a68; --ok:#7ee2a8; }
   body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
   header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px 16px; background:#0d1728; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
   main { padding:16px; max-width:1000px; margin:auto; }
@@ -32,6 +32,8 @@
   .muted { color:var(--muted); font-size:13px; }
   .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; flex-wrap:wrap; }
   .row.total { border-top:1px solid var(--line); margin-top:6px; padding-top:12px; font-size:17px; }
+  .okrow { display:flex; justify-content:space-between; align-items:center; gap:8px; color:var(--ok); padding:6px 0; }
+  h4 { margin:14px 0 8px; color:var(--muted); font-size:14px; font-weight:600; }
   .overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:12px; overflow:auto; z-index:20; }
   .modal { background:var(--card); color:var(--fg); padding:18px; border-radius:18px; width:100%; max-width:440px; box-sizing:border-box; position:relative; }
   .gallery { position:relative; height:300px; background:#f3f4f6; border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
@@ -49,6 +51,7 @@
   .couponrow { display:flex; gap:8px; }
   .couponrow input { margin:0; }
   .couponrow button { white-space:nowrap; }
+  .narrow { max-width:460px; margin:0 auto; }
   .hidden { display:none !important; }
   #debug { position:fixed; bottom:0; left:0; right:0; background:#000; color:#0f0; font:12px monospace; padding:8px; direction:ltr; white-space:pre-wrap; max-height:40vh; overflow:auto; z-index:30; }
 </style>
@@ -68,7 +71,6 @@
 <main><div id="view"></div></main>
 
 <div class="overlay hidden" id="pmodal"></div>
-<div class="overlay hidden" id="authModal"></div>
 
 <div class="overlay hidden" id="gate">
   <div class="modal">
@@ -92,10 +94,12 @@
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
+  const SITE_URL = "https://alooyhelal.github.io/showbiz/";
   const REQUIRE_PHONE = true; // false للتجربة لين تترقى Twilio
   const RATE_BHD = 0.377;     // للحاسبة فقط
-  const COUPONS = { TEST10: 0.10 }; // كود تجريبي: خصم 10%
+  const COUPONS = { TEST10: 0.10 }; // كود تجريبي
   const SLIDE_MS = 5000;
+  const PENDING_KEY = "showbiz_signup";
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -124,26 +128,25 @@
       productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"رسوم التوصيل", shipLater:"تُحدد بعد اختيار المنطقة",
       shippingNote:"رسوم التوصيل تُضاف عند تحديد المنطقة", coupon:"هل لديك كود خصم؟", apply:"تطبيق",
       couponBad:"كود الخصم غير صحيح", couponOk:"تم تطبيق كود الخصم", removeCoupon:"إزالة الكود",
-      keepShopping:"متابعة التسوق", checkout:"إتمام الطلب", name:"الاسم", area:"المنطقة", areaPh:"اختر المنطقة أو المدينة",
+      keepShopping:"متابعة التسوق", checkout:"إتمام الطلب", area:"المنطقة", areaPh:"اختر المنطقة أو المدينة",
       address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع", backShort:"رجوع",
       done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم حفظ الطلب في هذا المتصفح فقط",
       loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...", wait:"لحظة...",
       noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول", remove:"حذف",
-      dims:"الأبعاد", weight:"الوزن", noDesc:"لا توجد تفاصيل إضافية",
+      dims:"الأبعاد", weight:"الوزن", noDesc:"لا توجد تفاصيل إضافية", defaultVariant:"افتراضي",
       login:"تسجيل الدخول", logout:"تسجيل الخروج", account:"حسابي", myOrders:"طلباتي", noOrders:"ما عندك طلبات بعد",
       ordersErr:"تعذر تحميل الطلبات", editProfile:"تعديل بياناتي", save:"حفظ", saved:"تم الحفظ",
-      firstName:"الاسم الأول", lastName:"الاسم الثاني", needLogin:"سجّل دخولك أو أنشئ حساب لإتمام الطلب",
-      loginTitle:"تسجيل الدخول", email:"البريد الإلكتروني", password:"كلمة المرور", loginBtn:"دخول",
-      noAccount:"ليس لدي حساب، أنشئ حساب", createAccount:"إنشاء حساب", sendCode:"إرسال رمز التحقق",
-      codeSent:"تم إرسال رمز التحقق إلى بريدك", enterCode:"أدخل رمز التحقق", verify:"تحقق", resend:"إعادة الإرسال",
-      emailBad:"البريد الإلكتروني غير صحيح", backToLogin:"رجوع لتسجيل الدخول", phoneStep:"رقم الجوال",
-      sendSms:"إرسال رمز الجوال", smsSent:"تم إرسال الرمز إلى جوالك", phoneBad:"رقم الجوال غير صحيح",
-      finishTitle:"بيانات الحساب", confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب",
+      needLogin:"سجّل دخولك أو أنشئ حساب لإتمام الطلب", loginTitle:"تسجيل الدخول", email:"البريد الإلكتروني",
+      password:"كلمة المرور", loginBtn:"دخول", noAccount:"ليس لدي حساب، أنشئ حساب", haveAccount:"عندي حساب، سجّل دخول",
+      signupTitle:"إنشاء حساب جديد", stepEmail:"1) البريد الإلكتروني", stepPhone:"2) رقم الجوال", stepDetails:"3) بيانات الحساب",
+      sendLink:"إرسال رابط التحقق", linkSent:"أرسلنا رابط التحقق إلى بريدك. اضغط الرابط ثم ارجع لهذي الصفحة",
+      change:"تغيير", lockedStep:"أكمل الخطوة اللي قبلها أولًا", skipPhone:"التحقق من الجوال غير مفعّل حاليًا",
+      sendSms:"إرسال رمز التحقق", smsSent:"تم إرسال الرمز إلى جوالك", enterCode:"أدخل رمز التحقق", verify:"تحقق",
+      firstName:"الاسم الأول", lastName:"الاسم الثاني", confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب",
+      emailBad:"البريد الإلكتروني غير صحيح", phoneBad:"رقم الجوال غير صحيح", badCode:"رمز التحقق غير صحيح أو منتهي",
       namesReq:"الاسم الأول والثاني مطلوبين", passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر",
-      passMismatch:"كلمتا المرور غير متطابقتين", badCode:"رمز التحقق غير صحيح أو منتهي",
-      loginFail:"البريد أو كلمة المرور غير صحيحة", rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول",
-      alreadyExists:"هذا الحساب موجود، تم تسجيل دخولك", signedUp:"تم إنشاء الحساب بنجاح",
-      defaultVariant:"افتراضي"
+      passMismatch:"كلمتا المرور غير متطابقتين", loginFail:"البريد أو كلمة المرور غير صحيحة",
+      rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول", signedUp:"تم إنشاء الحساب بنجاح"
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
@@ -152,26 +155,25 @@
       productsVal:"Products", discount:"Discount", shipping:"Delivery fee", shipLater:"Set after choosing area",
       shippingNote:"Delivery fee is added once you select your area", coupon:"Have a discount code?", apply:"Apply",
       couponBad:"Invalid discount code", couponOk:"Discount code applied", removeCoupon:"Remove code",
-      keepShopping:"Keep shopping", checkout:"Checkout", name:"Name", area:"Area", areaPh:"Please select your area or city",
+      keepShopping:"Keep shopping", checkout:"Checkout", area:"Area", areaPh:"Please select your area or city",
       address:"Full address", confirm:"Confirm order", back:"Back", backShort:"Back",
       done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
       loadErr:"Could not load products, please try again", loading:"Loading...", wait:"Please wait...",
       noProducts:"No products available right now", fillAll:"Please fill all fields", remove:"Remove",
-      dims:"Dimensions", weight:"Weight", noDesc:"No extra details",
+      dims:"Dimensions", weight:"Weight", noDesc:"No extra details", defaultVariant:"Default",
       login:"Log in", logout:"Log out", account:"My account", myOrders:"My orders", noOrders:"You have no orders yet",
       ordersErr:"Could not load orders", editProfile:"Edit my details", save:"Save", saved:"Saved",
-      firstName:"First name", lastName:"Last name", needLogin:"Log in or create an account to complete your order",
-      loginTitle:"Log in", email:"Email", password:"Password", loginBtn:"Log in",
-      noAccount:"No account? Create one", createAccount:"Create account", sendCode:"Send verification code",
-      codeSent:"Verification code sent to your email", enterCode:"Enter verification code", verify:"Verify",
-      resend:"Resend", emailBad:"Invalid email address", backToLogin:"Back to log in", phoneStep:"Mobile number",
-      sendSms:"Send SMS code", smsSent:"Code sent to your mobile", phoneBad:"Invalid mobile number",
-      finishTitle:"Account details", confirmPass:"Confirm password", createBtn:"Create account",
+      needLogin:"Log in or create an account to complete your order", loginTitle:"Log in", email:"Email",
+      password:"Password", loginBtn:"Log in", noAccount:"No account? Create one", haveAccount:"I have an account, log in",
+      signupTitle:"Create a new account", stepEmail:"1) Email", stepPhone:"2) Mobile number", stepDetails:"3) Account details",
+      sendLink:"Send verification link", linkSent:"We sent a verification link to your email. Click it, then come back to this page",
+      change:"Change", lockedStep:"Complete the previous step first", skipPhone:"Phone verification is currently off",
+      sendSms:"Send verification code", smsSent:"Code sent to your mobile", enterCode:"Enter verification code", verify:"Verify",
+      firstName:"First name", lastName:"Last name", confirmPass:"Confirm password", createBtn:"Create account",
+      emailBad:"Invalid email address", phoneBad:"Invalid mobile number", badCode:"Invalid or expired code",
       namesReq:"First and last name are required", passShort:"Password must be 8 characters or more",
-      passMismatch:"Passwords do not match", badCode:"Invalid or expired code",
-      loginFail:"Email or password is incorrect", rateLimit:"Too many attempts, wait a moment and try again",
-      alreadyExists:"This account already exists, you are now logged in", signedUp:"Account created successfully",
-      defaultVariant:"Default"
+      passMismatch:"Passwords do not match", loginFail:"Email or password is incorrect",
+      rateLimit:"Too many attempts, wait a moment and try again", signedUp:"Account created successfully"
     }
   };
 
@@ -181,19 +183,27 @@
   if (!Array.isArray(state.cart)) state.cart = [];
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch(e) {} }
 
+  const blankPending = () => ({ email:"", linkSent:false, dial:"+973", phone:"", otpSent:false, full:"", editPhone:false, first:"", last:"" });
+  let pending = blankPending();
+  try { Object.assign(pending, JSON.parse(localStorage.getItem(PENDING_KEY) || "{}")); } catch(e) {}
+  function savePending() { try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch(e) {} }
+  function clearPending() { pending = blankPending(); try { localStorage.removeItem(PENDING_KEY); } catch(e) {} }
+
   let products = [];
   let loaded = false;
   let loadError = false;
   let view = "shop";
+  let notice = "";
+  let loginEmail = "";
+  let afterLogin = null;
   let modal = null;      // { pid, vid, qty, idx, paused, details }
-  let cardIdx = {};      // فهرس الصورة الحالية لكل بطاقة
+  let cardIdx = {};
   let me = null;
   let profile = null;
   let accountOrders = null;
   let ordersFailed = false;
   let lastSaveOk = true;
   let debugOn = false;
-  let auth = { open:false, step:"login", email:"", dial:"+973", phone:"", full:"", first:"", last:"", msg:"", afterLogin:null };
 
   // ===== مساعدات =====
   const t = (k) => T[state.lang][k];
@@ -201,6 +211,17 @@
   const localPrice = (usd) => usd * rate();
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+
+  function setNotice(m) {
+    notice = m;
+    const el = document.getElementById("notice");
+    if (el) el.textContent = m;
+  }
+  function go(v, msg) {
+    view = v;
+    notice = msg || "";
+    render();
+  }
 
   function fmt(amount) {
     const c = COUNTRIES[state.country];
@@ -265,7 +286,6 @@
       if (!Array.isArray(d.products)) throw new Error("bad");
       products = d.products.map(p => {
         let variants = (p.variants || []).filter(v => v.price != null);
-        // إذا المنتج ما له خيارات، نستخدم سعره الأساسي كخيار واحد
         if (!variants.length) {
           const base = parseFloat(String(p.sellPrice || "").split("-")[0]);
           if (!isNaN(base)) {
@@ -294,6 +314,20 @@
     }
   }
 
+  // بعد أي تغيير في الدخول: إذا الحساب بدون بيانات، نفتح صفحة الإنشاء
+  async function refreshAuth() {
+    await loadProfile();
+    if (me && me.email_confirmed_at) {
+      pending.email = me.email || pending.email;
+      pending.linkSent = true;
+      savePending();
+    }
+    if (me && !profile && view !== "signup") {
+      view = "signup";
+      notice = "";
+    }
+  }
+
   async function loadOrders() {
     accountOrders = null;
     ordersFailed = false;
@@ -318,184 +352,209 @@
     return m;
   }
 
-  function syncAuth() {
-    const g = (id) => document.getElementById(id);
-    if (g("aEmail")) auth.email = g("aEmail").value.trim();
-    if (g("aPhone")) auth.phone = g("aPhone").value.trim();
-    if (g("aDial")) auth.dial = g("aDial").value;
-    if (g("aFirst")) auth.first = g("aFirst").value.trim();
-    if (g("aLast")) auth.last = g("aLast").value.trim();
-  }
-
-  function renderAuth() {
-    syncAuth();
-    const box = document.getElementById("authModal");
-    if (!auth.open) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+  // ===== صفحة الدخول =====
+  function viewLogin() {
     const L = T[state.lang];
-    const s = auth.step;
-    let body = "";
-    if (s === "login") {
-      body = `<h3>${L.loginTitle}</h3>
-        <input id="aEmail" type="email" dir="ltr" placeholder="${L.email}" value="${esc(auth.email)}">
-        <input id="aPass" type="password" dir="ltr" placeholder="${L.password}">
-        <button id="aLogin" style="width:100%">${L.loginBtn}</button>
-        <p><button class="linkbtn" data-auth="su-email">${L.noAccount}</button></p>`;
-    } else if (s === "su-email") {
-      body = `<h3>${L.createAccount}</h3>
-        <input id="aEmail" type="email" dir="ltr" placeholder="${L.email}" value="${esc(auth.email)}">
-        <button id="aSendCode" style="width:100%">${L.sendCode}</button>
-        <p><button class="linkbtn" data-auth="login">${L.backToLogin}</button></p>`;
-    } else if (s === "su-emailcode") {
-      body = `<h3>${L.enterCode}</h3>
-        <p class="muted" dir="ltr">${esc(auth.email)}</p>
-        <input id="aCode" inputmode="numeric" dir="ltr" maxlength="6" placeholder="123456">
-        <button id="aVerifyEmail" style="width:100%">${L.verify}</button>
-        <p><button class="linkbtn" id="aResend">${L.resend}</button></p>`;
-    } else if (s === "su-phone") {
-      const dialOpts = Object.entries(COUNTRIES).map(([, c]) =>
-        `<option value="${c.dial}" ${auth.dial === c.dial ? "selected" : ""}>${c.flag} ${c.dial} ${c.name[state.lang]}</option>`
-      ).join("");
-      body = `<h3>${L.phoneStep}</h3>
-        <div class="row" style="flex-wrap:nowrap">
-          <select id="aDial" style="width:auto">${dialOpts}</select>
-          <input id="aPhone" type="tel" dir="ltr" placeholder="36123456" value="${esc(auth.phone)}" style="flex:1">
+    return `
+      <div class="narrow">
+        <div class="card pad">
+          <h3>${L.loginTitle}</h3>
+          <input id="lEmail" type="email" dir="ltr" placeholder="${L.email}" value="${esc(loginEmail)}">
+          <input id="lPass" type="password" dir="ltr" placeholder="${L.password}">
+          <button data-action="doLogin" style="width:100%">${L.loginBtn}</button>
+          <p><button class="linkbtn" data-action="toSignup">${L.noAccount}</button></p>
+          <p id="notice" class="muted">${esc(notice)}</p>
         </div>
-        <button id="aSendSms" style="width:100%">${L.sendSms}</button>`;
-    } else if (s === "su-phonecode") {
-      body = `<h3>${L.enterCode}</h3>
-        <p class="muted" dir="ltr">${esc(auth.full)}</p>
-        <input id="aCode" inputmode="numeric" dir="ltr" maxlength="6" placeholder="123456">
-        <button id="aVerifyPhone" style="width:100%">${L.verify}</button>`;
-    } else if (s === "su-details") {
-      body = `<h3>${L.finishTitle}</h3>
-        <input id="aFirst" placeholder="${L.firstName}" value="${esc(auth.first)}">
-        <input id="aLast" placeholder="${L.lastName}" value="${esc(auth.last)}">
-        <input id="aPass" type="password" dir="ltr" placeholder="${L.password}">
-        <input id="aPass2" type="password" dir="ltr" placeholder="${L.confirmPass}">
-        <button id="aCreate" style="width:100%">${L.createBtn}</button>`;
-    }
-    box.innerHTML = `<div class="modal">${body}
-      <p id="authMsg" class="muted">${esc(auth.msg)}</p>
-      <p><button class="ghost" data-auth="close">${L.close}</button></p></div>`;
-    box.classList.remove("hidden");
-  }
-
-  function setMsg(m) {
-    auth.msg = m;
-    const el = document.getElementById("authMsg");
-    if (el) el.textContent = m;
-  }
-  function setStep(step) {
-    auth.step = step;
-    auth.msg = "";
-    renderAuth();
-  }
-  function openAuth(step, msg) {
-    auth.open = true;
-    auth.step = step || "login";
-    auth.msg = msg || "";
-    renderAuth();
-  }
-  function closeAuth() {
-    auth.open = false;
-    auth.afterLogin = null;
-    renderAuth();
-  }
-
-  async function afterAuthSuccess() {
-    await loadProfile();
-    auth.open = false;
-    if (auth.afterLogin) { view = auth.afterLogin; auth.afterLogin = null; }
-    renderAuth();
-    render();
+      </div>`;
   }
 
   async function doLogin() {
-    syncAuth();
-    const pass = document.getElementById("aPass").value;
     const L = T[state.lang];
-    if (!isEmail(auth.email) || !pass) return setMsg(L.fillAll);
-    setMsg(L.wait);
-    const { error } = await sb.auth.signInWithPassword({ email: auth.email, password: pass });
-    if (error) return setMsg(errMsg(error));
-    await afterAuthSuccess();
-  }
-
-  async function doSendCode() {
-    syncAuth();
-    const L = T[state.lang];
-    if (!isEmail(auth.email)) return setMsg(L.emailBad);
-    setMsg(L.wait);
-    const { error } = await sb.auth.signInWithOtp({ email: auth.email, options: { shouldCreateUser: true } });
-    if (error) return setMsg(errMsg(error));
-    setStep("su-emailcode");
-    setMsg(L.codeSent);
-  }
-
-  async function doVerifyEmail() {
-    const L = T[state.lang];
-    const code = (document.getElementById("aCode").value || "").trim();
-    if (!/^\d{6}$/.test(code)) return setMsg(L.badCode);
-    setMsg(L.wait);
-    const { error } = await sb.auth.verifyOtp({ email: auth.email, token: code, type: "email" });
-    if (error) return setMsg(errMsg(error));
+    const email = loginEmail.trim();
+    const pass = document.getElementById("lPass")?.value || "";
+    if (!isEmail(email) || !pass) return setNotice(L.fillAll);
+    setNotice(L.wait);
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) return setNotice(errMsg(error));
     await loadProfile();
-    if (profile) {
-      setMsg(L.alreadyExists);
-      await afterAuthSuccess();
-      return;
+    if (!profile) {
+      pending.email = me.email || email;
+      pending.linkSent = true;
+      savePending();
+      return go("signup", "");
     }
-    setStep(REQUIRE_PHONE ? "su-phone" : "su-details");
+    const next = afterLogin || "shop";
+    afterLogin = null;
+    go(next, "");
   }
 
-  async function doSendSms() {
-    syncAuth();
+  // ===== صفحة إنشاء الحساب (خطوة بخطوة في صفحة واحدة) =====
+  function viewSignup() {
     const L = T[state.lang];
-    const digits = auth.phone.replace(/\s+/g, "");
-    if (!/^\d{6,12}$/.test(digits)) return setMsg(L.phoneBad);
-    const full = auth.dial + digits;
-    setMsg(L.wait);
+    const emailOK = !!(me && me.email_confirmed_at);
+    const phoneOK = !!(me && me.phone_confirmed_at) && !pending.editPhone;
+    const detailsOpen = emailOK && (!REQUIRE_PHONE || phoneOK);
+
+    // الخطوة 1: الإيميل
+    let s1;
+    if (emailOK) {
+      s1 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(me.email)}</span></span>
+              <button class="linkbtn" data-action="changeEmail">${L.change}</button></div>`;
+    } else {
+      s1 = `<input id="sEmail" type="email" dir="ltr" placeholder="${L.email}" value="${esc(pending.email)}">
+            <button data-action="sendLink" style="width:100%">${L.sendLink}</button>
+            ${pending.linkSent ? `<p class="muted">${L.linkSent}</p>` : ""}`;
+    }
+
+    // الخطوة 2: الجوال
+    let s2;
+    if (!emailOK) {
+      s2 = `<p class="muted">${L.lockedStep}</p>`;
+    } else if (!REQUIRE_PHONE) {
+      s2 = `<p class="muted">${L.skipPhone}</p>`;
+    } else if (phoneOK) {
+      s2 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(pending.full || me.phone || "")}</span></span>
+              <button class="linkbtn" data-action="changePhone">${L.change}</button></div>`;
+    } else if (!pending.otpSent) {
+      const opts = Object.values(COUNTRIES).map(c =>
+        `<option value="${c.dial}" ${pending.dial === c.dial ? "selected" : ""}>${c.flag} ${c.dial}</option>`
+      ).join("");
+      s2 = `<div class="row" style="flex-wrap:nowrap">
+              <select id="sDial" style="width:auto">${opts}</select>
+              <input id="sPhone" type="tel" dir="ltr" placeholder="36123456" value="${esc(pending.phone)}" style="flex:1">
+            </div>
+            <button data-action="sendSms" style="width:100%">${L.sendSms}</button>`;
+    } else {
+      s2 = `<p class="muted" dir="ltr">${esc(pending.full)}</p>
+            <input id="sCode" inputmode="numeric" dir="ltr" maxlength="6" placeholder="123456">
+            <button data-action="verifySms" style="width:100%">${L.verify}</button>
+            <p><button class="linkbtn" data-action="changePhone">${L.change}</button></p>`;
+    }
+
+    // الخطوة 3: الاسم وكلمة المرور
+    const s3 = detailsOpen
+      ? `<input id="sFirst" placeholder="${L.firstName}" value="${esc(pending.first)}">
+         <input id="sLast" placeholder="${L.lastName}" value="${esc(pending.last)}">
+         <input id="sPass" type="password" dir="ltr" placeholder="${L.password}">
+         <input id="sPass2" type="password" dir="ltr" placeholder="${L.confirmPass}">
+         <button class="btn-orange" data-action="createAccount" style="width:100%">${L.createBtn}</button>`
+      : `<p class="muted">${L.lockedStep}</p>`;
+
+    return `
+      <div class="narrow">
+        <div class="card pad">
+          <h3>${L.signupTitle}</h3>
+          <h4>${L.stepEmail}</h4>${s1}
+          <h4>${L.stepPhone}</h4>${s2}
+          <h4>${L.stepDetails}</h4>${s3}
+          <p id="notice" class="muted">${esc(notice)}</p>
+        </div>
+        <p><button class="linkbtn" data-action="toLogin">${L.haveAccount}</button></p>
+      </div>`;
+  }
+
+  async function sendLink() {
+    const L = T[state.lang];
+    const email = (pending.email || "").trim();
+    if (!isEmail(email)) return setNotice(L.emailBad);
+    setNotice(L.wait);
+    const { error } = await sb.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true, emailRedirectTo: SITE_URL }
+    });
+    if (error) return setNotice(errMsg(error));
+    pending.email = email;
+    pending.linkSent = true;
+    savePending();
+    render();
+    setNotice(L.linkSent);
+  }
+
+  async function changeEmail() {
+    await sb.auth.signOut();
+    me = null;
+    profile = null;
+    pending.email = "";
+    pending.linkSent = false;
+    savePending();
+    render();
+  }
+
+  async function sendSms() {
+    const L = T[state.lang];
+    const digits = (pending.phone || "").replace(/\s+/g, "");
+    if (!/^\d{6,12}$/.test(digits)) return setNotice(L.phoneBad);
+    const full = pending.dial + digits;
+    setNotice(L.wait);
     const { error } = await sb.auth.updateUser({ phone: full });
-    if (error) return setMsg(errMsg(error));
-    auth.full = full;
-    setStep("su-phonecode");
-    setMsg(L.smsSent);
+    if (error) return setNotice(errMsg(error));
+    pending.full = full;
+    pending.otpSent = true;
+    savePending();
+    render();
+    setNotice(L.smsSent);
   }
 
-  async function doVerifyPhone() {
+  async function verifySms() {
     const L = T[state.lang];
-    const code = (document.getElementById("aCode").value || "").trim();
-    if (!/^\d{6}$/.test(code)) return setMsg(L.badCode);
-    setMsg(L.wait);
-    const { error } = await sb.auth.verifyOtp({ phone: auth.full, token: code, type: "phone_change" });
-    if (error) return setMsg(errMsg(error));
-    setStep("su-details");
+    const code = (document.getElementById("sCode")?.value || "").trim();
+    if (!/^\d{6}$/.test(code)) return setNotice(L.badCode);
+    setNotice(L.wait);
+    const { error } = await sb.auth.verifyOtp({ phone: pending.full, token: code, type: "phone_change" });
+    if (error) return setNotice(errMsg(error));
+    pending.otpSent = false;
+    pending.editPhone = false;
+    savePending();
+    await loadProfile();
+    render();
   }
 
-  async function doCreate() {
-    syncAuth();
+  function changePhone() {
+    pending.otpSent = false;
+    pending.editPhone = true;
+    savePending();
+    render();
+  }
+
+  async function createAccount() {
     const L = T[state.lang];
-    const p1 = document.getElementById("aPass").value;
-    const p2 = document.getElementById("aPass2").value;
-    if (!auth.first || !auth.last) return setMsg(L.namesReq);
-    if (p1.length < 8) return setMsg(L.passShort);
-    if (p1 !== p2) return setMsg(L.passMismatch);
-    setMsg(L.wait);
-    const { error } = await sb.auth.updateUser({ password: p1, data: { first_name: auth.first, last_name: auth.last } });
-    if (error) return setMsg(errMsg(error));
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) return setMsg(L.badCode);
-    const row = {
-      id: user.id,
-      email: user.email,
-      first_name: auth.first,
-      last_name: auth.last,
-      phone: REQUIRE_PHONE ? auth.full : null
-    };
-    const { error: e2 } = await sb.from("customers").upsert(row);
-    if (e2) return setMsg(e2.message);
-    setMsg(L.signedUp);
-    await afterAuthSuccess();
+    const first = (document.getElementById("sFirst")?.value || "").trim();
+    const last = (document.getElementById("sLast")?.value || "").trim();
+    const p1 = document.getElementById("sPass")?.value || "";
+    const p2 = document.getElementById("sPass2")?.value || "";
+    pending.first = first;
+    pending.last = last;
+    savePending();
+    if (!first || !last) return setNotice(L.namesReq);
+    if (p1.length < 8) return setNotice(L.passShort);
+    if (p1 !== p2) return setNotice(L.passMismatch);
+    setNotice(L.wait);
+
+    const { error } = await sb.auth.updateUser({ password: p1, data: { first_name: first, last_name: last } });
+    if (error) return setNotice(errMsg(error));
+    await loadProfile();
+    if (!me) return setNotice(L.badCode);
+
+    const phoneValue = REQUIRE_PHONE
+      ? (pending.full || (me.phone ? "+" + String(me.phone).replace(/^\+/, "") : null))
+      : null;
+    const { error: e2 } = await sb.from("customers").upsert({
+      id: me.id, email: me.email, first_name: first, last_name: last, phone: phoneValue
+    });
+    if (e2) return setNotice(e2.message);
+
+    await loadProfile();
+    clearPending();
+    go("account", "");
+    loadOrders();
+  }
+
+  async function logout() {
+    await sb.auth.signOut();
+    me = null;
+    profile = null;
+    accountOrders = null;
+    go("shop", "");
   }
 
   async function saveProfile() {
@@ -507,15 +566,6 @@
     if (error) { m.textContent = error.message; return; }
     await loadProfile();
     m.textContent = t("saved");
-  }
-
-  async function logout() {
-    await sb.auth.signOut();
-    me = null;
-    profile = null;
-    accountOrders = null;
-    view = "shop";
-    render();
   }
 
   // ===== المنتجات والنافذة =====
@@ -610,7 +660,6 @@
     save();
   }
 
-  // ===== الكوبون =====
   function applyCoupon() {
     const code = (document.getElementById("cpn")?.value || "").trim().toUpperCase();
     if (COUPONS[code]) {
@@ -797,11 +846,12 @@
     const s = shippingCalc();
     d.textContent = JSON.stringify({
       country: state.country,
+      view: view,
       products: products.length,
       loggedIn: !!me,
+      emailVerified: !!(me && me.email_confirmed_at),
+      phoneVerified: !!(me && me.phone_confirmed_at),
       coupon: state.coupon,
-      actualKg: s.actualKg.toFixed(3),
-      volumetricKg: s.volKg.toFixed(3),
       chargeableKg: s.chargeable.toFixed(3),
       shippingBHD: s.shipBHD.toFixed(3),
       riskBHD_internal: s.riskBHD.toFixed(3),
@@ -821,6 +871,8 @@
     if (view === "cart") html = viewCart();
     else if (view === "checkout") html = viewCheckout();
     else if (view === "account") html = viewAccount();
+    else if (view === "login") html = viewLogin();
+    else if (view === "signup") html = viewSignup();
     else if (view === "done") html = `<p>${lastSaveOk ? t("done") : t("doneLocal")}</p><button data-action="shop">${t("back")}</button>`;
     else html = viewShop();
     document.getElementById("view").innerHTML = html;
@@ -828,7 +880,6 @@
     if (view === "checkout") document.getElementById("summary").innerHTML = summaryHTML();
     renderGate();
     renderModal();
-    renderAuth();
     updateDebug();
   }
 
@@ -837,7 +888,7 @@
     const addr = document.getElementById("fAddr").value.trim();
     const msg = document.getElementById("formMsg");
     if (!state.area || !addr) { msg.textContent = t("fillAll"); return; }
-    if (!me) { auth.afterLogin = "checkout"; openAuth("login", t("needLogin")); return; }
+    if (!me) { afterLogin = "checkout"; go("login", t("needLogin")); return; }
 
     const s = shippingCalc();
     const subtotal = localPrice(subtotalUSD());
@@ -877,8 +928,7 @@
     state.area = null;
     state.coupon = null;
     save();
-    view = "done";
-    render();
+    go("done", "");
   }
 
   // ===== الأحداث =====
@@ -914,19 +964,28 @@
     }
     if (a === "applyCoupon") { applyCoupon(); return; }
     if (a === "removeCoupon") { state.coupon = null; save(); render(); return; }
-    if (a === "cart") { view = "cart"; render(); return; }
-    if (a === "shop") { view = "shop"; render(); return; }
-    if (a === "login") { openAuth("login"); return; }
+    if (a === "cart") { go("cart", ""); return; }
+    if (a === "shop") { go("shop", ""); return; }
+    if (a === "login") { go("login", ""); return; }
+    if (a === "toLogin") { go("login", ""); return; }
+    if (a === "toSignup") { go("signup", ""); return; }
+    if (a === "doLogin") { await doLogin(); return; }
     if (a === "account") {
-      if (!me) { openAuth("login"); return; }
+      if (!me) { go("login", ""); return; }
       view = "account"; render(); loadOrders(); return;
     }
     if (a === "checkout") {
       if (!cartCount()) return;
-      if (!me) { auth.afterLogin = "checkout"; openAuth("login", t("needLogin")); return; }
-      view = "checkout"; render(); return;
+      if (!me) { afterLogin = "checkout"; go("login", t("needLogin")); return; }
+      go("checkout", ""); return;
     }
     if (a === "confirm") { await confirmOrder(); return; }
+    if (a === "sendLink") { await sendLink(); return; }
+    if (a === "changeEmail") { await changeEmail(); return; }
+    if (a === "sendSms") { await sendSms(); return; }
+    if (a === "verifySms") { await verifySms(); return; }
+    if (a === "changePhone") { changePhone(); return; }
+    if (a === "createAccount") { await createAccount(); return; }
     if (a === "saveProfile") { await saveProfile(); return; }
     if (a === "logout") { await logout(); return; }
   }
@@ -934,6 +993,29 @@
   document.getElementById("view").addEventListener("click", (e) => {
     const b = e.target.closest("[data-action]");
     if (b) handleAction(b.dataset.action, b.dataset);
+  });
+
+  // حفظ ما يكتبه المستخدم (بدون كلمات المرور)
+  document.getElementById("view").addEventListener("input", (e) => {
+    const id = e.target.id;
+    if (id === "sEmail") { pending.email = e.target.value.trim(); savePending(); }
+    else if (id === "sPhone") { pending.phone = e.target.value.trim(); savePending(); }
+    else if (id === "sFirst") { pending.first = e.target.value.trim(); savePending(); }
+    else if (id === "sLast") { pending.last = e.target.value.trim(); savePending(); }
+    else if (id === "lEmail") { loginEmail = e.target.value.trim(); }
+  });
+
+  document.getElementById("view").addEventListener("change", (e) => {
+    if (e.target.id === "fArea") {
+      state.area = e.target.value || null;
+      save();
+      document.getElementById("summary").innerHTML = summaryHTML();
+      updateDebug();
+    }
+    if (e.target.id === "sDial") {
+      pending.dial = e.target.value;
+      savePending();
+    }
   });
 
   document.getElementById("pmodal").addEventListener("click", (e) => {
@@ -953,36 +1035,8 @@
     if (e.target.id === "mVariant" && modal) {
       modal.vid = e.target.value;
       modal.idx = 0;
-      modal.paused = true; // نثبّت صورة الخيار المختار
+      modal.paused = true;
       renderModal();
-    }
-  });
-
-  document.getElementById("view").addEventListener("change", (e) => {
-    if (e.target.id === "fArea") {
-      state.area = e.target.value || null;
-      save();
-      document.getElementById("summary").innerHTML = summaryHTML();
-      updateDebug();
-    }
-  });
-
-  document.getElementById("authModal").addEventListener("click", async (e) => {
-    if (e.target.id === "authModal") { closeAuth(); return; }
-    const b = e.target.closest("[data-auth]");
-    if (b) {
-      const a = b.dataset.auth;
-      if (a === "close") closeAuth(); else setStep(a);
-      return;
-    }
-    switch (e.target.id) {
-      case "aLogin": return doLogin();
-      case "aSendCode": return doSendCode();
-      case "aResend": return doSendCode();
-      case "aVerifyEmail": return doVerifyEmail();
-      case "aSendSms": return doSendSms();
-      case "aVerifyPhone": return doVerifyPhone();
-      case "aCreate": return doCreate();
     }
   });
 
@@ -1004,7 +1058,7 @@
     state.seen = true; save(); render();
   });
   document.getElementById("cartBtn").addEventListener("click", () => {
-    view = "cart"; render();
+    go("cart", "");
   });
   document.getElementById("acctBtn").addEventListener("click", () => {
     handleAction(me ? "account" : "login", {});
@@ -1017,7 +1071,7 @@
     }
   });
 
-  // تبديل صور البطاقات والنافذة كل 5 ثواني
+  // تبديل الصور كل 5 ثواني
   setInterval(() => {
     if (modal && !modal.paused && !modal.details) {
       const c = curModal();
@@ -1041,22 +1095,31 @@
     });
   }, SLIDE_MS);
 
+  // أثناء انتظار الرابط: نتحقق كل 3 ثواني إذا الزبون ضغط الرابط
+  setInterval(async () => {
+    if (view !== "signup" || !pending.linkSent || (me && me.email_confirmed_at)) return;
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      await refreshAuth();
+      render();
+    }
+  }, 3000);
+
   sb.auth.onAuthStateChange(async (_event, session) => {
-    const prev = me && me.id;
     if (session && session.user) {
-      if (!profile || !me || me.id !== session.user.id) await loadProfile();
+      await refreshAuth();
     } else {
       me = null;
       profile = null;
+      if (view === "account") view = "shop";
     }
-    if (prev !== (me && me.id)) render();
+    render();
   });
 
   // ===== البدء =====
   fillCountrySelects();
   render();
   loadProducts();
-  loadProfile().then(render);
 </script>
 </body>
 </html>
