@@ -1,174 +1,849 @@
-const ALLOWED_ORIGIN = "https://alooyhelal.github.io";
-const CJ_BASE = "https://developers.cjdropshipping.com/api2.0/v1";
-const LIST_TTL = 5 * 60 * 1000;
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Showbiz</title>
+<style>
+  :root { --bg:#fafafa; --fg:#222; --card:#fff; --line:#e5e5e5; --btn:#111; --btnfg:#fff; --price:#e8590c; --muted:#777; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#111; --fg:#eee; --card:#1c1c1c; --line:#333; --btn:#fff; --btnfg:#111; --price:#ff922b; --muted:#999; }
+  }
+  :root[data-theme="dark"] { --bg:#111; --fg:#eee; --card:#1c1c1c; --line:#333; --btn:#fff; --btnfg:#111; --price:#ff922b; --muted:#999; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,sans-serif; }
+  header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line); }
+  main { padding:16px; max-width:960px; margin:auto; }
+  select, input { padding:9px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--fg); width:100%; box-sizing:border-box; margin-bottom:8px; }
+  header select { width:auto; }
+  button { padding:10px 14px; border:0; border-radius:8px; background:var(--btn); color:var(--btnfg); cursor:pointer; }
+  button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); }
+  button.linkbtn { background:none; color:var(--price); padding:4px; text-decoration:underline; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; }
+  .card img { width:100%; height:200px; object-fit:contain; background:#f4f4f4; border-radius:8px; }
+  .price { color:var(--price); font-weight:bold; margin:6px 0; }
+  .muted { color:var(--muted); font-size:13px; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; flex-wrap:wrap; }
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:16px; overflow:auto; }
+  .modal { background:var(--card); color:var(--fg); padding:20px; border-radius:12px; width:100%; max-width:420px; box-sizing:border-box; }
+  .hidden { display:none !important; }
+  #debug { position:fixed; bottom:0; left:0; right:0; background:#000; color:#0f0; font:12px monospace; padding:8px; direction:ltr; white-space:pre-wrap; max-height:40vh; overflow:auto; }
+</style>
+</head>
+<body>
 
-let cachedToken = null;
-let tokenExpiresAt = 0;
-let listCache = { at: 0, body: null };
+<header>
+  <strong id="siteName">Showbiz</strong>
+  <div>
+    <select id="countrySel"></select>
+    <button class="ghost" id="langBtn">English</button>
+    <button class="ghost" id="cartBtn">السلة (0)</button>
+    <button class="ghost" id="acctBtn">تسجيل الدخول</button>
+  </div>
+</header>
 
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Content-Type": "application/json; charset=utf-8",
-    "Cache-Control": "public, max-age=300",
+<main><div id="view"></div></main>
+
+<div class="overlay hidden" id="pmodal"></div>
+<div class="overlay hidden" id="authModal"></div>
+
+<div class="overlay hidden" id="gate">
+  <div class="modal">
+    <h3 id="gTitle"></h3>
+    <label id="gCountryLbl"></label>
+    <select id="gCountry"></select>
+    <label id="gLangLbl"></label>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="ghost" data-glang="ar">العربية</button>
+      <button class="ghost" data-glang="en">English</button>
+    </div>
+    <button id="gGo" style="width:100%"></button>
+  </div>
+</div>
+
+<div id="debug" class="hidden"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
+<script>
+  // ===== الإعدادات =====
+  const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
+  const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
+  const REQUIRE_PHONE = true; // false للتجربة لين تترقى Twilio
+  const RATE_BHD = 0.377;     // للحاسبة فقط
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const COUNTRIES = {
+    BH: { flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"},      sym:{ar:"د.ب", en:"BD"},  dec:3, rate:0.377,  base:2.2 },
+    SA: { flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"SAR", en:"SAR"}, dec:2, rate:3.75,   base:3.3 },
+    AE: { flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"},         sym:{ar:"AED", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
+    KW: { flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"},       sym:{ar:"د.ك", en:"KD"},  dec:3, rate:0.307,  base:3.3 },
+    QA: { flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"},           sym:{ar:"ر.ق", en:"QR"},  dec:2, rate:3.64,   base:3.3 },
+    OM: { flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"},          sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385,  base:3.3 }
   };
-}
-
-function jsonResponse(obj, status = 200) {
-  return new Response(JSON.stringify(obj), { status, headers: corsHeaders() });
-}
-
-async function getToken(env, force = false) {
-  if (!force && cachedToken && Date.now() < tokenExpiresAt) return cachedToken;
-  const res = await fetch(`${CJ_BASE}/authentication/getAccessToken`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ apiKey: env.CJ_API_KEY }),
-  });
-  const data = await res.json();
-  if (!data.data || !data.data.accessToken) {
-    throw new Error("token: " + (data.message || res.status));
-  }
-  cachedToken = data.data.accessToken;
-  tokenExpiresAt = Date.now() + 12 * 60 * 60 * 1000;
-  return cachedToken;
-}
-
-async function cjGet(env, path) {
-  let token = await getToken(env);
-  let res = await fetch(CJ_BASE + path, { headers: { "CJ-Access-Token": token } });
-  let data = await res.json();
-  if (data.result === false && /token/i.test(data.message || "")) {
-    token = await getToken(env, true);
-    res = await fetch(CJ_BASE + path, { headers: { "CJ-Access-Token": token } });
-    data = await res.json();
-  }
-  return data;
-}
-
-function parseImages(v) {
-  if (!v) return [];
-  if (Array.isArray(v)) return v;
-  try {
-    const a = JSON.parse(v);
-    return Array.isArray(a) ? a : [v];
-  } catch (e) {
-    return [v];
-  }
-}
-
-function parseDims(desc) {
-  const m = String(desc || "").match(
-    /(\d+(?:\.\d+)?)\s*[*x×]\s*(\d+(?:\.\d+)?)\s*[*x×]\s*(\d+(?:\.\d+)?)\s*cm/i
-  );
-  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
-}
-
-// CJ يرجع الأبعاد بالمليمتر
-function parseDimsFromItem(item) {
-  const L = item.lengthList, W = item.widthList, H = item.heightList;
-  if (Array.isArray(L) && Array.isArray(W) && Array.isArray(H) && L[0] && W[0] && H[0]) {
-    return [L[0] / 10, W[0] / 10, H[0] / 10];
-  }
-  return null;
-}
-
-// الوزن يجي كنطاق مثل "690.00-750.00"، ناخذ الأعلى (احتياط)
-function maxWeight(w) {
-  if (!w) return null;
-  const nums = String(w).split("-").map(Number).filter(n => !isNaN(n));
-  return nums.length ? Math.max(...nums) : null;
-}
-
-// خيارات كل منتج (لون، نمط...) وكل خيار فيه سعره ووزنه وأبعاده
-function variantsOf(d) {
-  const arr = Array.isArray(d.variants) ? d.variants : [];
-  return arr.map(v => ({
-    vid: v.vid,
-    key: v.variantKey || v.variantNameEn || v.vid,
-    sku: v.variantSku || null,
-    price: v.variantSellPrice != null ? Number(v.variantSellPrice) : null,
-    image: v.variantImage || "",
-    weightG: v.variantWeight != null ? Number(v.variantWeight) : null,
-    dimsCm: v.variantLength
-      ? [v.variantLength / 10, v.variantWidth / 10, v.variantHeight / 10]
-      : null,
-  }));
-}
-
-function normalize(item, detail) {
-  const d = detail || {};
-  const imgs = parseImages(d.productImage || item.bigImage || d.bigImage);
-  return {
-    pid: item.productId || item.pid || d.pid || null,
-    sku: item.sku || d.productSku || null,
-    nameEn: item.nameEn || d.productNameEn || "",
-    image: imgs[0] || item.bigImage || "",
-    images: imgs,
-    weightG: maxWeight(d.productWeight || item.weight),
-    dimsCm: parseDimsFromItem(item) || parseDims(d.description),
-    optionNames: Array.isArray(d.productKeyEnSet) ? d.productKeyEnSet : [],
-    variants: variantsOf(d),
+  const AREAS = {
+    BH: { ar:["المنامة","المحرق","الرفاع","مدينة عيسى","سترة","أخرى"], en:["Manama","Muharraq","Riffa","Isa Town","Sitra","Other"] },
+    SA: { ar:["الرياض","جدة","الدمام","مكة المكرمة","المدينة المنورة","أخرى"], en:["Riyadh","Jeddah","Dammam","Makkah","Madinah","Other"] },
+    AE: { ar:["دبي","أبوظبي","الشارقة","عجمان","أخرى"], en:["Dubai","Abu Dhabi","Sharjah","Ajman","Other"] },
+    KW: { ar:["الكويت","حولي","الفروانية","الجهراء","أخرى"], en:["Kuwait City","Hawalli","Farwaniya","Jahra","Other"] },
+    QA: { ar:["الدوحة","الريان","الوكرة","أخرى"], en:["Doha","Al Rayyan","Al Wakra","Other"] },
+    OM: { ar:["مسقط","صلالة","صحار","أخرى"], en:["Muscat","Salalah","Sohar","Other"] }
   };
-}
 
-export default {
-  async fetch(request, env) {
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders() });
+  const T = {
+    ar: {
+      siteName:"Showbiz", welcome:"مرحبًا بك", chooseCountry:"اختر الدولة", chooseLang:"اختر اللغة", go:"متابعة",
+      choose:"اختر اللون والنمط", chooseOpt:"اختر اللون / النمط", add:"أضف للسلة", close:"إغلاق",
+      cart:"السلة", empty:"السلة فارغة", total:"المجموع", shippingNote:"رسوم التوصيل تُضاف عند تحديد المنطقة",
+      shipping:"رسوم التوصيل", grand:"الإجمالي", checkout:"إتمام الطلب", name:"الاسم", area:"المنطقة",
+      areaPh:"اختر المنطقة أو المدينة", address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع",
+      done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم حفظ الطلب في هذا المتصفح فقط",
+      loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...", wait:"لحظة...",
+      noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول", remove:"حذف",
+      login:"تسجيل الدخول", logout:"تسجيل الخروج", account:"حسابي", myOrders:"طلباتي", noOrders:"ما عندك طلبات بعد",
+      ordersErr:"تعذر تحميل الطلبات", editProfile:"تعديل بياناتي", save:"حفظ", saved:"تم الحفظ",
+      firstName:"الاسم الأول", lastName:"الاسم الثاني", needLogin:"سجّل دخولك أو أنشئ حساب لإتمام الطلب",
+      loginTitle:"تسجيل الدخول", email:"البريد الإلكتروني", password:"كلمة المرور", loginBtn:"دخول",
+      noAccount:"ليس لدي حساب، أنشئ حساب", createAccount:"إنشاء حساب", sendCode:"إرسال رمز التحقق",
+      codeSent:"تم إرسال رمز التحقق إلى بريدك", enterCode:"أدخل رمز التحقق", verify:"تحقق", resend:"إعادة الإرسال",
+      emailBad:"البريد الإلكتروني غير صحيح", backToLogin:"رجوع لتسجيل الدخول", phoneStep:"رقم الجوال",
+      sendSms:"إرسال رمز الجوال", smsSent:"تم إرسال الرمز إلى جوالك", phoneBad:"رقم الجوال غير صحيح",
+      finishTitle:"بيانات الحساب", confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب",
+      namesReq:"الاسم الأول والثاني مطلوبين", passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر",
+      passMismatch:"كلمتا المرور غير متطابقتين", badCode:"رمز التحقق غير صحيح أو منتهي",
+      loginFail:"البريد أو كلمة المرور غير صحيحة", rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول",
+      alreadyExists:"هذا الحساب موجود، تم تسجيل دخولك", signedUp:"تم إنشاء الحساب بنجاح"
+    },
+    en: {
+      siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
+      choose:"Choose color & style", chooseOpt:"Choose color / style", add:"Add to cart", close:"Close",
+      cart:"Cart", empty:"Your cart is empty", total:"Subtotal", shippingNote:"Delivery fee is added once you select your area",
+      shipping:"Delivery fee", grand:"Total", checkout:"Checkout", name:"Name", area:"Area",
+      areaPh:"Please select your area or city", address:"Full address", confirm:"Confirm order", back:"Back",
+      done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
+      loadErr:"Could not load products, please try again", loading:"Loading...", wait:"Please wait...",
+      noProducts:"No products available right now", fillAll:"Please fill all fields", remove:"Remove",
+      login:"Log in", logout:"Log out", account:"My account", myOrders:"My orders", noOrders:"You have no orders yet",
+      ordersErr:"Could not load orders", editProfile:"Edit my details", save:"Save", saved:"Saved",
+      firstName:"First name", lastName:"Last name", needLogin:"Log in or create an account to complete your order",
+      loginTitle:"Log in", email:"Email", password:"Password", loginBtn:"Log in",
+      noAccount:"No account? Create one", createAccount:"Create account", sendCode:"Send verification code",
+      codeSent:"Verification code sent to your email", enterCode:"Enter verification code", verify:"Verify",
+      resend:"Resend", emailBad:"Invalid email address", backToLogin:"Back to log in", phoneStep:"Mobile number",
+      sendSms:"Send SMS code", smsSent:"Code sent to your mobile", phoneBad:"Invalid mobile number",
+      finishTitle:"Account details", confirmPass:"Confirm password", createBtn:"Create account",
+      namesReq:"First and last name are required", passShort:"Password must be 8 characters or more",
+      passMismatch:"Passwords do not match", badCode:"Invalid or expired code",
+      loginFail:"Email or password is incorrect", rateLimit:"Too many attempts, wait a moment and try again",
+      alreadyExists:"This account already exists, you are now logged in", signedUp:"Account created successfully"
     }
-    if (request.method !== "GET") {
-      return jsonResponse({ error: "method not allowed" }, 405);
+  };
+
+  // ===== الحالة =====
+  let state = { country:"BH", lang:"ar", cart:[], area:null, seen:false };
+  try { Object.assign(state, JSON.parse(localStorage.getItem("showbiz_state") || "{}")); } catch(e) {}
+  if (!Array.isArray(state.cart)) state.cart = [];
+  function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch(e) {} }
+
+  let products = [];
+  let loaded = false;
+  let loadError = false;
+  let view = "shop";
+  let currentPid = null;
+  let currentVid = null;
+  let me = null;
+  let profile = null;
+  let accountOrders = null;
+  let ordersFailed = false;
+  let lastSaveOk = true;
+  let debugOn = false;
+  let auth = { open:false, step:"login", email:"", dial:"+973", phone:"", full:"", first:"", last:"", msg:"", afterLogin:null };
+
+  // ===== مساعدات =====
+  const t = (k) => T[state.lang][k];
+  const rate = () => COUNTRIES[state.country].rate;
+  const localPrice = (usd) => usd * rate();
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+
+  function fmt(amount) {
+    const c = COUNTRIES[state.country];
+    const n = amount.toFixed(c.dec);
+    return state.lang === "ar" ? `${n} ${c.sym.ar}` : `${c.sym.en} ${n}`;
+  }
+  function fmtFor(code, amount) {
+    const c = COUNTRIES[code] || COUNTRIES[state.country];
+    const n = Number(amount).toFixed(c.dec);
+    return state.lang === "ar" ? `${n} ${c.sym.ar}` : `${c.sym.en} ${n}`;
+  }
+
+  const variantLabel = (v) => String(v.key).replace(/-/g, " · ");
+
+  function findVariant(vid) {
+    for (const p of products) {
+      const v = p.variants.find(x => x.vid === vid);
+      if (v) return { p, v };
     }
+    return null;
+  }
 
-    const url = new URL(request.url);
-    const raw = url.searchParams.get("raw") === "1";
+  function cartLines() {
+    return state.cart
+      .map(i => { const f = findVariant(i.vid); return f ? { vid: i.vid, qty: i.qty, p: f.p, v: f.v } : null; })
+      .filter(Boolean);
+  }
+  const cartCount = () => state.cart.reduce((s, i) => s + i.qty, 0);
+  const subtotalUSD = () => cartLines().reduce((s, l) => s + l.v.price * l.qty, 0);
 
+  // ===== الحاسبة =====
+  function shippingCalc() {
+    let actualKg = 0, volKg = 0;
+    cartLines().forEach(l => {
+      const w = (l.v.weightG || l.p.weightG || 500) / 1000;
+      const d = l.v.dimsCm || l.p.dimsCm || [10, 10, 10];
+      actualKg += w * l.qty;
+      volKg += (d[0] * d[1] * d[2] / 5000) * l.qty;
+    });
+    const chargeable = Math.max(actualKg, volKg);
+    const base = COUNTRIES[state.country].base;
+    const shipBHD = base + Math.max(0, chargeable - 1) * 0.5; // تجريبي
+    const orderBHD = subtotalUSD() * RATE_BHD;
+    const riskBHD = Math.max(orderBHD * 0.15, 0.3); // داخلي فقط
+    return { actualKg, volKg, chargeable, shipBHD, riskBHD };
+  }
+  const shipLocal = (bhd) => bhd * (rate() / RATE_BHD);
+
+  // ===== تحميل المنتجات من الوسيط =====
+  async function loadProducts() {
+    loadError = false;
     try {
-      // قائمة منتجات متجرك من CJ مع تفاصيل كل منتج وخياراته
-      if (url.searchParams.get("action") === "list") {
-        if (!raw && listCache.body && Date.now() - listCache.at < LIST_TTL) {
-          return jsonResponse(listCache.body);
-        }
-        const d = await cjGet(env, "/product/myProduct/query?pageNum=1&pageSize=50");
-        if (raw) return jsonResponse(d);
-
-        const list = Array.isArray(d.data?.content)
-          ? d.data.content
-          : Array.isArray(d.data?.list)
-          ? d.data.list
-          : [];
-
-        const products = await Promise.all(
-          list.map(async (item) => {
-            const pid = item.productId || item.pid;
-            let detail = null;
-            if (pid) {
-              try {
-                const dd = await cjGet(env, "/product/query?pid=" + encodeURIComponent(pid));
-                detail = dd.data || null;
-              } catch (e) {}
-            }
-            return normalize(item, detail);
-          })
-        );
-
-        const body = { products, count: products.length };
-        listCache = { at: Date.now(), body };
-        return jsonResponse(body);
-      }
-
-      // منتج واحد بالمعرّف (للاختبار)
-      const pid = url.searchParams.get("pid");
-      if (!pid) return jsonResponse({ error: "missing pid or action" }, 400);
-
-      const d = await cjGet(env, "/product/query?pid=" + encodeURIComponent(pid));
-      if (raw) return jsonResponse(d);
-      return jsonResponse(normalize(d.data || {}, d.data || {}));
+      const res = await fetch(WORKER_URL + "?action=list");
+      const d = await res.json();
+      if (!Array.isArray(d.products)) throw new Error("bad");
+      products = d.products
+        .map(p => ({ ...p, variants: (p.variants || []).filter(v => v.price != null) }))
+        .filter(p => p.variants.length > 0);
     } catch (e) {
-      return jsonResponse({ error: String(e.message || e) }, 500);
+      loadError = true;
+      products = [];
     }
-  },
-};
+    loaded = true;
+    render();
+  }
+
+  // ===== الحساب =====
+  async function loadProfile() {
+    const { data: { user } } = await sb.auth.getUser();
+    me = user || null;
+    profile = null;
+    if (me) {
+      const { data } = await sb.from("customers").select("*").eq("id", me.id).maybeSingle();
+      profile = data || null;
+    }
+  }
+
+  async function loadOrders() {
+    accountOrders = null;
+    ordersFailed = false;
+    render();
+    try {
+      const { data, error } = await sb.from("orders").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      accountOrders = data || [];
+    } catch (e) {
+      ordersFailed = true;
+      accountOrders = [];
+    }
+    render();
+  }
+
+  function errMsg(e) {
+    const m = String(e?.message || e || "");
+    const L = T[state.lang];
+    if (/invalid login/i.test(m)) return L.loginFail;
+    if (/rate|too many|seconds/i.test(m)) return L.rateLimit;
+    if (/token|otp|expired|invalid/i.test(m)) return L.badCode;
+    return m;
+  }
+
+  function syncAuth() {
+    const g = (id) => document.getElementById(id);
+    if (g("aEmail")) auth.email = g("aEmail").value.trim();
+    if (g("aPhone")) auth.phone = g("aPhone").value.trim();
+    if (g("aDial")) auth.dial = g("aDial").value;
+    if (g("aFirst")) auth.first = g("aFirst").value.trim();
+    if (g("aLast")) auth.last = g("aLast").value.trim();
+  }
+
+  function renderAuth() {
+    syncAuth();
+    const box = document.getElementById("authModal");
+    if (!auth.open) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+    const L = T[state.lang];
+    const s = auth.step;
+    let body = "";
+    if (s === "login") {
+      body = `<h3>${L.loginTitle}</h3>
+        <input id="aEmail" type="email" dir="ltr" placeholder="${L.email}" value="${esc(auth.email)}">
+        <input id="aPass" type="password" dir="ltr" placeholder="${L.password}">
+        <button id="aLogin" style="width:100%">${L.loginBtn}</button>
+        <p><button class="linkbtn" data-auth="su-email">${L.noAccount}</button></p>`;
+    } else if (s === "su-email") {
+      body = `<h3>${L.createAccount}</h3>
+        <input id="aEmail" type="email" dir="ltr" placeholder="${L.email}" value="${esc(auth.email)}">
+        <button id="aSendCode" style="width:100%">${L.sendCode}</button>
+        <p><button class="linkbtn" data-auth="login">${L.backToLogin}</button></p>`;
+    } else if (s === "su-emailcode") {
+      body = `<h3>${L.enterCode}</h3>
+        <p class="muted" dir="ltr">${esc(auth.email)}</p>
+        <input id="aCode" inputmode="numeric" dir="ltr" maxlength="6" placeholder="123456">
+        <button id="aVerifyEmail" style="width:100%">${L.verify}</button>
+        <p><button class="linkbtn" id="aResend">${L.resend}</button></p>`;
+    } else if (s === "su-phone") {
+      const dialOpts = Object.entries(COUNTRIES).map(([, c]) =>
+        `<option value="${c.dial}" ${auth.dial === c.dial ? "selected" : ""}>${c.flag} ${c.dial} ${c.name[state.lang]}</option>`
+      ).join("");
+      body = `<h3>${L.phoneStep}</h3>
+        <div class="row" style="flex-wrap:nowrap">
+          <select id="aDial" style="width:auto">${dialOpts}</select>
+          <input id="aPhone" type="tel" dir="ltr" placeholder="36123456" value="${esc(auth.phone)}" style="flex:1">
+        </div>
+        <button id="aSendSms" style="width:100%">${L.sendSms}</button>`;
+    } else if (s === "su-phonecode") {
+      body = `<h3>${L.enterCode}</h3>
+        <p class="muted" dir="ltr">${esc(auth.full)}</p>
+        <input id="aCode" inputmode="numeric" dir="ltr" maxlength="6" placeholder="123456">
+        <button id="aVerifyPhone" style="width:100%">${L.verify}</button>`;
+    } else if (s === "su-details") {
+      body = `<h3>${L.finishTitle}</h3>
+        <input id="aFirst" placeholder="${L.firstName}" value="${esc(auth.first)}">
+        <input id="aLast" placeholder="${L.lastName}" value="${esc(auth.last)}">
+        <input id="aPass" type="password" dir="ltr" placeholder="${L.password}">
+        <input id="aPass2" type="password" dir="ltr" placeholder="${L.confirmPass}">
+        <button id="aCreate" style="width:100%">${L.createBtn}</button>`;
+    }
+    box.innerHTML = `<div class="modal">${body}
+      <p id="authMsg" class="muted">${esc(auth.msg)}</p>
+      <p><button class="ghost" data-auth="close">${L.close}</button></p></div>`;
+    box.classList.remove("hidden");
+  }
+
+  function setMsg(m) {
+    auth.msg = m;
+    const el = document.getElementById("authMsg");
+    if (el) el.textContent = m;
+  }
+  function setStep(step) {
+    auth.step = step;
+    auth.msg = "";
+    renderAuth();
+  }
+  function openAuth(step, msg) {
+    auth.open = true;
+    auth.step = step || "login";
+    auth.msg = msg || "";
+    renderAuth();
+  }
+  function closeAuth() {
+    auth.open = false;
+    auth.afterLogin = null;
+    renderAuth();
+  }
+
+  async function afterAuthSuccess() {
+    await loadProfile();
+    auth.open = false;
+    if (auth.afterLogin) { view = auth.afterLogin; auth.afterLogin = null; }
+    renderAuth();
+    render();
+  }
+
+  async function doLogin() {
+    syncAuth();
+    const pass = document.getElementById("aPass").value;
+    const L = T[state.lang];
+    if (!isEmail(auth.email) || !pass) return setMsg(L.fillAll);
+    setMsg(L.wait);
+    const { error } = await sb.auth.signInWithPassword({ email: auth.email, password: pass });
+    if (error) return setMsg(errMsg(error));
+    await afterAuthSuccess();
+  }
+
+  async function doSendCode() {
+    syncAuth();
+    const L = T[state.lang];
+    if (!isEmail(auth.email)) return setMsg(L.emailBad);
+    setMsg(L.wait);
+    const { error } = await sb.auth.signInWithOtp({ email: auth.email, options: { shouldCreateUser: true } });
+    if (error) return setMsg(errMsg(error));
+    setStep("su-emailcode");
+    setMsg(L.codeSent);
+  }
+
+  async function doVerifyEmail() {
+    const L = T[state.lang];
+    const code = (document.getElementById("aCode").value || "").trim();
+    if (!/^\d{6}$/.test(code)) return setMsg(L.badCode);
+    setMsg(L.wait);
+    const { error } = await sb.auth.verifyOtp({ email: auth.email, token: code, type: "email" });
+    if (error) return setMsg(errMsg(error));
+    await loadProfile();
+    if (profile) { // الحساب موجود أصلًا
+      setMsg(L.alreadyExists);
+      await afterAuthSuccess();
+      return;
+    }
+    setStep(REQUIRE_PHONE ? "su-phone" : "su-details");
+  }
+
+  async function doSendSms() {
+    syncAuth();
+    const L = T[state.lang];
+    const digits = auth.phone.replace(/\s+/g, "");
+    if (!/^\d{6,12}$/.test(digits)) return setMsg(L.phoneBad);
+    const full = auth.dial + digits;
+    setMsg(L.wait);
+    const { error } = await sb.auth.updateUser({ phone: full });
+    if (error) return setMsg(errMsg(error));
+    auth.full = full;
+    setStep("su-phonecode");
+    setMsg(L.smsSent);
+  }
+
+  async function doVerifyPhone() {
+    const L = T[state.lang];
+    const code = (document.getElementById("aCode").value || "").trim();
+    if (!/^\d{6}$/.test(code)) return setMsg(L.badCode);
+    setMsg(L.wait);
+    const { error } = await sb.auth.verifyOtp({ phone: auth.full, token: code, type: "phone_change" });
+    if (error) return setMsg(errMsg(error));
+    setStep("su-details");
+  }
+
+  async function doCreate() {
+    syncAuth();
+    const L = T[state.lang];
+    const p1 = document.getElementById("aPass").value;
+    const p2 = document.getElementById("aPass2").value;
+    if (!auth.first || !auth.last) return setMsg(L.namesReq);
+    if (p1.length < 8) return setMsg(L.passShort);
+    if (p1 !== p2) return setMsg(L.passMismatch);
+    setMsg(L.wait);
+    const { error } = await sb.auth.updateUser({ password: p1, data: { first_name: auth.first, last_name: auth.last } });
+    if (error) return setMsg(errMsg(error));
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return setMsg(L.badCode);
+    const row = {
+      id: user.id,
+      email: user.email,
+      first_name: auth.first,
+      last_name: auth.last,
+      phone: REQUIRE_PHONE ? auth.full : null
+    };
+    const { error: e2 } = await sb.from("customers").upsert(row);
+    if (e2) return setMsg(e2.message);
+    setMsg(L.signedUp);
+    await afterAuthSuccess();
+  }
+
+  async function saveProfile() {
+    const first = document.getElementById("pFirst").value.trim();
+    const last = document.getElementById("pLast").value.trim();
+    const m = document.getElementById("pMsg");
+    if (!first || !last) { m.textContent = t("namesReq"); return; }
+    const { error } = await sb.from("customers").update({ first_name: first, last_name: last }).eq("id", me.id);
+    if (error) { m.textContent = error.message; return; }
+    await loadProfile();
+    m.textContent = t("saved");
+  }
+
+  async function logout() {
+    await sb.auth.signOut();
+    me = null;
+    profile = null;
+    accountOrders = null;
+    view = "shop";
+    render();
+  }
+
+  // ===== العرض =====
+  function fillCountrySelects() {
+    ["countrySel", "gCountry"].forEach(id => {
+      const sel = document.getElementById(id);
+      sel.innerHTML = "";
+      Object.entries(COUNTRIES).forEach(([code, c]) => {
+        const o = document.createElement("option");
+        o.value = code;
+        o.textContent = `${c.flag} ${c.name[state.lang]}`;
+        sel.appendChild(o);
+      });
+      sel.value = state.country;
+    });
+  }
+
+  function renderGate() {
+    const L = T[state.lang];
+    document.getElementById("gTitle").textContent = L.welcome;
+    document.getElementById("gCountryLbl").textContent = L.chooseCountry;
+    document.getElementById("gLangLbl").textContent = L.chooseLang;
+    document.getElementById("gGo").textContent = L.go;
+    document.getElementById("gate").classList.toggle("hidden", state.seen);
+  }
+
+  function priceRange(p) {
+    const prices = p.variants.map(v => v.price);
+    const min = Math.min(...prices), max = Math.max(...prices);
+    return min === max
+      ? fmt(localPrice(min))
+      : `${fmt(localPrice(min))} – ${fmt(localPrice(max))}`;
+  }
+
+  function viewShop() {
+    if (!loaded) return `<p>${t("loading")}</p>`;
+    if (loadError) return `<p>${t("loadErr")}</p>`;
+    if (!products.length) return `<p>${t("noProducts")}</p>`;
+    return `<div class="grid">` + products.map(p => `
+      <div class="card">
+        ${p.image ? `<img src="${esc(p.image)}" alt="">` : ""}
+        <div style="margin-top:8px">${esc(p.nameEn)}</div>
+        <div class="price">${priceRange(p)}</div>
+        <button data-action="open" data-pid="${esc(p.pid)}">${t("choose")}</button>
+      </div>`).join("") + `</div>`;
+  }
+
+  function renderModal() {
+    const box = document.getElementById("pmodal");
+    const p = products.find(x => x.pid === currentPid);
+    if (!p) {
+      box.classList.add("hidden");
+      box.innerHTML = "";
+      return;
+    }
+    const v = p.variants.find(x => x.vid === currentVid) || p.variants[0];
+    currentVid = v.vid;
+    const opts = p.variants.map(x =>
+      `<option value="${esc(x.vid)}" ${x.vid === v.vid ? "selected" : ""}>${esc(variantLabel(x))}</option>`
+    ).join("");
+    box.innerHTML = `
+      <div class="modal">
+        <img src="${esc(v.image || p.image)}" alt="" style="width:100%;height:220px;object-fit:contain;background:#f4f4f4;border-radius:8px">
+        <h3 style="margin:10px 0">${esc(p.nameEn)}</h3>
+        <label class="muted">${t("chooseOpt")}</label>
+        <select id="mVariant">${opts}</select>
+        <div class="price">${fmt(localPrice(v.price))}</div>
+        <div style="display:flex;gap:8px">
+          <button id="mAdd" style="flex:1">${t("add")}</button>
+          <button class="ghost" data-action="closeModal">${t("close")}</button>
+        </div>
+      </div>`;
+    box.classList.remove("hidden");
+  }
+
+  function viewCart() {
+    const lines = cartLines();
+    if (!lines.length) {
+      return `<p>${t("empty")}</p><button class="ghost" data-action="shop">${t("back")}</button>`;
+    }
+    return lines.map(l => `
+      <div class="card" style="margin-bottom:12px">
+        <div class="row"><strong>${esc(l.p.nameEn)}</strong><span class="muted">${esc(variantLabel(l.v))}</span></div>
+        <div class="row">
+          <span>${fmt(localPrice(l.v.price))}</span>
+          <span>
+            <button class="ghost" data-action="dec" data-vid="${esc(l.vid)}">−</button>
+            ${l.qty}
+            <button class="ghost" data-action="inc" data-vid="${esc(l.vid)}">+</button>
+            <button class="ghost" data-action="rm" data-vid="${esc(l.vid)}">${t("remove")}</button>
+          </span>
+        </div>
+      </div>`).join("") + `
+      <div class="row"><strong>${t("total")}</strong><strong>${fmt(localPrice(subtotalUSD()))}</strong></div>
+      <p class="muted">${t("shippingNote")}</p>
+      <button data-action="checkout" style="width:100%">${t("checkout")}</button>`;
+  }
+
+  function viewCheckout() {
+    const areaList = AREAS[state.country][state.lang];
+    const areas = areaList.map(a => `<option value="${esc(a)}" ${state.area === a ? "selected" : ""}>${esc(a)}</option>`).join("");
+    const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
+    return `
+      <h3>${t("checkout")}</h3>
+      <div class="card" style="margin-bottom:12px">
+        <div>${esc(name || me?.email || "")}</div>
+        <div class="muted" dir="ltr">${esc(profile?.phone || me?.phone || "")}</div>
+      </div>
+      <select id="fArea"><option value="">${t("areaPh")}</option>${areas}</select>
+      <input id="fAddr" placeholder="${t("address")}">
+      <div id="summary"></div>
+      <p id="formMsg" class="muted"></p>
+      <button data-action="confirm" style="width:100%">${t("confirm")}</button>
+      <p><button class="ghost" data-action="cart">${t("back")}</button></p>`;
+  }
+
+  function summaryHTML() {
+    const subtotal = localPrice(subtotalUSD());
+    if (!state.area) {
+      return `<div class="row"><span>${t("total")}</span><span>${fmt(subtotal)}</span></div>
+              <p class="muted">${t("shippingNote")}</p>`;
+    }
+    const s = shippingCalc();
+    const ship = shipLocal(s.shipBHD);
+    return `<div class="row"><span>${t("total")}</span><span>${fmt(subtotal)}</span></div>
+            <div class="row"><span>${t("shipping")}</span><span>${fmt(ship)}</span></div>
+            <div class="row"><strong>${t("grand")}</strong><strong>${fmt(subtotal + ship)}</strong></div>`;
+  }
+
+  function ordersHTML() {
+    if (ordersFailed) return `<p class="muted">${t("ordersErr")}</p>`;
+    if (!accountOrders || !accountOrders.length) return `<p class="muted">${t("noOrders")}</p>`;
+    return accountOrders.map(o => `
+      <div class="card" style="margin-bottom:8px">
+        <div class="row"><strong>#${esc(String(o.id).slice(0, 8))}</strong><span class="muted">${esc(String(o.created_at || "").slice(0, 10))}</span></div>
+        <div class="row"><span>${esc(o.status || "")}</span><strong>${fmtFor(o.country, o.total)}</strong></div>
+      </div>`).join("");
+  }
+
+  function viewAccount() {
+    if (!me) return `<p>${t("needLogin")}</p><button data-action="login">${t("login")}</button>`;
+    const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
+    return `
+      <div class="card" style="margin-bottom:16px">
+        <strong>${esc(name || me.email)}</strong>
+        <div class="muted" dir="ltr">${esc(me.email)}</div>
+        ${profile?.phone ? `<div class="muted" dir="ltr">${esc(profile.phone)}</div>` : ""}
+      </div>
+      <h3>${t("editProfile")}</h3>
+      <input id="pFirst" placeholder="${t("firstName")}" value="${esc(profile?.first_name || "")}">
+      <input id="pLast" placeholder="${t("lastName")}" value="${esc(profile?.last_name || "")}">
+      <button data-action="saveProfile">${t("save")}</button> <span id="pMsg" class="muted"></span>
+      <h3 style="margin-top:20px">${t("myOrders")}</h3>
+      <div>${accountOrders === null ? t("loading") : ordersHTML()}</div>
+      <p><button class="ghost" data-action="logout">${t("logout")}</button></p>`;
+  }
+
+  function updateDebug() {
+    const d = document.getElementById("debug");
+    if (!(debugOn || location.hash === "#debug")) { d.classList.add("hidden"); return; }
+    d.classList.remove("hidden");
+    const s = shippingCalc();
+    d.textContent = JSON.stringify({
+      country: state.country,
+      products: products.length,
+      loggedIn: !!me,
+      actualKg: s.actualKg.toFixed(3),
+      volumetricKg: s.volKg.toFixed(3),
+      chargeableKg: s.chargeable.toFixed(3),
+      shippingBHD: s.shipBHD.toFixed(3),
+      riskBHD_internal: s.riskBHD.toFixed(3),
+      area: state.area
+    }, null, 1);
+  }
+
+  function render() {
+    document.documentElement.lang = state.lang;
+    document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
+    document.getElementById("langBtn").textContent = state.lang === "ar" ? "English" : "العربية";
+    document.getElementById("cartBtn").textContent = `${t("cart")} (${cartCount()})`;
+    document.getElementById("acctBtn").textContent = me ? t("account") : t("login");
+    document.getElementById("siteName").textContent = t("siteName");
+
+    let html;
+    if (view === "cart") html = viewCart();
+    else if (view === "checkout") html = viewCheckout();
+    else if (view === "account") html = viewAccount();
+    else if (view === "done") html = `<p>${lastSaveOk ? t("done") : t("doneLocal")}</p><button data-action="shop">${t("back")}</button>`;
+    else html = viewShop();
+    document.getElementById("view").innerHTML = html;
+
+    if (view === "checkout") document.getElementById("summary").innerHTML = summaryHTML();
+    renderGate();
+    renderModal();
+    renderAuth();
+    updateDebug();
+  }
+
+  // ===== الطلب =====
+  async function confirmOrder() {
+    const addr = document.getElementById("fAddr").value.trim();
+    const msg = document.getElementById("formMsg");
+    if (!state.area || !addr) { msg.textContent = t("fillAll"); return; }
+    if (!me) { auth.afterLogin = "checkout"; openAuth("login", t("needLogin")); return; }
+
+    const s = shippingCalc();
+    const subtotal = localPrice(subtotalUSD());
+    const ship = shipLocal(s.shipBHD);
+    const row = {
+      user_id: me.id,
+      country: state.country,
+      status: "test-not-sent-to-cj",
+      items: cartLines().map(l => ({ pid: l.p.pid, vid: l.vid, sku: l.v.sku, name: l.p.nameEn, variant: l.v.key, qty: l.qty, unitUSD: l.v.price })),
+      shipping_address: { area: state.area, address: addr },
+      contact: { name: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim(), phone: profile?.phone || null },
+      subtotal: subtotal,
+      shipping: ship,
+      total: subtotal + ship,
+      internal_risk_bhd: s.riskBHD
+    };
+
+    lastSaveOk = false;
+    try {
+      const { error } = await sb.from("orders").insert(row);
+      if (!error) lastSaveOk = true;
+      else console.warn(error);
+    } catch (e) { console.warn(e); }
+
+    if (!lastSaveOk) {
+      try {
+        const arr = JSON.parse(localStorage.getItem("showbiz_orders") || "[]");
+        arr.push({ ...row, created: new Date().toISOString() });
+        localStorage.setItem("showbiz_orders", JSON.stringify(arr));
+      } catch (e) {}
+    }
+
+    state.cart = [];
+    state.area = null;
+    save();
+    view = "done";
+    render();
+  }
+
+  // ===== الأحداث =====
+  async function handleAction(a, ds) {
+    if (a === "open") {
+      const p = products.find(x => x.pid === ds.pid);
+      if (!p) return;
+      currentPid = p.pid;
+      currentVid = null;
+      renderModal();
+      return;
+    }
+    if (a === "closeModal") { currentPid = null; currentVid = null; renderModal(); return; }
+    if (a === "inc" || a === "dec" || a === "rm") {
+      const i = state.cart.find(x => x.vid === ds.vid);
+      if (!i) return;
+      if (a === "inc") i.qty++;
+      if (a === "dec") i.qty--;
+      if (a === "rm" || i.qty <= 0) state.cart = state.cart.filter(x => x.vid !== ds.vid);
+      save(); render(); return;
+    }
+    if (a === "cart") { view = "cart"; render(); return; }
+    if (a === "shop") { view = "shop"; render(); return; }
+    if (a === "login") { openAuth("login"); return; }
+    if (a === "account") {
+      if (!me) { openAuth("login"); return; }
+      view = "account"; render(); loadOrders(); return;
+    }
+    if (a === "checkout") {
+      if (!cartCount()) return;
+      if (!me) { auth.afterLogin = "checkout"; openAuth("login", t("needLogin")); return; }
+      view = "checkout"; render(); return;
+    }
+    if (a === "confirm") { await confirmOrder(); return; }
+    if (a === "saveProfile") { await saveProfile(); return; }
+    if (a === "logout") { await logout(); return; }
+  }
+
+  document.getElementById("view").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-action]");
+    if (b) handleAction(b.dataset.action, b.dataset);
+  });
+
+  document.getElementById("pmodal").addEventListener("click", async (e) => {
+    if (e.target.id === "pmodal") { currentPid = null; currentVid = null; renderModal(); return; }
+    if (e.target.id === "mAdd") {
+      if (!currentVid) return;
+      const i = state.cart.find(x => x.vid === currentVid);
+      if (i) i.qty++; else state.cart.push({ vid: currentVid, qty: 1 });
+      save();
+      currentPid = null; currentVid = null;
+      render();
+      return;
+    }
+    const b = e.target.closest("[data-action]");
+    if (b) handleAction(b.dataset.action, b.dataset);
+  });
+
+  document.getElementById("pmodal").addEventListener("change", (e) => {
+    if (e.target.id === "mVariant") { currentVid = e.target.value; renderModal(); }
+  });
+
+  document.getElementById("view").addEventListener("change", (e) => {
+    if (e.target.id === "fArea") {
+      state.area = e.target.value || null;
+      save();
+      document.getElementById("summary").innerHTML = summaryHTML();
+      updateDebug();
+    }
+  });
+
+  document.getElementById("authModal").addEventListener("click", async (e) => {
+    if (e.target.id === "authModal") { closeAuth(); return; }
+    const b = e.target.closest("[data-auth]");
+    if (b) {
+      const a = b.dataset.auth;
+      if (a === "close") closeAuth(); else setStep(a);
+      return;
+    }
+    switch (e.target.id) {
+      case "aLogin": return doLogin();
+      case "aSendCode": return doSendCode();
+      case "aResend": return doSendCode();
+      case "aVerifyEmail": return doVerifyEmail();
+      case "aSendSms": return doSendSms();
+      case "aVerifyPhone": return doVerifyPhone();
+      case "aCreate": return doCreate();
+    }
+  });
+
+  document.getElementById("countrySel").addEventListener("change", (e) => {
+    state.country = e.target.value; state.area = null; save(); fillCountrySelects(); render();
+  });
+  document.getElementById("gCountry").addEventListener("change", (e) => {
+    state.country = e.target.value; state.area = null; save(); fillCountrySelects(); render();
+  });
+  document.getElementById("langBtn").addEventListener("click", () => {
+    state.lang = state.lang === "ar" ? "en" : "ar"; save(); fillCountrySelects(); render();
+  });
+  document.querySelectorAll("[data-glang]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.lang = btn.dataset.glang; save(); fillCountrySelects(); render();
+    });
+  });
+  document.getElementById("gGo").addEventListener("click", () => {
+    state.seen = true; save(); render();
+  });
+  document.getElementById("cartBtn").addEventListener("click", () => {
+    view = "cart"; render();
+  });
+  document.getElementById("acctBtn").addEventListener("click", () => {
+    handleAction(me ? "account" : "login", {});
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "d") {
+      e.preventDefault();
+      debugOn = !debugOn;
+      updateDebug();
+    }
+  });
+
+  sb.auth.onAuthStateChange(async (_event, session) => {
+    const prev = me && me.id;
+    if (session && session.user) {
+      if (!profile || !me || me.id !== session.user.id) await loadProfile();
+    } else {
+      me = null;
+      profile = null;
+    }
+    if (prev !== (me && me.id)) render();
+  });
+
+  // ===== البدء =====
+  fillCountrySelects();
+  render();
+  loadProducts();
+  loadProfile().then(render);
+</script>
+</body>
+</html>
