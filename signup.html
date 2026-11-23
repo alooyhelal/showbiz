@@ -23,12 +23,14 @@
   select option { background:var(--card2); color:var(--fg); }
   input:focus, select:focus { outline:2px solid var(--orange); outline-offset:0; }
   input.bad, select.bad { border-color:var(--err); outline:1px solid var(--err); }
+  /* العين ثابتة على اليمين دائمًا، والكتابة تبدأ بعد مساحتها */
   .pw { position:relative; }
-  .pw input { padding-inline-end:46px; }
-  .eye { position:absolute; top:0; bottom:0; inset-inline-end:0; width:46px; border:0; background:transparent; color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+  .pw input { padding-right:50px; padding-left:14px; }
+  .eye { position:absolute; top:0; bottom:0; right:0; left:auto; width:46px; border:0; background:transparent; color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
   .ferr { color:var(--err); font-size:13px; line-height:1.6; margin-top:6px; }
   .hidden { display:none !important; }
   .link { color:var(--orange); font-weight:700; font-size:14px; text-decoration:underline; text-underline-offset:3px; padding:4px 2px; background:none; border:0; cursor:pointer; font-family:inherit; }
+  a.link { display:inline-block; }
   .btn { display:block; width:100%; text-align:center; text-decoration:none; border:0; border-radius:12px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; margin-top:14px; }
   .btn-main { background:var(--orange); color:#111; }
   .btn-main:hover { background:var(--orange-d); }
@@ -63,7 +65,7 @@
 <body>
 <div class="wrap">
   <div class="card" id="app"></div>
-  <div class="ver">v22 · 2026-11-23 09:20</div>
+  <div class="ver">v23 · 2026-11-23 09:20</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
@@ -96,7 +98,7 @@
       first:"الاسم الأول", last:"الاسم الأخير", namesReq:"الاسم الأول والأخير مطلوبين", country:"الدولة",
       password:"كلمة المرور", confirm:"تأكيد كلمة المرور", show:"إظهار كلمة المرور", hide:"إخفاء كلمة المرور",
       passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر", passMismatch:"كلمتا المرور غير متطابقتين",
-      create:"إنشاء الحساب", creating:"جاري إنشاء الحساب...", created:"تم إنشاء الحساب بنجاح، سجّل دخولك الآن",
+      create:"إنشاء الحساب", creating:"جاري إنشاء الحساب...", created:"تم إنشاء الحساب بنجاح",
       sessionLost:"انتهت الجلسة، ابدأ من خطوة البريد من جديد", cancel:"إلغاء", haveAcc:"عندي حساب، سجّل دخول",
       rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول مرة ثانية", switchLabel:"English" },
     en: { title:"Create account", sub:"Three simple steps and your account is ready", s1:"Email", s2:"Mobile number", s3:"Account details",
@@ -109,7 +111,7 @@
       first:"First name", last:"Last name", namesReq:"First and last name are required", country:"Country",
       password:"Password", confirm:"Confirm password", show:"Show password", hide:"Hide password",
       passShort:"Password must be 8 characters or more", passMismatch:"Passwords do not match",
-      create:"Create account", creating:"Creating account...", created:"Account created. Log in now",
+      create:"Create account", creating:"Creating account...", created:"Account created successfully",
       sessionLost:"The session has ended, start again from the email step", cancel:"Cancel", haveAcc:"I have an account, log in",
       rateLimit:"Too many attempts, wait a moment and try again", switchLabel:"العربية" }
   };
@@ -276,8 +278,8 @@
       <p class="sub">${t().sub}</p>
       ${stepsHTML()}
       <div id="notice" class="msg hidden"></div>
-      <div class="linkrow"><button class="link" type="button" data-act="toLogin">${t().haveAcc}</button></div>
-      <div class="row2"><a class="btn btn-line" href="login.html" style="margin-top:0">${t().cancel}</a></div>`;
+      <div class="linkrow"><a class="link" href="login.html">${t().haveAcc}</a></div>
+      <div class="row2"><a class="btn btn-line" href="index.html" style="margin-top:0">${t().cancel}</a></div>`;
   }
 
   // ===== خطوة البريد =====
@@ -369,20 +371,24 @@
       const { data } = await sb.auth.getSession();
       const session = data?.session;
       if (!session) return setNotice(t().sessionLost, "err");
+
+      // 1) كلمة المرور وبيانات الحساب
       const { error } = await sb.auth.updateUser({
         password: p1, data: { first_name: first, last_name: last, preferred_country: S.country }
       });
       if (error) throw error;
+
+      // 2) بيانات العميل في جدول customers
       const { error: e2 } = await sb.from("customers").upsert({
         id: session.user.id, email: session.user.email, first_name: first, last_name: last,
         phone: REQUIRE_PHONE ? S.pFull : null
       });
       if (e2) throw e2;
-      // الدولة المختارة تصير المفضلة، وبعدها ننقل لصفحة تسجيل الدخول
+
+      // 3) الدولة المختارة تصير المفضلة، ويدخل الموقع مباشرة وهو مسجّل
       mergeState({ country: S.country });
-      await sb.auth.signOut().catch(() => {});
       toast(t().created);
-      setTimeout(() => { location.href = "login.html"; }, TOAST_MS);
+      setTimeout(() => { location.href = "index.html"; }, TOAST_MS);
     } catch (e) {
       setNotice(errMsg(e), "err");
     } finally { S.busy = false; }
@@ -397,7 +403,6 @@
       const label = i.type === "password" ? t().show : t().hide;
       el.setAttribute("aria-label", label); el.title = label;
     },
-    toLogin() { location.href = "login.html"; },
     sendEmailCode, verifyEmail, changeEmail,
     sendPhoneCode, verifyPhone, changePhone,
     create: createAccount
