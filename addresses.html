@@ -45,6 +45,9 @@
   .item .line { color:var(--muted); font-size:13px; line-height:1.7; word-break:break-word; }
   .item .line.main { color:var(--fg); font-size:14px; }
   .item .actions { margin-top:12px; }
+  .item { position:relative; }
+  .flagc { position:absolute; top:14px; inset-inline-end:16px; font-size:24px; line-height:1; }
+  .item h3 { padding-inline-end:36px; }
   .ltr { direction:ltr; }
   .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:22px; direction:ltr; }
   .loading { text-align:center; color:var(--muted); padding:60px 0; }
@@ -76,7 +79,7 @@
     <h1 data-k="title"></h1>
     <p class="sub" data-k="intro"></p>
 
-    <div class="card">
+    <div class="card" id="formCard">
       <h2 id="formTitle"></h2>
       <div id="msg" class="msg hidden"></div>
 
@@ -102,6 +105,7 @@
 
     <h2 data-k="savedTitle"></h2>
     <div id="list"></div>
+    <button class="btn btn-main" id="addBtn" type="button" hidden style="width:100%;margin-top:14px">إضافة عنوان جديد</button>
   </div>
 
   <div class="ver" id="ver"></div>
@@ -335,7 +339,16 @@
     });
   }
 
+  let formOpen = false;
+  // الفورم يظهر تلقائياً إذا ما فيه عناوين، وإذا فيه عناوين يظهر بعد الضغط على "إضافة عنوان جديد"
+  function syncForm() {
+    const hasAny = loadList().length > 0;
+    const showForm = !hasAny || formOpen || !!editId;
+    $("formCard").hidden = !showForm;
+    $("addBtn").hidden = !hasAny || showForm;
+  }
   function resetForm() {
+    formOpen = false;
     editId = null;
     curCountry = "BH";
     chosen = [];
@@ -352,6 +365,7 @@
 
   function startEdit(a) {
     editId = a.id;
+    syncForm();
     curCountry = a.country;
     chosen = a.path.slice();
     vals = Object.assign({}, a.fields || {});
@@ -434,9 +448,14 @@
       card.appendChild(h);
 
       const c = getCountry(a.country);
+      const flag = document.createElement("span");
+      flag.className = "flagc";
+      flag.textContent = c ? c.flag : "";
+      card.appendChild(flag);
+
       const main = document.createElement("div");
       main.className = "line main";
-      main.textContent = (c ? countryName(c) : a.country) + " · " + pathNames(a.path);
+      main.textContent = pathNames(a.path).split(" ← ").join(" - ");
       card.appendChild(main);
 
       (FIELDS[a.country] || FIELDS.BH).forEach(f => {
@@ -489,6 +508,7 @@
       card.appendChild(acts);
       box.appendChild(card);
     });
+    syncForm();
   }
 
   // ===== اللغة =====
@@ -536,7 +556,8 @@
   });
   $("pNum").addEventListener("input", () => { $("pNum").value = digits($("pNum").value); });
   $("saveBtn").addEventListener("click", save);
-  $("cancelBtn").addEventListener("click", () => { hideMsg(); resetForm(); });
+  $("cancelBtn").addEventListener("click", () => { hideMsg(); resetForm(); syncForm(); });
+  $("addBtn").addEventListener("click", () => { hideMsg(); resetForm(); formOpen = true; syncForm(); $("formCard").scrollIntoView({ behavior: "smooth", block: "start" }); });
   $("langBtn").addEventListener("click", () => {
     lang = lang === "ar" ? "en" : "ar";
     writeState({ lang: lang });
