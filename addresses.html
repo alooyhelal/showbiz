@@ -421,6 +421,13 @@
     if (!saveList(arr)) return showMsg("err", L().storeErr);
 
     list = arr;
+    // جاي من الإتمام أو السلة: نرجع له ومعه العنوان الجديد مختار
+    const back = localStorage.getItem("showbiz_next");
+    if (back === "checkout" || back === "cart") {
+      localStorage.setItem("showbiz_pick_addr", entry.id);
+      location.href = "index.html";
+      return;
+    }
     resetForm();
     showMsg("ok", wasEdit ? L().updated : L().saved);
     renderList();
@@ -428,6 +435,8 @@
 
   // ===== عرض العناوين المحفوظة =====
   function renderList() {
+    // جاي من زر "إضافة عنوان جديد" في الإتمام أو السلة: يفتح النافذة مباشرة
+    if (localStorage.getItem("showbiz_open_add") === "1") { localStorage.removeItem("showbiz_open_add"); formOpen = true; }
     const box = $("list");
     box.innerHTML = "";
     const arr = loadList();
