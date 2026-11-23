@@ -121,7 +121,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
   // ===== رقم النسخة: غيّر version و updated مع كل تحديث =====
-  const BUILD = { version: "v15", updated: "2026-11-23 08:10" };
+  const BUILD = { version: "v16", updated: "2026-11-23 08:20" };
 
   // ===== الإعدادات =====
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
@@ -131,7 +131,7 @@
   const RATE_BHD = 0.377;
   const COUPONS = { TEST10: 0.10 };
   const SLIDE_MS = 5000;
-  const TOAST_MS = 1500;     // مدة إشعار النجاح
+  const TOAST_MS = 1500;      // مدة إشعار النجاح
   const SEND_DELAY_MS = 5000; // مدة التحميل قبل ما تظهر خانات الرمز
 
   // ===== مسح البيانات المحلية عند تغيّر النسخة فقط (للتجربة) =====
@@ -377,13 +377,21 @@
   }
 
   // ===== الحساب =====
+  // المستخدم الحالي من الجلسة المحلية (بدون طلب شبكة ينتظره المتصفح)
+  async function currentUser() {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      return session?.user || null;
+    } catch (e) { return null; }
+  }
   async function loadProfile() {
-    const { data: { user } } = await sb.auth.getUser();
-    me = user || null;
+    me = await currentUser();
     profile = null;
     if (me) {
-      const { data } = await sb.from("customers").select("*").eq("id", me.id).maybeSingle();
-      profile = data || null;
+      try {
+        const { data } = await sb.from("customers").select("*").eq("id", me.id).maybeSingle();
+        profile = data || null;
+      } catch (e) {}
     }
   }
   // يحدّث الخطوات حسب ما تحقق فعلًا في الجلسة
@@ -636,6 +644,7 @@
   }
 
   // التحقق من رمز البريد: تلقائي عند اكتمال 6 أرقام، أو بالضغط على الزر
+  // بعد نجاح الرمز نستخدم المستخدم اللي يرجعه Supabase مباشرة، بدون طلب شبكة إضافي
   async function verifyEmail() {
     if (busy) return;
     const L = T[state.lang];
@@ -647,12 +656,12 @@
       if (res.error) res = await sb.auth.verifyOtp({ email: pending.email, token: code, type: "magiclink" });
       if (res.error) {
         // إذا كان البريد متحقق منه من قبل في الجلسة، نعتبره ناجحًا
-        const { data: { user } } = await sb.auth.getUser();
-        const ok = user && user.email_confirmed_at && String(user.email).toLowerCase() === pending.email.toLowerCase();
+        const u = await currentUser();
+        const ok = u && u.email_confirmed_at && String(u.email).toLowerCase() === pending.email.toLowerCase();
         if (!ok) return failOtp("email", codeErr(res.error));
-        me = user;
+        me = u;
       } else {
-        me = res.data.user || me;
+        me = res.data?.user || me;
       }
       pending.emailVerified = true; pending.codeSent = false; savePending();
       otpMsg.email = null;
@@ -707,6 +716,7 @@
   }
 
   // التحقق من رمز الجوال: تلقائي عند اكتمال 6 أرقام، أو بالضغط على الزر
+  // بعد نجاح الرمز ننتقل فورًا بدون انتظار getUser
   async function verifySms() {
     if (busy) return;
     const L = T[state.lang];
@@ -714,19 +724,16 @@
     if (!/^\d{6}$/.test(code)) return setOtpMsg("sms", L.enterCode, "err");
     busy = true; setOtpMsg("sms", L.verifying, "info");
     try {
-      const { error } = await sb.auth.verifyOtp({ phone: smsFull(), token: code, type: "phone_change" });
-      let user = null;
+      const { data, error } = await sb.auth.verifyOtp({ phone: smsFull(), token: code, type: "phone_change" });
       if (error) {
         // إذا الرقم متحقق منه فعلًا في الجلسة، نكمل بدل ما نطلب رمز جديد
-        const r = await sb.auth.getUser();
-        user = r.data?.user || null;
-        const ok = user && user.phone_confirmed_at && samePhone(user.phone, smsFull());
+        const u = await currentUser();
+        const ok = u && u.phone_confirmed_at && samePhone(u.phone, smsFull());
         if (!ok) return failOtp("sms", codeErr(error));
+        me = u;
       } else {
-        const r = await sb.auth.getUser();
-        user = r.data?.user || null;
+        me = data?.user || me;
       }
-      me = user || me;
       pending.phoneVerified = true; pending.otpSent = false; pending.editPhone = false; savePending();
       otpMsg.sms = null;
       toast(L.phoneOk);
