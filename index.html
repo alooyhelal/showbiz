@@ -49,7 +49,10 @@
   .crow img { width:72px; height:72px; object-fit:contain; background:#f3f4f6; border-radius:10px; }
   .cinfo { flex:1; }
   .couponrow { display:flex; gap:8px; } .couponrow input { margin:0; } .couponrow button { white-space:nowrap; }
-  .addrpick { display:block; cursor:pointer; margin-bottom:8px; }
+  .addrpick { display:block; cursor:pointer; margin-bottom:8px; position:relative; }
+  .addrpick .flagc { position:absolute; top:12px; inset-inline-end:14px; font-size:22px; line-height:1; }
+  .addrpick strong { padding-inline-end:36px; display:block; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
   .addrpick .pickrow { display:flex; gap:10px; align-items:flex-start; }
   .addrpick input[type=radio] { width:auto; margin:4px 0 0; }
   .hidden { display:none !important; }
@@ -149,7 +152,7 @@
       keepShopping:"متابعة التسوق", checkout:"إتمام الطلب",
       pickAddr:"عنوان التوصيل", addAddrBtn:"إضافة أو تعديل العناوين", noAddrCountry:"ما عندك عنوان محفوظ لهذي الدولة. أضف عنوان أولًا", noAddrAny:"ما عندك عناوين محفوظة بعد. أضف عنوان أولًا",
       pickAddrErr:"اختر عنوان التوصيل أولًا",
-      confirm:"تأكيد الطلب", back:"رجوع",
+      confirm:"تأكيد الطلب", confirmAddrNext:"تأكيد العنوان والانتقال للخطوة التالية", back:"رجوع",
       done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم الحفظ في هذا المتصفح فقط",
       loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...",
       noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول",
@@ -171,7 +174,7 @@
       keepShopping:"Keep shopping", checkout:"Checkout",
       pickAddr:"Delivery address", addAddrBtn:"Add or edit addresses", noAddrCountry:"You have no saved address for this country. Add one first", noAddrAny:"You have no saved addresses yet. Add one first",
       pickAddrErr:"Choose a delivery address first",
-      confirm:"Confirm order", back:"Back",
+      confirm:"Confirm order", confirmAddrNext:"Confirm address and continue", back:"Back",
       done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
       loadErr:"Could not load products, please try again", loading:"Loading...",
       noProducts:"No products available right now", fillAll:"Please fill all fields",
@@ -635,7 +638,7 @@
             <div class="pickrow">
               <input type="radio" name="addr" value="${esc(a.id)}" ${state.addrId === a.id ? "checked" : ""}>
               <div>
-                <strong>${esc(COUNTRIES[a.country]?.flag || "")} ${esc(a.label)}</strong>
+                <span class="flagc">${esc(COUNTRIES[a.country]?.flag || "")}</span><strong>${esc(a.label)}</strong>
                 <div class="muted">${esc(addrText(a))}</div>
                 <div class="muted" dir="ltr">${esc(a.phone || "")}</div>
               </div>
@@ -654,7 +657,7 @@
       <button class="ghost btnfull" data-action="addAddr">${t("addAddrBtn")}</button>
       <div class="card pad" id="summary" style="margin-top:12px"></div>
       <p id="formMsg" class="muted"></p>
-      <button data-action="confirm" style="width:100%">${t("confirm")}</button>
+      <button data-action="confirm" style="width:100%" ${selectedAddr() ? "" : "disabled"}>${selectedAddr() ? t("confirm") : t("confirmAddrNext")}</button>
       <p><button class="ghost" data-action="cart">${t("back")}</button></p>`;
   }
   function summaryHTML() {
@@ -801,8 +804,8 @@
       state.addrId = e.target.value; save();
       const picked = selectedAddr();
       // العنوان يحدد الدولة تلقائياً (مثلاً عنوان سعودي يفتح السعودية)
-      if (picked && picked.country !== state.country) { state.country = picked.country; save(); render(); return; }
-      document.getElementById("summary").innerHTML = summaryHTML();
+      if (picked && picked.country !== state.country) state.country = picked.country;
+      save(); render();
     }
   });
   document.getElementById("pmodal").addEventListener("click", (e) => {
