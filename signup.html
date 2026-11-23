@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Showbiz إنشاء حساب</title>
+<style>
+  :root { --bg:#0b1220; --card:#162033; --card2:#1d2a44; --fg:#eef2f7; --muted:#9aa7bd; --line:#2c3b5a; --orange:#f59e4b; --orange-d:#e0852f; --ok:#7ee2a8; --okbg:#12301f; --okline:#2f6b4f; --err:#ffb4bf; --errbg:#3b1620; --errline:#7a2b3b; --info:#9aa7bd; color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width:420px; margin:0 auto; padding-block:24px 36px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:22px; box-shadow:0 20px 50px rgba(0,0,0,.35); padding:24px 22px 28px; }
+  .top { display:flex; justify-content:flex-start; margin-bottom:6px; }
+  .lang { background:var(--card2); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:7px 12px; font-size:13px; cursor:pointer; font-family:inherit; }
+  .brand { text-align:center; margin:4px 0 16px; }
+  .mark { width:64px; height:64px; margin:0 auto 10px; border-radius:18px; background:var(--orange); color:#111; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:800; }
+  .mark b { color:var(--bg); }
+  .brand .name { font-weight:800; letter-spacing:.5px; color:var(--orange); font-size:15px; }
+  h1 { font-size:24px; margin:0 0 6px; text-align:center; color:var(--fg); }
+  .sub { color:var(--muted); text-align:center; font-size:14px; margin:0 0 18px; line-height:1.7; }
+  label { display:block; font-size:13px; font-weight:600; color:var(--muted); margin:14px 0 6px; }
+  input, select { width:100%; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--card2); color:var(--fg); font-size:15px; font-family:inherit; }
+  select option { background:var(--card2); color:var(--fg); }
+  input:focus, select:focus { outline:2px solid var(--orange); outline-offset:0; }
+  input.bad, select.bad { border-color:var(--err); outline:1px solid var(--err); }
+  .pw { position:relative; }
+  .pw input { padding-inline-end:46px; }
+  .eye { position:absolute; top:0; bottom:0; inset-inline-end:0; width:46px; border:0; background:transparent; color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+  .ferr { color:var(--err); font-size:13px; line-height:1.6; margin-top:6px; }
+  .hidden { display:none !important; }
+  .link { color:var(--orange); font-weight:700; font-size:14px; text-decoration:underline; text-underline-offset:3px; padding:4px 2px; background:none; border:0; cursor:pointer; font-family:inherit; }
+  .btn { display:block; width:100%; text-align:center; text-decoration:none; border:0; border-radius:12px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; margin-top:14px; }
+  .btn-main { background:var(--orange); color:#111; }
+  .btn-main:hover { background:var(--orange-d); }
+  .btn-line { background:transparent; color:var(--fg); border:1px solid var(--line); }
+  .btn:disabled { opacity:.6; cursor:wait; }
+  .row2 { display:flex; gap:10px; margin-top:14px; }
+  .row2 .btn { margin-top:0; }
+  .linkrow { text-align:center; margin-top:18px; font-size:14px; color:var(--muted); }
+  .step { border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:12px; }
+  .step.done { border-color:#2f8f5f; }
+  .step.locked { opacity:.5; }
+  .sh { font-weight:700; color:var(--fg); display:flex; gap:8px; align-items:center; font-size:15px; }
+  .badge { width:24px; height:24px; border-radius:50%; background:var(--orange); color:#111; font-size:12px; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .step.done .badge { background:#2f8f5f; color:#fff; }
+  .okline { color:var(--ok); font-weight:700; margin-top:10px; font-size:14px; display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; }
+  .phonerow { display:flex; gap:8px; margin-top:10px; }
+  .phonerow select { width:128px; flex:0 0 auto; padding:14px 8px; font-size:14px; }
+  .phonerow input { flex:1; min-width:0; }
+  .loadline { display:flex; align-items:center; justify-content:center; gap:10px; color:var(--muted); padding:16px 0; font-size:14px; }
+  .spin { width:18px; height:18px; border:3px solid var(--line); border-top-color:var(--orange); border-radius:50%; animation:sp .8s linear infinite; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+  .addr { direction:ltr; text-align:center; font-weight:700; margin:6px 0 4px; word-break:break-all; }
+  .otp { display:grid; grid-template-columns:repeat(6,1fr); gap:6px; max-width:320px; margin:12px auto 4px; direction:ltr; }
+  .obox { width:100%; min-width:0; height:56px; text-align:center; font-size:24px; font-weight:700; padding:0; }
+  .msg { text-align:center; font-size:14px; border-radius:10px; padding:9px 10px; margin-top:10px; line-height:1.6; }
+  .msg.err { color:var(--err); background:var(--errbg); border:1px solid var(--errline); }
+  .msg.info { color:var(--info); background:var(--card2); border:1px solid var(--line); }
+  .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card); color:var(--ok); border:1px solid var(--okline); padding:16px 26px; border-radius:14px; font-size:17px; font-weight:700; box-shadow:0 12px 30px rgba(0,0,0,.4); z-index:50; max-width:90vw; text-align:center; }
+  .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:18px; direction:ltr; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="app"></div>
+  <div class="ver">v22 · 2026-11-23 09:20</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
+<script>
+  const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
+  const REQUIRE_PHONE = true;   // false إذا رسائل SMS ما وصلت وتبي تنشئ الحساب بدون الجوال
+  const SEND_MS = 5000;         // مدة التحميل قبل ما تظهر خانات الرمز
+  const TOAST_MS = 1500;
+  const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
+
+  // دول الخليج: الكود يحدد العملة المفضلة
+  const COUNTRIES = [
+    { code:"BH", flag:"🇧🇭", dial:"+973", ar:"البحرين", en:"Bahrain" },
+    { code:"SA", flag:"🇸🇦", dial:"+966", ar:"السعودية", en:"Saudi Arabia" },
+    { code:"AE", flag:"🇦🇪", dial:"+971", ar:"الإمارات", en:"UAE" },
+    { code:"KW", flag:"🇰🇼", dial:"+965", ar:"الكويت", en:"Kuwait" },
+    { code:"QA", flag:"🇶🇦", dial:"+974", ar:"قطر", en:"Qatar" },
+    { code:"OM", flag:"🇴🇲", dial:"+968", ar:"عُمان", en:"Oman" }
+  ];
+
+  const T = {
+    ar: { title:"إنشاء حساب", sub:"ثلاث خطوات بسيطة وحسابك يكون جاهز", s1:"البريد الإلكتروني", s2:"رقم الجوال", s3:"بيانات الحساب",
+      email:"البريد الإلكتروني", sendCode:"إرسال رمز التحقق", sending:"جاري إرسال الرمز...", sentTo:"تم إرسال الرمز إلى:",
+      enterCode:"اكتب الرمز المكون من 6 أرقام", codeWrong:"الرمز غير صحيح. اكتب الرمز من جديد",
+      codeExpired:"الرمز منتهي. اضغط إعادة إرسال الرمز واستخدم الجديد", resend:"إعادة إرسال الرمز", change:"تغيير", verify:"تحقق",
+      checking:"جاري التحقق...", emailOk:"تم التحقق من بريدك الإلكتروني ✅", phoneOk:"تم التحقق من جوالك ✅",
+      locked:"أكمل الخطوة اللي قبلها أولًا", skipPhone:"التحقق من الجوال غير مفعّل حاليًا",
+      emailBad:"البريد الإلكتروني غير صحيح، لأنه لم يتم كتابته بشكل صحيح", phoneBad:"رقم الجوال غير صحيح",
+      first:"الاسم الأول", last:"الاسم الأخير", namesReq:"الاسم الأول والأخير مطلوبين", country:"الدولة",
+      password:"كلمة المرور", confirm:"تأكيد كلمة المرور", show:"إظهار كلمة المرور", hide:"إخفاء كلمة المرور",
+      passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر", passMismatch:"كلمتا المرور غير متطابقتين",
+      create:"إنشاء الحساب", creating:"جاري إنشاء الحساب...", created:"تم إنشاء الحساب بنجاح، سجّل دخولك الآن",
+      sessionLost:"انتهت الجلسة، ابدأ من خطوة البريد من جديد", cancel:"إلغاء", haveAcc:"عندي حساب، سجّل دخول",
+      rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول مرة ثانية", switchLabel:"English" },
+    en: { title:"Create account", sub:"Three simple steps and your account is ready", s1:"Email", s2:"Mobile number", s3:"Account details",
+      email:"Email", sendCode:"Send verification code", sending:"Sending code...", sentTo:"Code sent to:",
+      enterCode:"Enter the 6-digit code", codeWrong:"The code is incorrect. Type it again",
+      codeExpired:"The code has expired. Press resend and use the new code", resend:"Resend code", change:"Change", verify:"Verify",
+      checking:"Verifying...", emailOk:"Your email is verified ✅", phoneOk:"Your mobile is verified ✅",
+      locked:"Complete the previous step first", skipPhone:"Phone verification is currently off",
+      emailBad:"The email is not valid, it was not typed correctly", phoneBad:"Invalid mobile number",
+      first:"First name", last:"Last name", namesReq:"First and last name are required", country:"Country",
+      password:"Password", confirm:"Confirm password", show:"Show password", hide:"Hide password",
+      passShort:"Password must be 8 characters or more", passMismatch:"Passwords do not match",
+      create:"Create account", creating:"Creating account...", created:"Account created. Log in now",
+      sessionLost:"The session has ended, start again from the email step", cancel:"Cancel", haveAcc:"I have an account, log in",
+      rateLimit:"Too many attempts, wait a moment and try again", switchLabel:"العربية" }
+  };
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = (id) => document.getElementById(id);
+  const wait = (ms) => new Promise(r => setTimeout(r, ms));
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const isEmail = (s) => EMAIL_RE.test(String(s || "").trim());
+  const digitsOnly = (s) => String(s || "").replace(/\D/g, "");
+
+  let lang = "ar", preferredCountry = "BH";
+  try {
+    const st = JSON.parse(localStorage.getItem("showbiz_state") || "{}");
+    if (st.lang === "en" || st.lang === "ar") lang = st.lang;
+    if (COUNTRIES.some(c => c.code === st.country)) preferredCountry = st.country;
+  } catch (e) {}
+  const t = () => T[lang];
+
+  const S = {
+    sEmail:"", sCodeSent:false, sVerified:false, sLoading:false, sMsg:null,
+    pDial:"+973", pPhone:"", pFull:"", pCodeSent:false, pVerified:false, pLoading:false, pMsg:null,
+    first:"", last:"", country:preferredCountry, busy:false, sendSeq:0
+  };
+
+  function mergeState(patch) {
+    try {
+      const st = JSON.parse(localStorage.getItem("showbiz_state") || "{}");
+      localStorage.setItem("showbiz_state", JSON.stringify({ ...st, ...patch }));
+    } catch (e) {}
+  }
+  function setErr(id, msg) {
+    const i = $(id), e = $(id + "Err");
+    if (i) i.classList.toggle("bad", !!msg);
+    if (e) { e.textContent = msg || ""; e.classList.toggle("hidden", !msg); }
+  }
+  function setNotice(msg, kind = "err") {
+    const n = $("notice");
+    if (!n) return;
+    n.className = "msg " + kind + (msg ? "" : " hidden");
+    n.textContent = msg || "";
+  }
+  function toast(msg) {
+    const d = document.createElement("div");
+    d.className = "toast"; d.textContent = msg;
+    document.body.appendChild(d);
+    setTimeout(() => d.remove(), TOAST_MS);
+  }
+  // الرسالة الحقيقية من Supabase، عدا الحالات المعروفة
+  function errMsg(e) {
+    const m = String(e?.message || e || "");
+    if (/rate|too many|seconds/i.test(m)) return t().rateLimit;
+    const extra = [e?.code, e?.status].filter(Boolean).join(" · ");
+    return extra ? `${m} (${extra})` : m;
+  }
+  const codeErr = (e) => /expired/i.test(String(e?.message || e || "")) ? t().codeExpired : t().codeWrong;
+  // رسالة تحت خانات الرمز: تتحدث مباشرة بدون ما تمسح الخانات
+  function showMsg(p, text, kind) {
+    S[p === "email" ? "sMsg" : "pMsg"] = text ? { t: text, k: kind } : null;
+    const el = $(p + "Msg");
+    if (!el) return render();
+    el.className = "msg " + kind + (text ? "" : " hidden");
+    el.textContent = text || "";
+  }
+  const msgHTML = (p) => {
+    const m = p === "email" ? S.sMsg : S.pMsg;
+    return `<div id="${p}Msg" class="msg ${m ? m.k : "err"} ${m ? "" : "hidden"}">${m ? esc(m.t) : ""}</div>`;
+  };
+  const getCode = (p) => [...document.querySelectorAll(`[data-otp="${p}"]`)].map(x => x.value).join("");
+  const clearCode = (p) => document.querySelectorAll(`[data-otp="${p}"]`).forEach(x => { x.value = ""; });
+  function focusBox(p, i) {
+    setTimeout(() => { const el = document.querySelector(`[data-otp="${p}"][data-i="${i}"]`); if (el) el.focus(); }, 0);
+  }
+
+  const EYE = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const eyeBtn = (id) => `<button class="eye" type="button" data-act="eye" data-t="${id}" aria-label="${t().show}" title="${t().show}">${EYE}</button>`;
+  const loading = (text) => `<div class="loadline"><span class="spin"></span><span>${text}</span></div>`;
+
+  function codeBlock(p) {
+    const addr = p === "email" ? S.sEmail : S.pFull;
+    const boxes = [0,1,2,3,4,5].map(i => `<input class="obox" inputmode="numeric" autocomplete="one-time-code" maxlength="1" data-otp="${p}" data-i="${i}" aria-label="${i + 1}">`).join("");
+    const verifyAct = p === "email" ? "verifyEmail" : "verifyPhone";
+    const sendAct = p === "email" ? "sendEmailCode" : "sendPhoneCode";
+    const changeAct = p === "email" ? "changeEmail" : "changePhone";
+    return `
+      <p class="sub" style="margin:8px 0 0">${t().sentTo}</p>
+      <div class="addr">${esc(addr)}</div>
+      <div class="otp">${boxes}</div>
+      ${msgHTML(p)}
+      <button class="btn btn-main" type="button" data-act="${verifyAct}">${t().verify}</button>
+      <div class="linkrow" style="margin-top:6px">
+        <button class="link" type="button" data-act="${sendAct}">${t().resend}</button> ·
+        <button class="link" type="button" data-act="${changeAct}">${t().change}</button>
+      </div>`;
+  }
+
+  function stepsHTML() {
+    const emailOK = S.sVerified;
+    const phoneOK = S.pVerified || !REQUIRE_PHONE;
+    const detailsOpen = emailOK && phoneOK;
+
+    let b1;
+    if (emailOK) b1 = `<div class="okline"><span dir="ltr">${esc(S.sEmail)}</span><button class="link" type="button" data-act="changeEmail">${t().change}</button></div>`;
+    else if (S.sLoading) b1 = loading(t().sending);
+    else if (!S.sCodeSent) b1 = `
+        <label for="sEmail">${t().email}</label>
+        <input id="sEmail" type="email" dir="ltr" autocomplete="email" placeholder="name@example.com" value="${esc(S.sEmail)}">
+        <div class="ferr hidden" id="sEmailErr"></div>
+        ${msgHTML("email")}
+        <button class="btn btn-main" type="button" data-act="sendEmailCode">${t().sendCode}</button>`;
+    else b1 = codeBlock("email");
+
+    let b2;
+    if (!emailOK) b2 = `<p class="sub" style="margin:10px 0 0">${t().locked}</p>`;
+    else if (!REQUIRE_PHONE) b2 = `<p class="sub" style="margin:10px 0 0">${t().skipPhone}</p>`;
+    else if (S.pVerified) b2 = `<div class="okline"><span dir="ltr">${esc(S.pFull)}</span><button class="link" type="button" data-act="changePhone">${t().change}</button></div>`;
+    else if (S.pLoading) b2 = loading(t().sending);
+    else if (!S.pCodeSent) {
+      const opts = COUNTRIES.map(c => `<option value="${c.dial}" ${c.dial === S.pDial ? "selected" : ""}>${c.flag} ${c.dial}</option>`).join("");
+      b2 = `<div class="phonerow"><select id="sDial">${opts}</select><input id="sPhone" type="tel" dir="ltr" placeholder="36123456" value="${esc(S.pPhone)}"></div>
+            <div class="ferr hidden" id="sPhoneErr"></div>
+            ${msgHTML("sms")}
+            <button class="btn btn-main" type="button" data-act="sendPhoneCode">${t().sendCode}</button>`;
+    } else b2 = codeBlock("sms");
+
+    const countryOpts = COUNTRIES.map(c => `<option value="${c.code}" ${c.code === S.country ? "selected" : ""}>${c.flag} ${lang === "ar" ? c.ar : c.en}</option>`).join("");
+    const b3 = detailsOpen ? `
+        <label for="sFirst">${t().first}</label>
+        <input id="sFirst" value="${esc(S.first)}">
+        <div class="ferr hidden" id="sFirstErr"></div>
+        <label for="sLast">${t().last}</label>
+        <input id="sLast" value="${esc(S.last)}">
+        <div class="ferr hidden" id="sLastErr"></div>
+        <label for="sCountry">${t().country}</label>
+        <select id="sCountry">${countryOpts}</select>
+        <label for="sPass">${t().password}</label>
+        <div class="pw"><input id="sPass" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("sPass")}</div>
+        <div class="ferr hidden" id="sPassErr"></div>
+        <label for="sPass2">${t().confirm}</label>
+        <div class="pw"><input id="sPass2" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("sPass2")}</div>
+        <div class="ferr hidden" id="sPass2Err"></div>
+        <button class="btn btn-main" type="button" data-act="create">${t().create}</button>`
+      : `<p class="sub" style="margin:10px 0 0">${t().locked}</p>`;
+
+    const step = (n, done, locked, label, body) => `
+      <section class="step ${done ? "done" : ""} ${locked ? "locked" : ""}">
+        <div class="sh"><span class="badge">${done ? "✓" : n}</span>${label}</div>${body}
+      </section>`;
+
+    return `
+      ${step(1, emailOK, false, t().s1, b1)}
+      ${step(2, phoneOK, !emailOK, t().s2, b2)}
+      ${step(3, false, !detailsOpen, t().s3, b3)}`;
+  }
+
+  function render() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.title = "Showbiz " + t().title;
+    $("app").innerHTML = `
+      <div class="top"><button class="lang" type="button" data-act="lang">${t().switchLabel}</button></div>
+      <div class="brand"><div class="mark">S<b>.</b></div><div class="name">Showbiz</div></div>
+      <h1>${t().title}</h1>
+      <p class="sub">${t().sub}</p>
+      ${stepsHTML()}
+      <div id="notice" class="msg hidden"></div>
+      <div class="linkrow"><button class="link" type="button" data-act="toLogin">${t().haveAcc}</button></div>
+      <div class="row2"><a class="btn btn-line" href="login.html" style="margin-top:0">${t().cancel}</a></div>`;
+  }
+
+  // ===== خطوة البريد =====
+  async function sendEmailCode() {
+    const el = $("sEmail");
+    const email = (el ? el.value : S.sEmail).trim();
+    S.sEmail = email;
+    if (!isEmail(email)) { if (el) setErr("sEmail", t().emailBad); return; }
+    const seq = ++S.sendSeq;
+    S.sLoading = true; S.sCodeSent = false; S.sMsg = null; render();
+    // الطلب يكمل في الخلفية، وإذا رجع خطأ حقيقي يظهر تحت الخانات
+    sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
+      .then(({ error }) => { if (error && seq === S.sendSeq) showMsg("email", errMsg(error), "err"); })
+      .catch((e) => { if (seq === S.sendSeq) showMsg("email", errMsg(e), "err"); });
+    await wait(SEND_MS);
+    if (seq !== S.sendSeq) return;
+    S.sLoading = false; S.sCodeSent = true; render(); focusBox("email", 0);
+  }
+  async function verifyEmail() {
+    if (S.busy) return;
+    const code = getCode("email");
+    if (!/^\d{6}$/.test(code)) return showMsg("email", t().enterCode, "err");
+    S.busy = true; showMsg("email", t().checking, "info");
+    try {
+      let res = await sb.auth.verifyOtp({ email: S.sEmail, token: code, type: "email" });
+      if (res.error) res = await sb.auth.verifyOtp({ email: S.sEmail, token: code, type: "magiclink" });
+      if (res.error) throw res.error;
+      S.sVerified = true; S.sMsg = null; toast(t().emailOk); render();
+    } catch (e) {
+      clearCode("email"); focusBox("email", 0);
+      showMsg("email", codeErr(e), "err");
+    } finally { S.busy = false; }
+  }
+  function changeEmail() {
+    S.sVerified = false; S.sCodeSent = false; S.sMsg = null;
+    S.pVerified = false; S.pCodeSent = false; S.pMsg = null;
+    sb.auth.signOut().catch(() => {});
+    render();
+  }
+
+  // ===== خطوة الجوال =====
+  async function sendPhoneCode() {
+    const el = $("sPhone");
+    const digits = digitsOnly(el ? el.value : S.pPhone);
+    S.pPhone = digits;
+    if (el) S.pDial = $("sDial").value;
+    if (!/^\d{6,12}$/.test(digits)) { if (el) setErr("sPhone", t().phoneBad); return; }
+    S.pFull = S.pDial + digits;
+    const seq = ++S.sendSeq;
+    S.pLoading = true; S.pCodeSent = false; S.pMsg = null; render();
+    sb.auth.updateUser({ phone: S.pFull })
+      .then(({ error }) => { if (error && seq === S.sendSeq) showMsg("sms", errMsg(error), "err"); })
+      .catch((e) => { if (seq === S.sendSeq) showMsg("sms", errMsg(e), "err"); });
+    await wait(SEND_MS);
+    if (seq !== S.sendSeq) return;
+    S.pLoading = false; S.pCodeSent = true; render(); focusBox("sms", 0);
+  }
+  async function verifyPhone() {
+    if (S.busy) return;
+    const code = getCode("sms");
+    if (!/^\d{6}$/.test(code)) return showMsg("sms", t().enterCode, "err");
+    S.busy = true; showMsg("sms", t().checking, "info");
+    try {
+      const { error } = await sb.auth.verifyOtp({ phone: S.pFull, token: code, type: "phone_change" });
+      if (error) throw error;
+      S.pVerified = true; S.pMsg = null; toast(t().phoneOk); render();
+    } catch (e) {
+      clearCode("sms"); focusBox("sms", 0);
+      showMsg("sms", codeErr(e), "err");
+    } finally { S.busy = false; }
+  }
+  function changePhone() { S.pVerified = false; S.pCodeSent = false; S.pMsg = null; render(); }
+
+  // ===== إنشاء الحساب =====
+  async function createAccount() {
+    if (S.busy) return;
+    const first = $("sFirst").value.trim(), last = $("sLast").value.trim();
+    const p1 = $("sPass").value, p2 = $("sPass2").value;
+    S.first = first; S.last = last;
+    ["sFirst", "sLast", "sPass", "sPass2"].forEach(id => setErr(id, ""));
+    if (!first) setErr("sFirst", t().namesReq);
+    if (!last) setErr("sLast", t().namesReq);
+    if (p1.length < 8) setErr("sPass", t().passShort);
+    if (p1 !== p2) setErr("sPass2", t().passMismatch);
+    if (!first || !last || p1.length < 8 || p1 !== p2) return;
+
+    S.busy = true; setNotice(t().creating, "info");
+    try {
+      const { data } = await sb.auth.getSession();
+      const session = data?.session;
+      if (!session) return setNotice(t().sessionLost, "err");
+      const { error } = await sb.auth.updateUser({
+        password: p1, data: { first_name: first, last_name: last, preferred_country: S.country }
+      });
+      if (error) throw error;
+      const { error: e2 } = await sb.from("customers").upsert({
+        id: session.user.id, email: session.user.email, first_name: first, last_name: last,
+        phone: REQUIRE_PHONE ? S.pFull : null
+      });
+      if (e2) throw e2;
+      // الدولة المختارة تصير المفضلة، وبعدها ننقل لصفحة تسجيل الدخول
+      mergeState({ country: S.country });
+      await sb.auth.signOut().catch(() => {});
+      toast(t().created);
+      setTimeout(() => { location.href = "login.html"; }, TOAST_MS);
+    } catch (e) {
+      setNotice(errMsg(e), "err");
+    } finally { S.busy = false; }
+  }
+
+  // ===== الأحداث =====
+  const ACT = {
+    lang() { lang = lang === "ar" ? "en" : "ar"; mergeState({ lang }); render(); },
+    eye(el) {
+      const i = $(el.dataset.t); if (!i) return;
+      i.type = i.type === "password" ? "text" : "password";
+      const label = i.type === "password" ? t().show : t().hide;
+      el.setAttribute("aria-label", label); el.title = label;
+    },
+    toLogin() { location.href = "login.html"; },
+    sendEmailCode, verifyEmail, changeEmail,
+    sendPhoneCode, verifyPhone, changePhone,
+    create: createAccount
+  };
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    const fn = ACT[b.dataset.act];
+    if (fn) fn(b);
+  });
+  document.addEventListener("input", (e) => {
+    const el = e.target;
+    if (el.dataset && el.dataset.otp) {
+      el.value = digitsOnly(el.value).slice(-1);
+      const p = el.dataset.otp, i = Number(el.dataset.i);
+      if (el.value && i < 5) focusBox(p, i + 1);
+      if (getCode(p).length === 6) (p === "email" ? verifyEmail : verifyPhone)();
+      return;
+    }
+    const MAP = { sEmail: "sEmail", sPhone: "pPhone", sFirst: "first", sLast: "last" };
+    if (MAP[el.id]) S[MAP[el.id]] = el.value;
+    if (el.id && $(el.id + "Err")) setErr(el.id, "");
+  });
+  document.addEventListener("change", (e) => {
+    if (e.target.id === "sDial") S.pDial = e.target.value;
+    if (e.target.id === "sCountry") S.country = e.target.value;
+  });
+  document.addEventListener("keydown", (e) => {
+    const el = e.target;
+    if (el.dataset && el.dataset.otp) {
+      const p = el.dataset.otp, i = Number(el.dataset.i);
+      if (e.key === "Backspace" && !el.value && i > 0) {
+        e.preventDefault();
+        const prev = document.querySelector(`[data-otp="${p}"][data-i="${i - 1}"]`);
+        if (prev) { prev.value = ""; prev.focus(); }
+      } else if (e.key === "Enter") {
+        e.preventDefault(); (p === "email" ? verifyEmail : verifyPhone)();
+      }
+      return;
+    }
+    if (e.key !== "Enter") return;
+    const map = { sEmail: "sendEmailCode", sPhone: "sendPhoneCode", sPass2: "create" };
+    if (map[el.id]) { e.preventDefault(); ACT[map[el.id]](); }
+  });
+  document.addEventListener("paste", (e) => {
+    const el = e.target;
+    if (!(el.dataset && el.dataset.otp)) return;
+    e.preventDefault();
+    const digits = digitsOnly(e.clipboardData?.getData("text")).slice(0, 6);
+    if (!digits) return;
+    const p = el.dataset.otp, start = Number(el.dataset.i);
+    [...digits].forEach((d, k) => {
+      const box = document.querySelector(`[data-otp="${p}"][data-i="${start + k}"]`);
+      if (box) box.value = d;
+    });
+    focusBox(p, Math.min(start + digits.length, 5));
+    if (getCode(p).length === 6) (p === "email" ? verifyEmail : verifyPhone)();
+  });
+
+  // إذا فيه جلسة لحساب مكتمل نرجع للمتجر، وإذا جلسة ناقصة نبدأ من جديد
+  (async () => {
+    try {
+      const { data } = await sb.auth.getSession();
+      if (data?.session) {
+        const { data: p } = await sb.from("customers").select("id").eq("id", data.session.user.id).maybeSingle();
+        if (p) return location.replace("index.html");
+        await sb.auth.signOut();
+      }
+    } catch (e) {}
+  })();
+
+  render();
+</script>
+</body>
+</html>
