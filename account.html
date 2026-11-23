@@ -48,6 +48,20 @@
   .loading { text-align:center; color:var(--muted); padding:60px 0; }
   .hidden { display:none !important; }
 </style>
+<script>
+/* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
+(function () {
+  var SITE_VERSION = "v32";
+  try {
+    if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
+      Object.keys(localStorage).forEach(function (k) {
+        if (k.indexOf("showbiz") === 0 || (k.indexOf("sb-") === 0 && k.slice(-11) === "-auth-token")) localStorage.removeItem(k);
+      });
+      localStorage.setItem("showbiz_ver", SITE_VERSION);
+    }
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -186,7 +200,7 @@
       const s = $(id), cur = s.value;
       s.innerHTML = "";
       COUNTRIES.forEach(c => {
-        const text = id === "country" ? (lang === "ar" ? c.ar : c.en) : c.dial;
+        const text = id === "country" ? `${c.flag} ${lang === "ar" ? c.ar : c.en}` : `${c.flag} ${c.dial}`;
         s.appendChild(new Option(text, c.code));
       });
       if (cur) s.value = cur;
@@ -370,5 +384,6 @@
 
   init();
 </script>
+<div id="verLine" style="text-align:center;font:12px monospace;color:#6b7a94;padding:10px 12px 18px;direction:ltr">v32 · 2026-11-24 01:50</div>
 </body>
 </html>

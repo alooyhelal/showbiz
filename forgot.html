@@ -39,6 +39,20 @@
   .linkrow { text-align:center; margin-top:18px; font-size:14px; color:var(--muted); }
   .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:18px; direction:ltr; }
 </style>
+<script>
+/* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
+(function () {
+  var SITE_VERSION = "v32";
+  try {
+    if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
+      Object.keys(localStorage).forEach(function (k) {
+        if (k.indexOf("showbiz") === 0 || (k.indexOf("sb-") === 0 && k.slice(-11) === "-auth-token")) localStorage.removeItem(k);
+      });
+      localStorage.setItem("showbiz_ver", SITE_VERSION);
+    }
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -249,5 +263,6 @@
   showView(view);
   apply();
 </script>
+<div id="verLine" style="text-align:center;font:12px monospace;color:#6b7a94;padding:10px 12px 18px;direction:ltr">v32 · 2026-11-24 01:50</div>
 </body>
 </html>
