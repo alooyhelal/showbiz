@@ -320,6 +320,13 @@
     const cands = [d?.products, d?.items, d?.list, d?.data?.content, d?.data?.list, d?.data?.products, d?.data];
     return cands.find(Array.isArray) || [];
   }
+  // منتجات وهمية للتجربة فقط (تظهر بـ ?demo=1 عند فراغ القائمة الحقيقية)
+  const DEMO_PRODUCTS = [
+    { pid: "demo-1", nameEn: "Demo Product 1 (test)", image: "", images: [], variants: [
+      { vid: "demo-1-a", key: "Default", sku: "DEMO-1", price: 5, image: "", weightG: 300 } ] },
+    { pid: "demo-2", nameEn: "Demo Product 2 (test)", image: "", images: [], variants: [
+      { vid: "demo-2-a", key: "Default", sku: "DEMO-2", price: 8, image: "", weightG: 500 } ] }
+  ];
   async function loadProducts() {
     loadError = false; loadMsg = "";
     try {
@@ -337,6 +344,12 @@
         products = list.map(normalizeProduct).filter(p => p.variants.length > 0);
         if (!products.length && !loadMsg) {
           loadMsg = rawCount ? "المنتجات وصلت بس ما انقرأ فيها سعر أو رقم" : "الرد ما فيه قائمة منتجات";
+        }
+        // وضع تجريبي فقط: ?demo=1 يضيف منتجين وهميين إذا القائمة الحقيقية فاضية.
+        // الزوار العاديين ما يشوفون شي وهمي.
+        if (!products.length && /[?&]demo=1\b/.test(location.search)) {
+          products = DEMO_PRODUCTS.map(normalizeProduct);
+          loadMsg = "وضع تجريبي (منتجات وهمية)";
         }
       } else {
         products = [];
