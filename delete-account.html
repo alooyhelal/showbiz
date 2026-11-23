@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Showbiz حذف الحساب</title>
+<style>
+  :root { --bg:#0c1628; --card:#14213a; --card2:#1a2b4a; --line:#2c4168; --fg:#f2f5fa; --muted:#9aa8bf; --orange:#f59e4b; --orange-d:#e0852f; --err:#ff8593; --errbg:rgba(255,133,147,.12); --ok:#5fd39a; --okbg:rgba(95,211,154,.12); color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width:560px; margin:0 auto; padding-block:18px 40px; }
+  .hdr { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:18px; }
+  .brand { font-weight:800; font-size:18px; color:var(--fg); text-decoration:none; }
+  .brand b { color:var(--orange); }
+  .tools { display:flex; gap:8px; align-items:center; }
+  .navwrap { position:relative; }
+  .menu { position:absolute; top:calc(100% + 6px); inset-inline-start:0; min-width:220px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px; z-index:30; box-shadow:0 12px 30px rgba(0,0,0,.5); }
+  .menu a { display:block; padding:10px 12px; border-radius:8px; color:var(--fg); text-decoration:none; font-size:14px; }
+  .menu a:hover { background:var(--card2); }
+  .menu a.cur { color:var(--orange); font-weight:700; }
+  .menu .btn { width:100%; margin-top:4px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  h2 { font-size:17px; margin:0 0 12px; }
+  .sub { color:var(--muted); font-size:13px; margin:0 0 14px; line-height:1.7; }
+  .btn { border:0; border-radius:12px; padding:12px 16px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; text-decoration:none; display:inline-block; text-align:center; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .btn-line { background:transparent; color:var(--fg); border:1px solid var(--line); }
+  .btn-danger { background:#b42339; color:#fff; }
+  .btn-sm { padding:8px 12px; font-size:13px; border-radius:10px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:20px 18px; margin-bottom:16px; }
+  .danger-box { border:1px solid rgba(255,133,147,.35); background:rgba(255,133,147,.06); border-radius:14px; padding:14px; }
+  .danger-box p { color:var(--muted); font-size:13px; line-height:1.7; margin:0 0 12px; }
+  .msg { border-radius:10px; padding:10px 12px; font-size:14px; line-height:1.6; margin-bottom:14px; border:1px solid transparent; }
+  .msg.err { color:var(--err); background:var(--errbg); border-color:rgba(255,133,147,.35); }
+  .modal { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:16px; z-index:50; }
+  .box { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:22px 18px; max-width:380px; width:100%; }
+  .box h3 { margin:0 0 8px; font-size:17px; }
+  .box p { color:var(--muted); font-size:14px; line-height:1.7; margin:0 0 14px; }
+  .actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; justify-content:flex-end; }
+  .loading { text-align:center; color:var(--muted); padding:60px 0; }
+  .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:22px; direction:ltr; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <a class="brand" href="index.html">Show<b>biz</b></a>
+    <div class="tools">
+      <button class="btn btn-line btn-sm" id="langBtn" type="button"></button>
+      <div class="navwrap">
+        <button class="btn btn-line btn-sm" id="menuBtn" type="button">☰</button>
+        <div class="menu hidden" id="navMenu">
+          <a href="index.html" data-k="navStore"></a>
+          <a href="account.html" data-k="navAccount"></a>
+          <a href="addresses.html" data-k="navAddr"></a>
+          <a href="delete-account.html" class="cur" data-k="navDel"></a>
+          <button class="btn btn-line btn-sm" id="navLogout" type="button" data-k="logout"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="loading" data-k="loading"></div>
+
+  <div id="page" class="hidden">
+    <h1 data-k="title"></h1>
+    <p class="sub" data-k="intro"></p>
+    <div class="card">
+      <div id="notice" class="msg err hidden"></div>
+      <div class="danger-box">
+        <p data-k="dangerText"></p>
+        <button class="btn btn-danger" id="delBtn" type="button" data-k="delBtn"></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ver" id="ver"></div>
+</div>
+
+<div class="modal hidden" id="delModal">
+  <div class="box">
+    <h3 data-k="delTitle"></h3>
+    <p data-k="delAsk"></p>
+    <div class="actions">
+      <button class="btn btn-line" id="delNo" type="button" data-k="cancel"></button>
+      <button class="btn btn-danger" id="delYes" type="button" data-k="delConfirm"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
+<script>
+  const BUILD = { version: "v1", updated: "2026-11-23 18:30" };
+
+  const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
+
+  const T = {
+    ar: {
+      title: "حذف الحساب", intro: "هذي الصفحة لحذف حسابك نهائيًا.", loading: "جاري التحميل...",
+      dangerText: "حذف الحساب نهائي ولا يمكن التراجع عنه، وتُحذف معه بياناتك المحفوظة.", delBtn: "حذف حسابي",
+      delTitle: "هل تود حذف الحساب؟", delAsk: "سيتم حذف حسابك وبياناتك نهائيًا. هل أنت متأكد؟",
+      cancel: "إلغاء", delConfirm: "نعم، احذف الحساب", delFail: "تعذّر حذف الحساب",
+      navStore: "المتجر", navAccount: "معلومات الحساب", navAddr: "عناويني", navDel: "حذف الحساب", logout: "تسجيل الخروج", switchLabel: "English"
+    },
+    en: {
+      title: "Delete account", intro: "This page deletes your account permanently.", loading: "Loading...",
+      dangerText: "Deleting your account is permanent and cannot be undone. Your saved data will be removed too.", delBtn: "Delete my account",
+      delTitle: "Do you want to delete your account?", delAsk: "Your account and data will be permanently deleted. Are you sure?",
+      cancel: "Cancel", delConfirm: "Yes, delete account", delFail: "Could not delete the account",
+      navStore: "Store", navAccount: "Account details", navAddr: "My addresses", navDel: "Delete account", logout: "Log out", switchLabel: "العربية"
+    }
+  };
+
+  // مسح مرة وحدة للبيانات القديمة (نفس وسم الرئيسية)
+  try {
+    if (localStorage.getItem("showbiz_reset") !== "showbiz-reset-v28") {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith("showbiz") || (k.startsWith("sb-") && k.endsWith("-auth-token"))) localStorage.removeItem(k);
+      });
+      localStorage.setItem("showbiz_reset", "showbiz-reset-v28");
+    }
+  } catch (e) {}
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = (id) => document.getElementById(id);
+  const L = () => T[lang];
+
+  let lang = "ar";
+  let user = null, busy = false;
+  { let st = {}; try { st = JSON.parse(localStorage.getItem("showbiz_state") || "{}"); } catch (e) {} if (st.lang === "en" || st.lang === "ar") lang = st.lang; }
+
+  function writeLang() { try { const st = JSON.parse(localStorage.getItem("showbiz_state") || "{}"); st.lang = lang; localStorage.setItem("showbiz_state", JSON.stringify(st)); } catch (e) {} }
+
+  function apply() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.title = "Showbiz " + L().title;
+    document.querySelectorAll("[data-k]").forEach(el => { el.textContent = L()[el.dataset.k]; });
+    $("langBtn").textContent = L().switchLabel;
+    $("ver").textContent = "build " + BUILD.version + " · " + BUILD.updated;
+  }
+
+  function openDel() { $("delModal").classList.remove("hidden"); }
+  function closeDel() { $("delModal").classList.add("hidden"); }
+
+  async function deleteAccount() {
+    if (busy) return;
+    busy = true;
+    $("delYes").disabled = true;
+    let err = null;
+    try {
+      const { error } = await sb.rpc("delete_my_account");
+      err = error;
+    } catch (e) { err = e; }
+    if (err) {
+      busy = false;
+      $("delYes").disabled = false;
+      closeDel();
+      const n = $("notice");
+      n.textContent = L().delFail + ": " + (err.message || err);
+      n.classList.remove("hidden");
+      return;
+    }
+    try {
+      Object.keys(localStorage).forEach(k => { if (k.startsWith("showbiz_addr")) localStorage.removeItem(k); });
+    } catch (e) {}
+    try { await sb.auth.signOut(); } catch (e) {}
+    location.replace("index.html");
+  }
+
+  async function logout() {
+    try { await sb.auth.signOut(); } catch (e) {}
+    location.replace("index.html");
+  }
+
+  async function init() {
+    let session = null;
+    try { const { data } = await sb.auth.getSession(); session = data && data.session; } catch (e) {}
+    if (!session) { location.replace("login.html"); return; }
+    user = session.user;
+    $("loading").classList.add("hidden");
+    $("page").classList.remove("hidden");
+    apply();
+  }
+
+  $("delBtn").addEventListener("click", openDel);
+  $("delNo").addEventListener("click", closeDel);
+  $("delYes").addEventListener("click", deleteAccount);
+  $("langBtn").addEventListener("click", () => { lang = lang === "ar" ? "en" : "ar"; writeLang(); apply(); });
+  $("menuBtn").addEventListener("click", (e) => { e.stopPropagation(); $("navMenu").classList.toggle("hidden"); });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".navwrap")) $("navMenu").classList.add("hidden"); });
+  $("navLogout").addEventListener("click", logout);
+
+  apply();
+  init();
+</script>
+</body>
+</html>
