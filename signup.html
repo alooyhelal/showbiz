@@ -62,6 +62,20 @@
   .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card); color:var(--ok); border:1px solid var(--okline); padding:16px 26px; border-radius:14px; font-size:17px; font-weight:700; box-shadow:0 12px 30px rgba(0,0,0,.4); z-index:50; max-width:90vw; text-align:center; }
   .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:18px; direction:ltr; }
 </style>
+<script>
+/* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
+(function () {
+  var SITE_VERSION = "v32";
+  try {
+    if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
+      Object.keys(localStorage).forEach(function (k) {
+        if (k.indexOf("showbiz") === 0 || (k.indexOf("sb-") === 0 && k.slice(-11) === "-auth-token")) localStorage.removeItem(k);
+      });
+      localStorage.setItem("showbiz_ver", SITE_VERSION);
+    }
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -231,14 +245,14 @@
     else if (S.pVerified) b2 = `<div class="okline"><span dir="ltr">${esc(S.pFull)}</span><button class="link" type="button" data-act="changePhone">${t().change}</button></div>`;
     else if (S.pLoading) b2 = loading(t().sending);
     else if (!S.pCodeSent) {
-      const opts = COUNTRIES.map(c => `<option value="${c.dial}" ${c.dial === S.pDial ? "selected" : ""}>${c.dial}</option>`).join("");
+      const opts = COUNTRIES.map(c => `<option value="${c.dial}" ${c.dial === S.pDial ? "selected" : ""}>${c.flag} ${c.dial}</option>`).join("");
       b2 = `<div class="phonerow"><select id="sDial">${opts}</select><input id="sPhone" type="tel" dir="ltr" placeholder="36123456" value="${esc(S.pPhone)}"></div>
             <div class="ferr hidden" id="sPhoneErr"></div>
             ${msgHTML("sms")}
             <button class="btn btn-main" type="button" data-act="sendPhoneCode">${t().sendCode}</button>`;
     } else b2 = codeBlock("sms");
 
-    const countryOpts = COUNTRIES.map(c => `<option value="${c.code}" ${c.code === S.country ? "selected" : ""}>${lang === "ar" ? c.ar : c.en}</option>`).join("");
+    const countryOpts = COUNTRIES.map(c => `<option value="${c.code}" ${c.code === S.country ? "selected" : ""}>${c.flag} ${lang === "ar" ? c.ar : c.en}</option>`).join("");
     const b3 = detailsOpen ? `
         <label for="sFirst">${t().first}</label>
         <input id="sFirst" value="${esc(S.first)}">
@@ -477,5 +491,6 @@
 
   render();
 </script>
+<div id="verLine" style="text-align:center;font:12px monospace;color:#6b7a94;padding:10px 12px 18px;direction:ltr">v32 · 2026-11-24 01:50</div>
 </body>
 </html>
