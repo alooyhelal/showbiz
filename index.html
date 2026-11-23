@@ -377,12 +377,26 @@
 
   // ===== الحساب =====
   // يقرأ الجلسة، وإذا بيانات العميل ناقصة يكملها من بيانات الحساب
+  // يقرأ المستخدم من مكتبة Supabase، وإذا ما رجّعت شي والتوكن موجود في المتصفح يعيد المحاولة
+  // ثم يقرأ المستخدم من التوكن نفسه (عشان العناوين المحفوظة تظهر في الإتمام)
+  async function readSessionUser() {
+    try { const { data } = await sb.auth.getSession(); return data?.session?.user || null; } catch (e) { return null; }
+  }
+  function userFromStoredToken() {
+    try {
+      const key = Object.keys(localStorage).find(k => k.startsWith("sb-") && k.endsWith("-auth-token"));
+      const o = key ? JSON.parse(localStorage.getItem(key)) : null;
+      return (o && o.user && o.user.id) ? o.user : null;
+    } catch (e) { return null; }
+  }
   async function loadProfile() {
     me = null; profile = null;
-    try {
-      const { data } = await sb.auth.getSession();
-      me = data?.session?.user || null;
-    } catch (e) {}
+    me = await readSessionUser();
+    if (!me && sessionHint()) {
+      await new Promise(r => setTimeout(r, 800));
+      me = await readSessionUser();
+    }
+    if (!me && sessionHint()) me = userFromStoredToken();
     sessionChecked = true;
     // جاي من صفحة العناوين بعد الحفظ: نختار العنوان الجديد تلقائياً
     const pick = localStorage.getItem("showbiz_pick_addr");
