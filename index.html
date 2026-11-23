@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Showbiz</title>
 <style>
-  :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; --bad:#e5566b; color-scheme:dark; }
+  :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; color-scheme:dark; }
   body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; }
   header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px 16px; background:#0d1728; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
   main { padding:16px 16px 56px; max-width:1000px; margin:auto; }
@@ -13,7 +13,7 @@
   select option { background:var(--card2); color:var(--fg); }
   input:focus, select:focus { outline:2px solid var(--orange); outline-offset:1px; }
   header select { width:auto; margin:0; }
-  button { padding:10px 14px; border:0; border-radius:10px; background:var(--orange); color:#111; cursor:pointer; font-size:14px; font-family:inherit; font-weight:700; }
+  button, .btnlink { padding:10px 14px; border:0; border-radius:10px; background:var(--orange); color:#111; cursor:pointer; font-size:14px; font-family:inherit; font-weight:700; text-decoration:none; display:inline-block; text-align:center; }
   button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:400; }
   button.linkbtn { background:none; color:var(--orange); padding:4px 6px; text-decoration:underline; font-weight:400; }
   button:disabled { opacity:.45; cursor:not-allowed; }
@@ -86,7 +86,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
   // رقم النسخة: يتشال من هنا بعد اعتماد الموقع
-  const BUILD = { version: "v24", updated: "2026-11-23 09:30" };
+  const BUILD = { version: "v25", updated: "2026-11-23 09:40" };
 
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
@@ -166,13 +166,14 @@
   let view = "shop", notice = "";
   let modal = null, cardIdx = {};
   let me = null, profile = null;
-  let accountOrders = null, ordersFailed = false, lastSaveOk = true, debugOn = false;
+  let accountOrders = null, ordersFailed = false, lastSaveOk = true;
 
   // ===== مساعدات =====
   const t = (k) => T[state.lang][k];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const localPrice = (usd) => usd * COUNTRIES[state.country].rate;
-  const isComplete = () => !!(me && profile);
+  // المسجّل = عنده جلسة دخول. بيانات العميل تكمّل بعدين، فما تمنع الدخول
+  const isComplete = () => !!me;
 
   function toast(msg) {
     const d = document.createElement("div");
@@ -181,6 +182,12 @@
     setTimeout(() => d.remove(), TOAST_MS);
   }
   function go(v, msg) { view = v; notice = msg || ""; render(); }
+
+  // الذهاب لصفحة الدخول مع تذكّر الصفحة الحالية، وبعد الدخول يرجع لنفس المكان
+  function goLogin() {
+    if (view === "checkout" || view === "cart") localStorage.setItem("showbiz_next", view);
+    location.href = "login.html";
+  }
 
   function fmtFor(code, amount) {
     const c = COUNTRIES[code] || COUNTRIES[state.country];
@@ -252,17 +259,28 @@
     render();
   }
 
-  // ===== الحساب (الدخول يتم من صفحات login و signup و forgot) =====
+  // ===== الحساب =====
+  // يقرأ الجلسة، وإذا بيانات العميل ناقصة يكملها من بيانات الحساب
   async function loadProfile() {
     me = null; profile = null;
     try {
-      const { data: { session } } = await sb.auth.getSession();
-      me = session?.user || null;
+      const { data } = await sb.auth.getSession();
+      me = data?.session?.user || null;
     } catch (e) {}
     if (me) {
       try {
         const { data } = await sb.from("customers").select("*").eq("id", me.id).maybeSingle();
         profile = data || null;
+        if (!profile) {
+          const md = me.user_metadata || {};
+          const row = {
+            id: me.id, email: me.email || null,
+            first_name: md.first_name || null, last_name: md.last_name || null,
+            phone: me.phone ? "+" + String(me.phone).replace(/^\+/, "") : null
+          };
+          const { error } = await sb.from("customers").upsert(row);
+          if (!error) profile = row;
+        }
       } catch (e) {}
     }
     // الدولة المفضلة المحفوظة في الحساب تنطبق تلقائيًا
@@ -281,12 +299,12 @@
     render();
   }
 
-  // ===== خانات الرسائل والطلب =====
+  // ===== إتمام الطلب =====
   async function confirmOrder() {
     const addr = document.getElementById("fAddr").value.trim();
     const msg = document.getElementById("formMsg");
     if (!state.area || !addr) { msg.textContent = t("fillAll"); return; }
-    if (!isComplete()) { localStorage.setItem("showbiz_next", "checkout"); location.href = "login.html"; return; }
+    if (!isComplete()) { goLogin(); return; }
 
     const s = shippingCalc();
     const subtotal = localPrice(subtotalUSD());
@@ -538,12 +556,12 @@
       </div>`).join("");
   }
   function viewAccount() {
-    if (!isComplete()) return `<p>${t("needLogin")}</p><a class="btn" href="login.html">${t("goLogin")}</a>`;
+    if (!isComplete()) return `<p>${t("needLogin")}</p><button data-action="login">${t("goLogin")}</button>`;
     const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
     return `
       <div class="card pad">
         <strong>${esc(name || me.email)}</strong>
-        <div class="muted" dir="ltr">${esc(me.email)}</div>
+        <div class="muted" dir="ltr">${esc(me.email || "")}</div>
         ${profile?.phone ? `<div class="muted" dir="ltr">${esc(profile.phone)}</div>` : ""}
       </div>
       <h3>${t("editProfile")}</h3>
@@ -562,8 +580,7 @@
     document.getElementById("acctBtn").textContent = isComplete() ? t("account") : t("login");
     document.getElementById("siteName").textContent = t("siteName");
 
-    let html;
-    if (notice) html = `<div class="notice">${esc(notice)}</div>`; else html = "";
+    let html = notice ? `<div class="notice">${esc(notice)}</div>` : "";
     if (view === "cart") html += viewCart();
     else if (view === "checkout") html += viewCheckout();
     else if (view === "account") html += viewAccount();
@@ -611,14 +628,14 @@
     if (a === "removeCoupon") { state.coupon = null; save(); render(); return; }
     if (a === "cart") { go("cart", ""); return; }
     if (a === "shop") { go("shop", ""); return; }
+    if (a === "login") { goLogin(); return; }
     if (a === "checkout") {
       if (!cartCount()) return;
-      if (!isComplete()) { localStorage.setItem("showbiz_next", "checkout"); location.href = "login.html"; return; }
       go("checkout", ""); return;
     }
     if (a === "confirm") { await confirmOrder(); return; }
     if (a === "account") {
-      if (!isComplete()) { location.href = "login.html"; return; }
+      if (!isComplete()) { goLogin(); return; }
       view = "account"; render(); loadOrders(); return;
     }
     if (a === "saveProfile") {
@@ -644,8 +661,6 @@
     const b = e.target.closest("[data-action]");
     if (b && !b.disabled) handleAction(b.dataset.action, b.dataset);
   });
-
-  // خانات: الكتابة تسحب الفوكس وما فيه خانات هنا، فقط حقل المنطقة والعنوان
   document.getElementById("view").addEventListener("change", (e) => {
     if (e.target.id === "fArea") {
       state.area = e.target.value || null; save();
@@ -685,10 +700,7 @@
   document.getElementById("gGo").addEventListener("click", () => { state.seen = true; save(); render(); });
   document.getElementById("cartBtn").addEventListener("click", () => go("cart", ""));
   document.getElementById("acctBtn").addEventListener("click", () => {
-    if (isComplete()) handleAction("account", {}); else location.href = "login.html";
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "d") { e.preventDefault(); debugOn = !debugOn; }
+    if (isComplete()) handleAction("account", {}); else goLogin();
   });
 
   // تبديل الصور كل 5 ثواني
@@ -724,13 +736,11 @@
   // ===== البدء =====
   (async () => {
     await loadProfile();
-    // إذا جا من صفحة الدخول وكان ناوي إتمام الطلب، نرجعه لصفحة الطلب
+    // نرجع الزائر للصفحة اللي كان فيها قبل الدخول (السلة أو إتمام الطلب)
     const next = localStorage.getItem("showbiz_next");
-    if (next === "checkout" && isComplete() && cartCount()) {
-      localStorage.removeItem("showbiz_next");
-      view = "checkout";
-    } else if (next) {
-      localStorage.removeItem("showbiz_next");
+    localStorage.removeItem("showbiz_next");
+    if (isComplete() && (next === "checkout" || next === "cart") && cartCount()) {
+      view = next;
     }
     render();
   })();
