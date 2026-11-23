@@ -111,7 +111,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
   // ===== رقم النسخة: غيّر version و updated مع كل تحديث =====
-  const BUILD = { version: "v11", updated: "2026-11-23 05:00" };
+  const BUILD = { version: "v12", updated: "2026-11-23 05:20" };
 
   // ===== الإعدادات =====
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
@@ -121,7 +121,8 @@
   const RATE_BHD = 0.377;
   const COUPONS = { TEST10: 0.10 };
   const SLIDE_MS = 5000;
-  const CALL_TIMEOUT_MS = 60000; // مهلة الطلب الواحد
+  const CALL_TIMEOUT_MS = 60000; // مهلة طلب الإرسال (SMS ممكن يتأخر)
+  const VERIFY_TIMEOUT_MS = 20000; // مهلة طلب التحقق من الرمز
   const RESEND_MS = 90000; // دقيقة ونصف بين كل إرسال
 
   // ===== مسح البيانات المحلية عند تغيّر النسخة فقط (للتجربة) =====
@@ -165,6 +166,7 @@
       address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع",
       done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم الحفظ في هذا المتصفح فقط",
       loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...", wait:"جاري التنفيذ...",
+      verifying:"جاري التحقق...",
       noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول",
       dims:"الأبعاد", weight:"الوزن", noDesc:"لا توجد تفاصيل إضافية", defaultVariant:"افتراضي",
       login:"تسجيل الدخول", logout:"تسجيل الخروج", account:"حسابي", myOrders:"طلباتي", noOrders:"ما عندك طلبات بعد",
@@ -175,14 +177,15 @@
       signupTitle:"إنشاء حساب جديد", signupSub:"ثلاث خطوات بسيطة وتكون حسابك جاهز",
       stepEmail:"البريد الإلكتروني", stepPhone:"رقم الجوال", stepDetails:"بيانات الحساب",
       sendCode:"إرسال رمز التحقق", codeSentTo:"أرسلنا رمز من 6 أرقام إلى", enterCode:"اكتب الرمز المكون من 6 أرقام",
-      verifyBtn:"تحقق", resendCode:"إعادة إرسال الرمز", resendIn:"إعادة الإرسال بعد",
+      resendCode:"إعادة إرسال الرمز", resendIn:"إعادة الإرسال بعد",
       emailOk:"تم التحقق من بريدك الإلكتروني ✅", phoneOk:"تم التحقق من جوالك ✅",
       change:"تغيير", lockedStep:"أكمل الخطوة اللي قبلها أولًا", skipPhone:"التحقق من الجوال غير مفعّل حاليًا",
       sendSms:"إرسال رمز التحقق", firstName:"الاسم الأول", lastName:"الاسم الأخير",
       confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب", accountDone:"تم إنشاء الحساب بنجاح",
       emailBad:"البريد الإلكتروني غير صحيح", phoneBad:"رقم الجوال غير صحيح",
-      codeWrong:"الرمز غير صحيح. تأكد من الأرقام وحاول مرة ثانية",
-      codeExpired:"الرمز منتهي. اضغط إعادة إرسال الرمز واستخدم الجديد",
+      codeWrong:"الرمز غير صحيح. اكتب الرمز من جديد",
+      codeExpired:"الرمز منتهي. اضغط إعادة إرسال الرمز بعد دقيقة ونص واستخدم الجديد",
+      verifyTimeout:"ما وصلنا رد من الخدمة أثناء التحقق. حاول مرة ثانية",
       namesReq:"الاسم الأول والأخير مطلوبين",
       passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر", passMismatch:"كلمتا المرور غير متطابقتين",
       loginFail:"البريد أو كلمة المرور غير صحيحة", rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول",
@@ -201,6 +204,7 @@
       address:"Full address", confirm:"Confirm order", back:"Back",
       done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
       loadErr:"Could not load products, please try again", loading:"Loading...", wait:"Working...",
+      verifying:"Verifying...",
       noProducts:"No products available right now", fillAll:"Please fill all fields",
       dims:"Dimensions", weight:"Weight", noDesc:"No extra details", defaultVariant:"Default",
       login:"Log in", logout:"Log out", account:"My account", myOrders:"My orders", noOrders:"You have no orders yet",
@@ -211,14 +215,15 @@
       signupTitle:"Create a new account", signupSub:"Three simple steps and your account is ready",
       stepEmail:"Email", stepPhone:"Mobile number", stepDetails:"Account details",
       sendCode:"Send verification code", codeSentTo:"We sent a 6-digit code to", enterCode:"Enter the 6-digit code",
-      verifyBtn:"Verify", resendCode:"Resend code", resendIn:"Resend in",
+      resendCode:"Resend code", resendIn:"Resend in",
       emailOk:"Your email is verified ✅", phoneOk:"Your mobile is verified ✅",
       change:"Change", lockedStep:"Complete the previous step first", skipPhone:"Phone verification is currently off",
       sendSms:"Send verification code", firstName:"First name", lastName:"Last name",
       confirmPass:"Confirm password", createBtn:"Create account", accountDone:"Account created successfully",
       emailBad:"Invalid email address", phoneBad:"Invalid mobile number",
-      codeWrong:"The code is incorrect. Check the digits and try again",
-      codeExpired:"The code has expired. Press resend and use the new code",
+      codeWrong:"The code is incorrect. Type it again",
+      codeExpired:"The code has expired. Press resend after 1.5 minutes and use the new code",
+      verifyTimeout:"No response from the service during verification. Try again",
       namesReq:"First and last name are required",
       passShort:"Password must be 8 characters or more", passMismatch:"Passwords do not match",
       loginFail:"Email or password is incorrect", rateLimit:"Too many attempts, wait a moment and try again",
@@ -262,10 +267,11 @@
   const samePhone = (a, b) => !!a && !!b && digitsOnly(a) === digitsOnly(b);
   const isComplete = () => !!(me && profile);
   // يمنع بقاء أي عملية معلّقة للأبد
-  const withTimeout = (p) => Promise.race([
+  const withTimeout = (p, ms = CALL_TIMEOUT_MS) => Promise.race([
     p,
-    new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), CALL_TIMEOUT_MS))
+    new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))
   ]);
+  const isTimeout = (e) => /timeout/i.test(String(e?.message || e || ""));
 
   // رسائل: نوعها err أو ok أو info
   function noticeHTML() {
@@ -421,11 +427,20 @@
   function readOtp(prefix) {
     return [...document.querySelectorAll(`[data-otp="${prefix}"]`)].map(x => x.value).join("");
   }
+  function clearOtp(prefix) {
+    document.querySelectorAll(`[data-otp="${prefix}"]`).forEach(x => { x.value = ""; });
+  }
   function focusOtp(prefix, i) {
     setTimeout(() => {
       const el = document.querySelector(`[data-otp="${prefix}"][data-i="${i}"]`);
       if (el) { el.focus(); el.select(); }
     }, 0);
+  }
+  // يتحقق تلقائيًا لما تكتمل الخانات الستة
+  function maybeVerify(prefix) {
+    if (busy) return;
+    if (readOtp(prefix).length !== 6) return;
+    if (prefix === "email") verifyEmail(); else verifySms();
   }
 
   // ===== العدّاد لإعادة الإرسال =====
@@ -478,7 +493,7 @@
     if (!pass) return setNotice(L.fillAll, "err");
     busy = true; setNotice(L.wait, "info");
     try {
-      const { error } = await withTimeout(sb.auth.signInWithPassword({ email, password: pass }));
+      const { error } = await withTimeout(sb.auth.signInWithPassword({ email, password: pass }), VERIFY_TIMEOUT_MS);
       if (error) return setNotice(errMsg(error), "err");
       await loadProfile();
       if (!profile) { syncPendingFromSession(); return go("signup", L.lockedStep); }
@@ -487,7 +502,7 @@
       afterLogin = null;
       go(next, "");
     } catch (e) {
-      setNotice(errMsg(e), "err");
+      setNotice(isTimeout(e) ? L.verifyTimeout : errMsg(e), "err");
     } finally { busy = false; }
   }
 
@@ -512,7 +527,6 @@
     } else {
       b1 = `<p class="muted">${L.codeSentTo} <span dir="ltr">${esc(pending.email)}</span></p>
             ${otpBoxes("email")}
-            <button class="btn-orange btnfull" data-action="verifyEmail">${L.verifyBtn}</button>
             <div class="linkrow">
               <button class="linkbtn" id="resendEmail" data-action="sendCode">${L.resendCode}</button>
               <button class="linkbtn" data-action="changeEmail">${L.change}</button>
@@ -540,7 +554,6 @@
     } else {
       b2 = `<p class="muted">${L.codeSentTo} <span dir="ltr">${esc(pending.full)}</span></p>
             ${otpBoxes("sms")}
-            <button class="btn-orange btnfull" data-action="verifySms">${L.verifyBtn}</button>
             <div class="linkrow">
               <button class="linkbtn" id="resendSms" data-action="sendSms">${L.resendCode}</button>
               <button class="linkbtn" data-action="changePhone">${L.change}</button>
@@ -599,21 +612,24 @@
     } finally { busy = false; }
   }
 
-  // التحقق من رمز البريد: يتم عند الضغط على زر تحقق فقط
+  // التحقق من رمز البريد: تلقائي عند اكتمال 6 أرقام
   async function verifyEmail() {
     if (busy) return;
     const L = T[state.lang];
     const code = readOtp("email");
-    if (!/^\d{6}$/.test(code)) return setNotice(L.enterCode, "err");
-    busy = true; setNotice(L.wait, "info");
+    if (!/^\d{6}$/.test(code)) return;
+    busy = true; setNotice(L.verifying, "info");
     try {
-      let res = await withTimeout(sb.auth.verifyOtp({ email: pending.email, token: code, type: "email" }));
-      if (res.error) res = await withTimeout(sb.auth.verifyOtp({ email: pending.email, token: code, type: "magiclink" }));
+      let res = await withTimeout(sb.auth.verifyOtp({ email: pending.email, token: code, type: "email" }), VERIFY_TIMEOUT_MS);
+      if (res.error) res = await withTimeout(sb.auth.verifyOtp({ email: pending.email, token: code, type: "magiclink" }), VERIFY_TIMEOUT_MS);
       if (res.error) {
         // إذا كان البريد متحقق منه من قبل في الجلسة، نعتبره ناجحًا
-        const { data: { user } } = await sb.auth.getUser();
+        const { data: { user } } = await withTimeout(sb.auth.getUser(), VERIFY_TIMEOUT_MS);
         const ok = user && user.email_confirmed_at && String(user.email).toLowerCase() === pending.email.toLowerCase();
-        if (!ok) return setNotice(codeErr(res.error), "err");
+        if (!ok) {
+          clearOtp("email"); focusOtp("email", 0);
+          return setNotice(codeErr(res.error), "err");
+        }
         me = user;
       } else {
         me = res.data.user || me;
@@ -621,7 +637,8 @@
       pending.emailVerified = true; pending.codeSent = false; savePending();
       setNotice(L.emailOk, "ok"); render();
     } catch (e) {
-      setNotice(errMsg(e), "err");
+      if (isTimeout(e)) { setNotice(L.verifyTimeout, "err"); }
+      else { clearOtp("email"); focusOtp("email", 0); setNotice(errMsg(e), "err"); }
     } finally { busy = false; }
   }
 
@@ -658,7 +675,7 @@
       render(); focusOtp("sms", 0);
     } catch (e) {
       console.log("[sendSms error]", e);
-      if (/timeout/i.test(String(e?.message || e))) {
+      if (isTimeout(e)) {
         // ما رجع رد في الوقت: نعرض خانات الرمز، لأن الرسالة ممكن تكون وصلت
         pending.otpSent = true; savePending();
         startCool("sms");
@@ -670,24 +687,27 @@
     } finally { busy = false; }
   }
 
-  // التحقق من رمز الجوال: عند الضغط على تحقق فقط
+  // التحقق من رمز الجوال: تلقائي عند اكتمال 6 أرقام
   async function verifySms() {
     if (busy) return;
     const L = T[state.lang];
     const code = readOtp("sms");
-    if (!/^\d{6}$/.test(code)) return setNotice(L.enterCode, "err");
-    busy = true; setNotice(L.wait, "info");
+    if (!/^\d{6}$/.test(code)) return;
+    busy = true; setNotice(L.verifying, "info");
     try {
-      const { error } = await withTimeout(sb.auth.verifyOtp({ phone: pending.full, token: code, type: "phone_change" }));
+      const { error } = await withTimeout(sb.auth.verifyOtp({ phone: pending.full, token: code, type: "phone_change" }), VERIFY_TIMEOUT_MS);
       let user = null;
       if (error) {
         // إذا الرقم متحقق منه فعلًا في الجلسة، نكمل بدل ما نطلب رمز جديد
-        const r = await sb.auth.getUser();
+        const r = await withTimeout(sb.auth.getUser(), VERIFY_TIMEOUT_MS);
         user = r.data?.user || null;
         const ok = user && user.phone_confirmed_at && samePhone(user.phone, pending.full);
-        if (!ok) return setNotice(codeErr(error), "err");
+        if (!ok) {
+          clearOtp("sms"); focusOtp("sms", 0);
+          return setNotice(codeErr(error), "err");
+        }
       } else {
-        const r = await sb.auth.getUser();
+        const r = await withTimeout(sb.auth.getUser(), VERIFY_TIMEOUT_MS);
         user = r.data?.user || null;
       }
       me = user || me;
@@ -695,7 +715,8 @@
       setNotice(L.phoneOk, "ok"); render();
       document.getElementById("stepDetails")?.scrollIntoView({ behavior: "smooth", block: "center" });
     } catch (e) {
-      setNotice(errMsg(e), "err");
+      if (isTimeout(e)) { setNotice(L.verifyTimeout, "err"); }
+      else { clearOtp("sms"); focusOtp("sms", 0); setNotice(errMsg(e), "err"); }
     } finally { busy = false; }
   }
 
@@ -720,19 +741,19 @@
     try {
       await loadProfile();
       if (!me) return setNotice(L.codeExpired, "err");
-      const { error } = await withTimeout(sb.auth.updateUser({ password: p1, data: { first_name: first, last_name: last } }));
+      const { error } = await withTimeout(sb.auth.updateUser({ password: p1, data: { first_name: first, last_name: last } }), VERIFY_TIMEOUT_MS);
       if (error) return setNotice(errMsg(error), "err");
       const phoneValue = REQUIRE_PHONE ? (pending.full || null) : null;
       const { error: e2 } = await withTimeout(sb.from("customers").upsert({
         id: me.id, email: me.email, first_name: first, last_name: last, phone: phoneValue
-      }));
+      }), VERIFY_TIMEOUT_MS);
       if (e2) return setNotice(e2.message, "err");
       await loadProfile();
       clearPending();
       go("account", L.accountDone, "ok");
       loadOrders();
     } catch (e) {
-      setNotice(errMsg(e), "err");
+      setNotice(isTimeout(e) ? L.verifyTimeout : errMsg(e), "err");
     } finally { busy = false; }
   }
 
@@ -1115,10 +1136,8 @@
     }
     if (a === "confirm") { await confirmOrder(); return; }
     if (a === "sendCode") { await sendCode(); return; }
-    if (a === "verifyEmail") { await verifyEmail(); return; }
     if (a === "changeEmail") { await changeEmail(); return; }
     if (a === "sendSms") { await sendSms(); return; }
-    if (a === "verifySms") { await verifySms(); return; }
     if (a === "changePhone") { changePhone(); return; }
     if (a === "createAccount") { await createAccount(); return; }
     if (a === "saveProfile") { await saveProfile(); return; }
@@ -1130,7 +1149,7 @@
     if (b && !b.disabled) handleAction(b.dataset.action, b.dataset);
   });
 
-  // خانات الرمز: كتابة تنتقل للتالي، مسح يرجع للسابق، ولصق يوزع الأرقام
+  // خانات الرمز: كتابة تنتقل للتالي، وعند اكتمال 6 أرقام يتحقق تلقائيًا
   document.getElementById("view").addEventListener("input", (e) => {
     const el = e.target;
     if (el.classList.contains("obox")) {
@@ -1138,6 +1157,7 @@
       el.value = v;
       const i = Number(el.dataset.i);
       if (v && i < 5) focusOtp(el.dataset.otp, i + 1);
+      if (v) maybeVerify(el.dataset.otp);
       return;
     }
     const id = el.id;
@@ -1163,8 +1183,6 @@
         e.preventDefault(); focusOtp(prefix, i - 1);
       } else if (e.key === "ArrowRight" && i < 5) {
         e.preventDefault(); focusOtp(prefix, i + 1);
-      } else if (e.key === "Enter") {
-        if (prefix === "email") verifyEmail(); else verifySms();
       }
       return;
     }
@@ -1186,6 +1204,7 @@
       if (box) box.value = d;
     });
     focusOtp(prefix, Math.min(start + digits.length, 5));
+    maybeVerify(prefix);
   });
   document.getElementById("view").addEventListener("change", (e) => {
     if (e.target.id === "fArea") {
