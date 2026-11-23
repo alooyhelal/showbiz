@@ -50,6 +50,12 @@
   .cinfo { flex:1; }
   .couponrow { display:flex; gap:8px; } .couponrow input { margin:0; } .couponrow button { white-space:nowrap; }
   .hidden { display:none !important; }
+  .acctwrap { position:relative; display:inline-block; }
+  .menu { position:absolute; top:calc(100% + 6px); inset-inline-end:0; min-width:210px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px; z-index:30; box-shadow:0 12px 30px rgba(0,0,0,.5); }
+  .menu-who { padding:8px 12px; color:var(--muted); font-size:13px; border-bottom:1px solid var(--line); margin-bottom:4px; word-break:break-all; direction:ltr; text-align:start; }
+  .menu a { display:block; padding:10px 12px; border-radius:8px; color:var(--fg); text-decoration:none; font-size:14px; }
+  .menu a:hover { background:var(--card2); }
+  .menu button.menu-out { width:100%; margin-top:4px; background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:400; }
   .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card); color:var(--ok); border:1px solid #2f6b4f; padding:16px 26px; border-radius:14px; font-size:17px; font-weight:bold; z-index:60; box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:90vw; text-align:center; }
   .notice { padding:10px 12px; border-radius:10px; font-size:14px; margin:8px 0; color:var(--err); background:#3b1620; border:1px solid #7a2b3b; }
   .build { position:fixed; bottom:0; left:0; right:0; background:#070d18; color:#6b7a94; font:12px monospace; text-align:center; padding:6px; direction:ltr; z-index:4; border-top:1px solid var(--line); }
@@ -63,7 +69,16 @@
     <select id="countrySel"></select>
     <button class="ghost" id="langBtn"></button>
     <button class="ghost" id="cartBtn"></button>
-    <button class="ghost" id="acctBtn"></button>
+    <div class="acctwrap">
+      <button class="ghost" id="acctBtn"></button>
+      <div class="menu hidden" id="acctMenu">
+        <div class="menu-who" id="menuWho"></div>
+        <a href="account.html#info" id="menuInfo"></a>
+        <a href="account.html#addresses" id="menuAddr"></a>
+        <a href="account.html#delete" id="menuDel"></a>
+        <button class="ghost menu-out" id="menuLogout"></button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -87,7 +102,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
   // رقم النسخة: يتشال من هنا بعد اعتماد الموقع
-  const BUILD = { version: "v26", updated: "2026-11-23 09:45" };
+  const BUILD = { version: "v28", updated: "2026-11-23 18:00" };
 
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
@@ -96,6 +111,17 @@
   const COUPONS = { TEST10: 0.10 };
   const SLIDE_MS = 5000;
   const TOAST_MS = 1500;
+
+  // مسح مرة وحدة للبيانات القديمة في متصفحات الناس (السلة، الحالة، الجلسة) عند هذا النشر
+  const RESET_TAG = "showbiz-reset-v28";
+  try {
+    if (localStorage.getItem("showbiz_reset") !== RESET_TAG) {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith("showbiz") || (k.startsWith("sb-") && k.endsWith("-auth-token"))) localStorage.removeItem(k);
+      });
+      localStorage.setItem("showbiz_reset", RESET_TAG);
+    }
+  } catch (e) {}
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -134,7 +160,8 @@
       ordersErr:"تعذر تحميل الطلبات", editProfile:"تعديل بياناتي", save:"حفظ", saved:"تم الحفظ",
       namesReq:"الاسم الأول والأخير مطلوبين", firstName:"الاسم الأول", lastName:"الاسم الأخير",
       needLogin:"سجّل دخولك لإتمام الطلب", goLogin:"تسجيل الدخول",
-      buildLabel:"النسخة", updatedLabel:"آخر تحديث"
+      buildLabel:"النسخة", updatedLabel:"آخر تحديث",
+      menuInfo:"معلومات حسابي", menuAddr:"عناويني", menuDel:"حذف الحساب"
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
@@ -153,7 +180,8 @@
       ordersErr:"Could not load orders", editProfile:"Edit my details", save:"Save", saved:"Saved",
       namesReq:"First and last name are required", firstName:"First name", lastName:"Last name",
       needLogin:"Log in to complete your order", goLogin:"Log in",
-      buildLabel:"Build", updatedLabel:"Last update"
+      buildLabel:"Build", updatedLabel:"Last update",
+      menuInfo:"My details", menuAddr:"My addresses", menuDel:"Delete account"
     }
   };
 
@@ -176,7 +204,7 @@
   const t = (k) => T[state.lang][k];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const localPrice = (usd) => usd * COUNTRIES[state.country].rate;
-  const isLoggedIn = () => !!me || (!sessionChecked && sessionHint());
+  const isLoggedIn = () => !!me || sessionHint();
 
   function toast(msg) {
     const d = document.createElement("div");
@@ -240,23 +268,36 @@
 
   // ===== تحميل المنتجات =====
   // يقبل أي شكل قائمة من السيرفر، ويعرض عدد اللي وصل بأسفل الصفحة للتشخيص
+  // يدعم شكل CJ الخام (productId, bigImage, sellPrice "15.45-16.41") وشكلنا المعدّل
+  const firstNum = (v) => { const n = parseFloat(String(v ?? "").split("-")[0]); return isNaN(n) ? null : n; };
   function normalizeProduct(p) {
+    const pid = p.pid ?? p.productId ?? p.id;
+    const image = p.image || p.bigImage || "";
+    const weightG = p.weightG || firstNum(p.weight);
+    const dimsCm = p.dimsCm || (Array.isArray(p.lengthList) && p.lengthList[0]
+      ? [firstNum(p.lengthList[0]), firstNum(p.widthList?.[0]) || 10, firstNum(p.heightList?.[0]) || 10] : null);
     let variants = (Array.isArray(p.variants) ? p.variants : [])
       .map(v => ({ ...v, price: Number(v.price) }))
       .filter(v => v.vid && !isNaN(v.price));
     if (!variants.length) {
-      const base = parseFloat(String(p.sellPrice ?? p.price ?? "").split("-")[0]);
-      if (!isNaN(base)) variants = [{ vid: "base-" + p.pid, key: "", sku: p.sku, price: base, image: p.image, weightG: p.weightG, dimsCm: p.dimsCm }];
+      const base = firstNum(p.sellPrice ?? p.price);
+      if (base !== null) variants = [{ vid: p.vid || ("base-" + pid), key: "", sku: p.sku, price: base, image, weightG, dimsCm }];
     }
-    const images = (Array.isArray(p.images) && p.images.length) ? p.images : [p.image].filter(Boolean);
-    return { ...p, images, variants };
+    const images = (Array.isArray(p.images) && p.images.length) ? p.images : [image].filter(Boolean);
+    return { ...p, pid, nameEn: p.nameEn || p.name || "", image, images, weightG, dimsCm, variants };
+  }
+  // يبحث عن قائمة المنتجات مهما كان شكل الرد
+  function findList(d) {
+    if (Array.isArray(d)) return d;
+    const cands = [d?.products, d?.items, d?.list, d?.data?.content, d?.data?.list, d?.data?.products, d?.data];
+    return cands.find(Array.isArray) || [];
   }
   async function loadProducts() {
     loadError = false;
     try {
       const res = await fetch(WORKER_URL + "?action=list", { cache: "no-store" });
       const d = await res.json();
-      const list = Array.isArray(d) ? d : (Array.isArray(d.products) ? d.products : (Array.isArray(d.items) ? d.items : []));
+      const list = findList(d);
       rawCount = list.length;
       products = list.map(normalizeProduct).filter(p => p.variants.length > 0);
     } catch (e) {
@@ -589,6 +630,11 @@
     document.getElementById("langBtn").textContent = state.lang === "ar" ? "English" : "العربية";
     document.getElementById("cartBtn").textContent = `${t("cart")} (${cartCount()})`;
     document.getElementById("acctBtn").textContent = isLoggedIn() ? t("account") : t("login");
+    document.getElementById("menuWho").textContent = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || me?.email || "";
+    document.getElementById("menuInfo").textContent = t("menuInfo");
+    document.getElementById("menuAddr").textContent = t("menuAddr");
+    document.getElementById("menuDel").textContent = t("menuDel");
+    document.getElementById("menuLogout").textContent = t("logout");
     document.getElementById("siteName").textContent = t("siteName");
 
     let html = notice ? `<div class="notice">${esc(notice)}</div>` : "";
@@ -710,8 +756,19 @@
   });
   document.getElementById("gGo").addEventListener("click", () => { state.seen = true; save(); render(); });
   document.getElementById("cartBtn").addEventListener("click", () => go("cart", ""));
-  document.getElementById("acctBtn").addEventListener("click", () => {
-    if (me) handleAction("account", {}); else goLogin();
+  // زر "حسابي" يفتح قائمة منسدلة، وما يرجع لصفحة الدخول إلا إذا ما فيه جلسة
+  const acctMenu = document.getElementById("acctMenu");
+  document.getElementById("acctBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (isLoggedIn()) acctMenu.classList.toggle("hidden");
+    else goLogin();
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".acctwrap")) acctMenu.classList.add("hidden");
+  });
+  document.getElementById("menuLogout").addEventListener("click", () => {
+    acctMenu.classList.add("hidden");
+    handleAction("logout", {});
   });
 
   // تبديل الصور كل 5 ثواني
