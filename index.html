@@ -111,7 +111,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
   // ===== رقم النسخة: غيّر version و updated مع كل تحديث =====
-  const BUILD = { version: "v10", updated: "2026-11-23 04:30" };
+  const BUILD = { version: "v11", updated: "2026-11-23 05:00" };
 
   // ===== الإعدادات =====
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
@@ -121,7 +121,7 @@
   const RATE_BHD = 0.377;
   const COUPONS = { TEST10: 0.10 };
   const SLIDE_MS = 5000;
-  const CALL_TIMEOUT_MS = 20000;
+  const CALL_TIMEOUT_MS = 60000; // مهلة الطلب الواحد
   const RESEND_MS = 90000; // دقيقة ونصف بين كل إرسال
 
   // ===== مسح البيانات المحلية عند تغيّر النسخة فقط (للتجربة) =====
@@ -186,7 +186,8 @@
       namesReq:"الاسم الأول والأخير مطلوبين",
       passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر", passMismatch:"كلمتا المرور غير متطابقتين",
       loginFail:"البريد أو كلمة المرور غير صحيحة", rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول",
-      timeout:"انتهت المهلة، تحقق من الاتصال وحاول مرة ثانية",
+      timeout:"الطلب تأخر أكثر من دقيقة. إذا وصلك الرمز أدخله، وإذا لا اضغط إعادة الإرسال بعد دقيقة ونص",
+      smsTimeout:"ما وصلنا رد من الخدمة. إذا وصلك الرمز أدخله هنا، وإذا ما وصل اضغط إعادة الإرسال بعد دقيقة ونص",
       buildLabel:"النسخة", updatedLabel:"آخر تحديث"
     },
     en: {
@@ -221,7 +222,8 @@
       namesReq:"First and last name are required",
       passShort:"Password must be 8 characters or more", passMismatch:"Passwords do not match",
       loginFail:"Email or password is incorrect", rateLimit:"Too many attempts, wait a moment and try again",
-      timeout:"Request timed out, check your connection and try again",
+      timeout:"The request took over a minute. If you received the code, enter it; otherwise press resend after 1.5 minutes",
+      smsTimeout:"No response from the service. If you received the code, enter it here; otherwise press resend after 1.5 minutes",
       buildLabel:"Build", updatedLabel:"Last update"
     }
   };
@@ -393,13 +395,15 @@
     }
     render();
   }
+  // رسالة الخطأ: الحقيقية من Supabase مع الكود والحالة، عدا الحالات المعروفة
   function errMsg(e) {
-    const m = String(e?.message || e || "");
     const L = T[state.lang];
+    const m = String(e?.message || e || "");
     if (/timeout/i.test(m)) return L.timeout;
     if (/invalid login/i.test(m)) return L.loginFail;
     if (/rate|too many|seconds/i.test(m)) return L.rateLimit;
-    return m;
+    const extra = [e?.code, e?.status].filter(Boolean).join(" · ");
+    return extra ? `${m} (${extra})` : m;
   }
   // خطأ الرمز: منتهي أو غلط
   function codeErr(e) {
@@ -595,7 +599,7 @@
     } finally { busy = false; }
   }
 
-  // التحقق من رمز البريد: عند الضغط على تحقق فقط
+  // التحقق من رمز البريد: يتم عند الضغط على زر تحقق فقط
   async function verifyEmail() {
     if (busy) return;
     const L = T[state.lang];
@@ -606,7 +610,7 @@
       let res = await withTimeout(sb.auth.verifyOtp({ email: pending.email, token: code, type: "email" }));
       if (res.error) res = await withTimeout(sb.auth.verifyOtp({ email: pending.email, token: code, type: "magiclink" }));
       if (res.error) {
-        // إذا كان البريد متحقق منه من قبل في الجلسة، نعتبره ناجحًا بدل رسالة خطأ مربكة
+        // إذا كان البريد متحقق منه من قبل في الجلسة، نعتبره ناجحًا
         const { data: { user } } = await sb.auth.getUser();
         const ok = user && user.email_confirmed_at && String(user.email).toLowerCase() === pending.email.toLowerCase();
         if (!ok) return setNotice(codeErr(res.error), "err");
@@ -644,14 +648,25 @@
     }
     busy = true; setNotice(L.wait, "info");
     try {
-      const { error } = await withTimeout(sb.auth.updateUser({ phone: full }));
+      const { data, error } = await withTimeout(sb.auth.updateUser({ phone: full }));
+      console.log("[sendSms response]", { data, error });
+      pending.phone = digits; pending.full = full; pending.phoneVerified = false; savePending();
       if (error) return setNotice(errMsg(error), "err");
-      pending.phone = digits; pending.full = full; pending.otpSent = true; pending.phoneVerified = false; savePending();
+      pending.otpSent = true; savePending();
       startCool("sms");
       setNotice(L.codeSentTo + " " + full, "ok");
       render(); focusOtp("sms", 0);
     } catch (e) {
-      setNotice(errMsg(e), "err");
+      console.log("[sendSms error]", e);
+      if (/timeout/i.test(String(e?.message || e))) {
+        // ما رجع رد في الوقت: نعرض خانات الرمز، لأن الرسالة ممكن تكون وصلت
+        pending.otpSent = true; savePending();
+        startCool("sms");
+        setNotice(L.smsTimeout, "info");
+        render(); focusOtp("sms", 0);
+      } else {
+        setNotice(errMsg(e), "err");
+      }
     } finally { busy = false; }
   }
 
