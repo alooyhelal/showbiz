@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Showbiz نسيت كلمة المرور</title>
+<style>
+  :root { --bg:#0b1220; --card:#162033; --card2:#1d2a44; --fg:#eef2f7; --muted:#9aa7bd; --line:#2c3b5a; --orange:#f59e4b; --orange-d:#e0852f; --err:#ffb4bf; --errbg:#3b1620; --errline:#7a2b3b; --ok:#7ee2a8; --okbg:#12301f; --okline:#2f6b4f; color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width:420px; margin:0 auto; padding-block:24px 36px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:22px; box-shadow:0 20px 50px rgba(0,0,0,.35); padding:24px 22px 28px; }
+  .top { display:flex; justify-content:flex-start; margin-bottom:6px; }
+  .lang { background:var(--card2); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:7px 12px; font-size:13px; cursor:pointer; font-family:inherit; }
+  .brand { text-align:center; margin:4px 0 16px; }
+  .mark { width:64px; height:64px; margin:0 auto 10px; border-radius:18px; background:var(--orange); color:#111; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:800; }
+  .mark b { color:var(--bg); }
+  .brand .name { font-weight:800; letter-spacing:.5px; color:var(--orange); font-size:15px; }
+  h1 { font-size:24px; margin:0 0 6px; text-align:center; color:var(--fg); }
+  .sub { color:var(--muted); text-align:center; font-size:14px; margin:0 0 18px; line-height:1.7; }
+  label { display:block; font-size:13px; font-weight:600; color:var(--muted); margin:14px 0 6px; }
+  input { width:100%; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--card2); color:var(--fg); font-size:15px; font-family:inherit; }
+  input:focus { outline:2px solid var(--orange); outline-offset:0; }
+  input.bad { border-color:var(--err); outline:1px solid var(--err); }
+  .pw { position:relative; }
+  .pw input { padding-inline-end:46px; }
+  .eye { position:absolute; top:0; bottom:0; inset-inline-end:0; width:46px; border:0; background:transparent; color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+  .ferr { color:var(--err); font-size:13px; line-height:1.6; margin-top:6px; }
+  .hidden { display:none !important; }
+  .link { color:var(--orange); font-weight:700; font-size:14px; text-decoration:underline; text-underline-offset:3px; padding:4px 2px; display:inline-block; background:none; border:0; cursor:pointer; font-family:inherit; }
+  .msg { text-align:center; font-size:14px; border-radius:10px; padding:9px 10px; margin-top:12px; line-height:1.6; color:var(--err); background:var(--errbg); border:1px solid var(--errline); }
+  .ok { text-align:center; font-size:14px; border-radius:12px; padding:12px; margin-top:6px; line-height:1.7; color:var(--ok); background:var(--okbg); border:1px solid var(--okline); }
+  .row2 { display:flex; gap:10px; margin-top:14px; }
+  .btn { flex:1; display:block; text-align:center; text-decoration:none; border:0; border-radius:12px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .btn-main { background:var(--orange); color:#111; margin-top:14px; width:100%; }
+  .btn-main:hover { background:var(--orange-d); }
+  .btn-main:disabled { opacity:.6; cursor:wait; }
+  .btn-line { background:transparent; color:var(--fg); border:1px solid var(--line); }
+  .linkrow { text-align:center; margin-top:18px; font-size:14px; color:var(--muted); }
+  .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:18px; direction:ltr; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="top"><button class="lang" id="langBtn" type="button"></button></div>
+    <div class="brand"><div class="mark">S<b>.</b></div><div class="name">Showbiz</div></div>
+
+    <!-- الحالة 1: إدخال البريد -->
+    <div id="viewSend">
+      <h1 data-k="forgotTitle"></h1>
+      <p class="sub" data-k="forgotSub"></p>
+      <div id="sendForm">
+        <label for="fEmail" data-k="email"></label>
+        <input id="fEmail" type="email" dir="ltr" autocomplete="email">
+        <div class="ferr hidden" id="fEmailErr"></div>
+        <button class="btn btn-main" id="sendBtn" type="button"></button>
+      </div>
+      <div id="sentBox" class="ok hidden" data-k="sentMsg"></div>
+      <div class="row2"><a class="btn btn-line" href="login.html" data-k="cancel"></a></div>
+      <div class="linkrow"><span data-k="noAcc"></span> <a class="link" href="signup.html" data-k="signupLink"></a></div>
+    </div>
+
+    <!-- الحالة 2: كلمة المرور الجديدة (تفتح من رابط البريد) -->
+    <div id="viewReset" class="hidden">
+      <h1 data-k="resetTitle"></h1>
+      <p class="sub" data-k="resetSub"></p>
+      <label for="nPass" data-k="newPass"></label>
+      <div class="pw"><input id="nPass" type="password" dir="ltr" autocomplete="new-password"><button class="eye" type="button" data-t="nPass" aria-label=""></button></div>
+      <div class="ferr hidden" id="nPassErr"></div>
+      <label for="nPass2" data-k="newPass2"></label>
+      <div class="pw"><input id="nPass2" type="password" dir="ltr" autocomplete="new-password"><button class="eye" type="button" data-t="nPass2" aria-label=""></button></div>
+      <div class="ferr hidden" id="nPass2Err"></div>
+      <button class="btn btn-main" id="saveBtn" type="button"></button>
+    </div>
+
+    <!-- الحالة 3: تم الحفظ -->
+    <div id="viewDone" class="hidden">
+      <h1 data-k="resetTitle"></h1>
+      <div class="ok" data-k="doneMsg"></div>
+      <div class="row2"><a class="btn btn-main" href="login.html" data-k="toLogin" style="margin-top:0"></a></div>
+    </div>
+
+    <div id="notice" class="msg hidden"></div>
+  </div>
+  <div class="ver">v22 · 2026-11-23 09:10</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
+<script>
+  const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
+  const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
+
+  const T = {
+    ar: { switchLabel:"English", forgotTitle:"نسيت كلمة المرور", forgotSub:"اكتب بريدك الإلكتروني، وبنرسل لك رابط لإعادة تعيين كلمة المرور",
+      email:"البريد الإلكتروني", sendBtn:"إرسال الرابط", sending:"جاري الإرسال...", sentMsg:"تم إرسال لك رابط عبر البريد الإلكتروني لإعادة تعيين كلمة المرور",
+      cancel:"إلغاء", noAcc:"ليس لديك حساب؟", signupLink:"سجّل حساب الآن",
+      resetTitle:"إعادة تعيين كلمة المرور", resetSub:"اكتب كلمة المرور الجديدة لحسابك",
+      newPass:"كلمة المرور الجديدة", newPass2:"تأكيد كلمة المرور الجديدة", saveBtn:"حفظ", saving:"جاري الحفظ...",
+      doneMsg:"تم حفظ كلمة المرور بنجاح. سجّل دخولك بكلمة المرور الجديدة", toLogin:"تسجيل الدخول",
+      show:"إظهار كلمة المرور", hide:"إخفاء كلمة المرور",
+      emailBad:"البريد الإلكتروني غير صحيح، لأنه لم يتم كتابته بشكل صحيح",
+      passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر", passMismatch:"كلمتا المرور غير متطابقتين",
+      linkExpired:"الرابط منتهي أو تم استخدامه من قبل، اطلب رابط جديد من صفحة نسيت كلمة المرور",
+      rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول مرة ثانية" },
+    en: { switchLabel:"العربية", forgotTitle:"Forgot password", forgotSub:"Enter your email and we will send you a link to reset your password",
+      email:"Email", sendBtn:"Send link", sending:"Sending...", sentMsg:"A password reset link has been sent to your email",
+      cancel:"Cancel", noAcc:"Don't have an account?", signupLink:"Create an account",
+      resetTitle:"Reset password", resetSub:"Enter your new password for your account",
+      newPass:"New password", newPass2:"Confirm new password", saveBtn:"Save", saving:"Saving...",
+      doneMsg:"Password saved successfully. Log in with your new password", toLogin:"Log in",
+      show:"Show password", hide:"Hide password",
+      emailBad:"The email is not valid, it was not typed correctly",
+      passShort:"Password must be 8 characters or more", passMismatch:"Passwords do not match",
+      linkExpired:"This link has expired or was already used. Request a new one from the Forgot password page",
+      rateLimit:"Too many attempts, wait a moment and try again" }
+  };
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = (id) => document.getElementById(id);
+  const isEmail = (s) => EMAIL_RE.test(String(s || "").trim());
+
+  let lang = "ar";
+  try {
+    const st = JSON.parse(localStorage.getItem("showbiz_state") || "{}");
+    if (st.lang === "en" || st.lang === "ar") lang = st.lang;
+  } catch (e) {}
+  const L = () => T[lang];
+  let busy = false;
+  let view = /type=recovery/.test(location.hash) ? "viewReset" : "viewSend";
+
+  function mergeState(patch) {
+    try {
+      const st = JSON.parse(localStorage.getItem("showbiz_state") || "{}");
+      localStorage.setItem("showbiz_state", JSON.stringify({ ...st, ...patch }));
+    } catch (e) {}
+  }
+  function setErr(id, msg) {
+    const i = $(id), e = $(id + "Err");
+    if (i) i.classList.toggle("bad", !!msg);
+    if (e) { e.textContent = msg || ""; e.classList.toggle("hidden", !msg); }
+  }
+  function setNotice(msg) {
+    const n = $("notice");
+    n.textContent = msg || ""; n.classList.toggle("hidden", !msg);
+  }
+  // الرسالة الحقيقية من Supabase مع الكود، عدا الحالات المعروفة
+  function errMsg(e) {
+    const m = String(e?.message || e || "");
+    if (/rate|too many|seconds/i.test(m)) return L().rateLimit;
+    if (/expired|invalid|session/i.test(m)) return L().linkExpired;
+    const extra = [e?.code, e?.status].filter(Boolean).join(" · ");
+    return extra ? `${m} (${extra})` : m;
+  }
+  function showView(id) {
+    view = id;
+    ["viewSend", "viewReset", "viewDone"].forEach(v => $(v).classList.toggle("hidden", v !== id));
+    setNotice("");
+  }
+
+  function apply() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.querySelectorAll("[data-k]").forEach(el => { el.textContent = L()[el.dataset.k]; });
+    $("langBtn").textContent = L().switchLabel;
+    $("sendBtn").textContent = busy && view === "viewSend" ? L().sending : L().sendBtn;
+    $("sendBtn").disabled = busy;
+    $("saveBtn").textContent = busy && view === "viewReset" ? L().saving : L().saveBtn;
+    $("saveBtn").disabled = busy;
+    document.querySelectorAll(".eye").forEach(btn => {
+      const shown = $(btn.dataset.t).type === "text";
+      btn.setAttribute("aria-label", shown ? L().hide : L().show);
+      btn.title = shown ? L().hide : L().show;
+    });
+    document.title = "Showbiz " + L().forgotTitle;
+  }
+
+  // إرسال رابط إعادة التعيين
+  async function sendReset() {
+    if (busy) return;
+    const email = $("fEmail").value.trim();
+    setErr("fEmail", ""); setNotice("");
+    if (!isEmail(email)) return setErr("fEmail", L().emailBad);
+    busy = true; apply();
+    try {
+      // Supabase ما يكشف إذا البريد مسجل أو لا، لذلك الرسالة وحدة للجميع
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      if (error) return setNotice(errMsg(error));
+      $("sendForm").classList.add("hidden");
+      $("sentBox").classList.remove("hidden");
+    } catch (e) {
+      setNotice(errMsg(e));
+    } finally {
+      busy = false; apply();
+    }
+  }
+
+  // حفظ كلمة المرور الجديدة
+  async function saveNew() {
+    if (busy) return;
+    const a = $("nPass").value, b = $("nPass2").value;
+    setErr("nPass", ""); setErr("nPass2", ""); setNotice("");
+    if (a.length < 8) return setErr("nPass", L().passShort);
+    if (a !== b) return setErr("nPass2", L().passMismatch);
+    busy = true; apply();
+    try {
+      const { data } = await sb.auth.getSession();
+      if (!data || !data.session) return setNotice(L().linkExpired);
+      const { error } = await sb.auth.updateUser({ password: a });
+      if (error) return setNotice(errMsg(error));
+      // ننهي الجلسة المؤقتة، ويسجل الزائر دخوله من صفحة الدخول بكلمة المرور الجديدة
+      await sb.auth.signOut().catch(() => {});
+      showView("viewDone");
+      setTimeout(() => { location.href = "login.html"; }, 2500);
+    } catch (e) {
+      setNotice(errMsg(e));
+    } finally {
+      busy = false; apply();
+    }
+  }
+
+  $("sendBtn").addEventListener("click", sendReset);
+  $("saveBtn").addEventListener("click", saveNew);
+  $("fEmail").addEventListener("input", () => setErr("fEmail", ""));
+  $("fEmail").addEventListener("keydown", (e) => { if (e.key === "Enter") sendReset(); });
+  ["nPass", "nPass2"].forEach(id => {
+    $(id).addEventListener("input", () => setErr(id, ""));
+    $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") saveNew(); });
+  });
+  document.querySelectorAll(".eye").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const i = $(btn.dataset.t);
+      i.type = i.type === "password" ? "text" : "password";
+      apply();
+    });
+  });
+  $("langBtn").addEventListener("click", () => {
+    lang = lang === "ar" ? "en" : "ar";
+    mergeState({ lang });
+    apply();
+  });
+
+  // فتح الرابط من البريد يعطي حدث استعادة كلمة المرور
+  sb.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") { showView("viewReset"); apply(); }
+  });
+
+  showView(view);
+  apply();
+</script>
+</body>
+</html>
