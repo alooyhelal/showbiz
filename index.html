@@ -15,7 +15,6 @@
   button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); }
   button.btn-orange { background:var(--orange); color:#111; font-weight:bold; }
   button.linkbtn { background:none; color:var(--orange); padding:4px; text-decoration:underline; }
-  button:disabled { opacity:.5; cursor:not-allowed; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
   .pad { padding:14px; margin-bottom:12px; }
@@ -39,18 +38,14 @@
   .gallery { position:relative; height:300px; background:#f3f4f6; border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
   .gallery img { width:100%; height:100%; object-fit:contain; transition:opacity .4s; }
   .nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.45); color:#fff; padding:6px 12px; }
-  .nav.prev { left:8px; }
-  .nav.next { right:8px; }
+  .nav.prev { left:8px; } .nav.next { right:8px; }
   .xbtn { position:absolute; top:10px; left:10px; background:rgba(0,0,0,.55); color:#fff; padding:4px 10px; z-index:2; }
   .qtyrow { display:flex; justify-content:space-between; align-items:center; margin:12px 0; }
   .qtyctl button { padding:6px 12px; }
   .crow { display:flex; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
-  .crow:last-child { border-bottom:0; }
   .crow img { width:72px; height:72px; object-fit:contain; background:#f3f4f6; border-radius:10px; }
   .cinfo { flex:1; }
-  .couponrow { display:flex; gap:8px; }
-  .couponrow input { margin:0; }
-  .couponrow button { white-space:nowrap; }
+  .couponrow { display:flex; gap:8px; } .couponrow input { margin:0; } .couponrow button { white-space:nowrap; }
   .narrow { max-width:460px; margin:0 auto; }
   .hidden { display:none !important; }
   .otp { letter-spacing:8px; font-size:22px; text-align:center; direction:ltr; }
@@ -70,9 +65,7 @@
 </header>
 
 <main><div id="view"></div></main>
-
 <div class="overlay hidden" id="pmodal"></div>
-
 <div class="overlay hidden" id="gate">
   <div class="modal">
     <h3 id="gTitle"></h3>
@@ -86,7 +79,6 @@
     <button id="gGo" style="width:100%"></button>
   </div>
 </div>
-
 <div id="debug" class="hidden"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
@@ -96,20 +88,20 @@
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
   const REQUIRE_PHONE = true; // false إذا SMS ما اشتغل في الحساب التجريبي
-  const RATE_BHD = 0.377;     // للحاسبة فقط
-  const COUPONS = { TEST10: 0.10 }; // كود تجريبي
+  const RATE_BHD = 0.377;
+  const COUPONS = { TEST10: 0.10 };
   const SLIDE_MS = 5000;
   const PENDING_KEY = "showbiz_signup";
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const COUNTRIES = {
-    BH: { flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"},      sym:{ar:"د.ب", en:"BD"},  dec:3, rate:0.377,  base:2.2 },
-    SA: { flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"SAR", en:"SAR"}, dec:2, rate:3.75,   base:3.3 },
-    AE: { flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"},         sym:{ar:"AED", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
-    KW: { flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"},       sym:{ar:"د.ك", en:"KD"},  dec:3, rate:0.307,  base:3.3 },
-    QA: { flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"},           sym:{ar:"ر.ق", en:"QR"},  dec:2, rate:3.64,   base:3.3 },
-    OM: { flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"},          sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385,  base:3.3 }
+    BH: { flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2 },
+    SA: { flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"SAR", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
+    AE: { flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"AED", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
+    KW: { flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3 },
+    QA: { flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3 },
+    OM: { flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
   };
   const AREAS = {
     BH: { ar:["المنامة","المحرق","الرفاع","مدينة عيسى","سترة","أخرى"], en:["Manama","Muharraq","Riffa","Isa Town","Sitra","Other"] },
@@ -123,14 +115,14 @@
   const T = {
     ar: {
       siteName:"Showbiz", welcome:"مرحبًا بك", chooseCountry:"اختر الدولة", chooseLang:"اختر اللغة", go:"متابعة",
-      details:"التفاصيل", detailsTitle:"تفاصيل المنتج", chooseOpt:"اختر اللون / النمط", add:"إضافة للسلة", close:"إغلاق",
-      qty:"الكمية", cart:"السلة", cartTitle:"سلة المشتريات", empty:"السلة فارغة", total:"المجموع", grand:"الإجمالي",
+      details:"التفاصيل", detailsTitle:"تفاصيل المنتج", chooseOpt:"اختر اللون / النمط", add:"إضافة للسلة",
+      qty:"الكمية", cart:"السلة", cartTitle:"سلة المشتريات", empty:"السلة فارغة", grand:"الإجمالي",
       productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"رسوم التوصيل", shipLater:"تُحدد بعد اختيار المنطقة",
       shippingNote:"رسوم التوصيل تُضاف عند تحديد المنطقة", coupon:"هل لديك كود خصم؟", apply:"تطبيق",
       couponBad:"كود الخصم غير صحيح", couponOk:"تم تطبيق كود الخصم", removeCoupon:"إزالة الكود",
       keepShopping:"متابعة التسوق", checkout:"إتمام الطلب", areaPh:"اختر المنطقة أو المدينة",
-      address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع", backShort:"رجوع",
-      done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم حفظ الطلب في هذا المتصفح فقط",
+      address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع",
+      done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم الحفظ في هذا المتصفح فقط",
       loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...", wait:"لحظة...",
       noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول",
       dims:"الأبعاد", weight:"الوزن", noDesc:"لا توجد تفاصيل إضافية", defaultVariant:"افتراضي",
@@ -139,26 +131,26 @@
       needLogin:"سجّل دخولك أو أنشئ حساب لإتمام الطلب", loginTitle:"تسجيل الدخول", email:"البريد الإلكتروني",
       password:"كلمة المرور", loginBtn:"دخول", noAccount:"ليس لدي حساب، أنشئ حساب", haveAccount:"عندي حساب، سجّل دخول",
       signupTitle:"إنشاء حساب جديد", stepEmail:"1) البريد الإلكتروني", stepPhone:"2) رقم الجوال", stepDetails:"3) بيانات الحساب",
-      sendCode:"إرسال رمز التحقق", codeSent:"أرسلنا رمز من 6 أرقام إلى بريدك", codeHint:"اكتب الرمز اللي وصلك في الإيميل",
-      verifyEmail:"تحقق من البريد", resendCode:"إعادة إرسال الرمز", emailOk:"تم التحقق من بريدك الإلكتروني ✅",
-      change:"تغيير", lockedStep:"أكمل الخطوة اللي قبلها أولًا", skipPhone:"التحقق من الجوال غير مفعّل حاليًا",
-      sendSms:"إرسال رمز التحقق", smsSent:"تم إرسال الرمز إلى جوالك", verify:"تحقق", phoneOk:"تم التحقق من جوالك ✅",
-      firstName:"الاسم الأول", lastName:"الاسم الثاني", confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب",
-      accountDone:"تم إنشاء الحساب بنجاح",
-      emailBad:"البريد الإلكتروني غير صحيح", phoneBad:"رقم الجوال غير صحيح", badCode:"الرمز غير صحيح أو منتهي، اطلب رمز جديد",
-      namesReq:"الاسم الأول والثاني مطلوبين", passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر",
-      passMismatch:"كلمتا المرور غير متطابقتين", loginFail:"البريد أو كلمة المرور غير صحيحة",
-      rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول"
+      sendCode:"إرسال رمز التحقق", codeSent:"أرسلنا رمز من 6 أرقام إلى بريدك. استخدم آخر رمز وصلك فقط",
+      codeHint:"اكتب الرمز اللي وصلك في الإيميل", verifyEmail:"تحقق من البريد", resendCode:"إعادة إرسال الرمز",
+      emailOk:"تم التحقق من بريدك الإلكتروني ✅", change:"تغيير", lockedStep:"أكمل الخطوة اللي قبلها أولًا",
+      skipPhone:"التحقق من الجوال غير مفعّل حاليًا", sendSms:"إرسال رمز التحقق", smsSent:"تم إرسال الرمز إلى جوالك",
+      verify:"تحقق", phoneOk:"تم التحقق من جوالك ✅", firstName:"الاسم الأول", lastName:"الاسم الثاني",
+      confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب", accountDone:"تم إنشاء الحساب بنجاح",
+      emailBad:"البريد الإلكتروني غير صحيح", phoneBad:"رقم الجوال غير صحيح",
+      badCode:"الرمز غير صحيح أو منتهي، اطلب رمز جديد", namesReq:"الاسم الأول والثاني مطلوبين",
+      passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر", passMismatch:"كلمتا المرور غير متطابقتين",
+      loginFail:"البريد أو كلمة المرور غير صحيحة", rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول"
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
-      details:"Details", detailsTitle:"Product details", chooseOpt:"Choose color / style", add:"Add to cart", close:"Close",
-      qty:"Quantity", cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty", total:"Subtotal", grand:"Total",
+      details:"Details", detailsTitle:"Product details", chooseOpt:"Choose color / style", add:"Add to cart",
+      qty:"Quantity", cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty", grand:"Total",
       productsVal:"Products", discount:"Discount", shipping:"Delivery fee", shipLater:"Set after choosing area",
       shippingNote:"Delivery fee is added once you select your area", coupon:"Have a discount code?", apply:"Apply",
       couponBad:"Invalid discount code", couponOk:"Discount code applied", removeCoupon:"Remove code",
       keepShopping:"Keep shopping", checkout:"Checkout", areaPh:"Please select your area or city",
-      address:"Full address", confirm:"Confirm order", back:"Back", backShort:"Back",
+      address:"Full address", confirm:"Confirm order", back:"Back",
       done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
       loadErr:"Could not load products, please try again", loading:"Loading...", wait:"Please wait...",
       noProducts:"No products available right now", fillAll:"Please fill all fields",
@@ -168,16 +160,16 @@
       needLogin:"Log in or create an account to complete your order", loginTitle:"Log in", email:"Email",
       password:"Password", loginBtn:"Log in", noAccount:"No account? Create one", haveAccount:"I have an account, log in",
       signupTitle:"Create a new account", stepEmail:"1) Email", stepPhone:"2) Mobile number", stepDetails:"3) Account details",
-      sendCode:"Send verification code", codeSent:"We sent a 6-digit code to your email", codeHint:"Enter the code from your email",
-      verifyEmail:"Verify email", resendCode:"Resend code", emailOk:"Your email is verified ✅",
-      change:"Change", lockedStep:"Complete the previous step first", skipPhone:"Phone verification is currently off",
-      sendSms:"Send verification code", smsSent:"Code sent to your mobile", verify:"Verify", phoneOk:"Your mobile is verified ✅",
-      firstName:"First name", lastName:"Last name", confirmPass:"Confirm password", createBtn:"Create account",
-      accountDone:"Account created successfully",
-      emailBad:"Invalid email address", phoneBad:"Invalid mobile number", badCode:"Code is invalid or expired, request a new one",
-      namesReq:"First and last name are required", passShort:"Password must be 8 characters or more",
-      passMismatch:"Passwords do not match", loginFail:"Email or password is incorrect",
-      rateLimit:"Too many attempts, wait a moment and try again"
+      sendCode:"Send verification code", codeSent:"We sent a 6-digit code to your email. Use the latest code only",
+      codeHint:"Enter the code from your email", verifyEmail:"Verify email", resendCode:"Resend code",
+      emailOk:"Your email is verified ✅", change:"Change", lockedStep:"Complete the previous step first",
+      skipPhone:"Phone verification is currently off", sendSms:"Send verification code", smsSent:"Code sent to your mobile",
+      verify:"Verify", phoneOk:"Your mobile is verified ✅", firstName:"First name", lastName:"Last name",
+      confirmPass:"Confirm password", createBtn:"Create account", accountDone:"Account created successfully",
+      emailBad:"Invalid email address", phoneBad:"Invalid mobile number",
+      badCode:"Code is invalid or expired, request a new one", namesReq:"First and last name are required",
+      passShort:"Password must be 8 characters or more", passMismatch:"Passwords do not match",
+      loginFail:"Email or password is incorrect", rateLimit:"Too many attempts, wait a moment and try again"
     }
   };
 
@@ -189,30 +181,20 @@
 
   // بيانات التسجيل المؤقتة (بدون كلمات المرور)
   const blankPending = () => ({
-    email:"", codeSent:false, emailVerified:false,
-    dial:"+973", phone:"", otpSent:false, full:"", phoneVerified:false, editPhone:false,
-    first:"", last:""
+    email:"", codeSent:false, emailVerified:false, dial:"+973", phone:"", otpSent:false,
+    full:"", phoneVerified:false, editPhone:false, first:"", last:""
   });
   let pending = blankPending();
   try { Object.assign(pending, JSON.parse(localStorage.getItem(PENDING_KEY) || "{}")); } catch(e) {}
   function savePending() { try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch(e) {} }
   function clearPending() { pending = blankPending(); try { localStorage.removeItem(PENDING_KEY); } catch(e) {} }
 
-  let products = [];
-  let loaded = false;
-  let loadError = false;
-  let view = "shop";
-  let notice = "";
-  let loginEmail = "";
-  let afterLogin = null;
-  let modal = null;      // { pid, vid, qty, idx, paused, details }
-  let cardIdx = {};
-  let me = null;         // جلسة Supabase
-  let profile = null;    // صف الزبون في customers (يوجد فقط بعد إنشاء الحساب)
-  let accountOrders = null;
-  let ordersFailed = false;
-  let lastSaveOk = true;
-  let debugOn = false;
+  let products = [], loaded = false, loadError = false;
+  let view = "shop", notice = "", loginEmail = "", afterLogin = null;
+  let modal = null, cardIdx = {};
+  let me = null;       // جلسة Supabase (مؤقتة قبل إنشاء الحساب)
+  let profile = null;  // صف الزبون في customers (يوجد فقط بعد إنشاء الحساب)
+  let accountOrders = null, ordersFailed = false, lastSaveOk = true, debugOn = false;
 
   // ===== مساعدات =====
   const t = (k) => T[state.lang][k];
@@ -227,23 +209,14 @@
     const el = document.getElementById("notice");
     if (el) el.textContent = m;
   }
-  function go(v, msg) {
-    view = v;
-    notice = msg || "";
-    render();
-  }
+  function go(v, msg) { view = v; notice = msg || ""; render(); }
 
-  function fmt(amount) {
-    const c = COUNTRIES[state.country];
-    const n = Number(amount).toFixed(c.dec);
-    return state.lang === "ar" ? `${n} ${c.sym.ar}` : `${c.sym.en} ${n}`;
-  }
   function fmtFor(code, amount) {
     const c = COUNTRIES[code] || COUNTRIES[state.country];
     const n = Number(amount).toFixed(c.dec);
     return state.lang === "ar" ? `${n} ${c.sym.ar}` : `${c.sym.en} ${n}`;
   }
-
+  const fmt = (amount) => fmtFor(state.country, amount);
   const variantLabel = (v) => v.key ? String(v.key).replace(/-/g, " · ") : t("defaultVariant");
 
   function stripHTML(html) {
@@ -251,7 +224,6 @@
     const doc = new DOMParser().parseFromString(String(html), "text/html");
     return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
   }
-
   function findVariant(vid) {
     for (const p of products) {
       const v = p.variants.find(x => x.vid === vid);
@@ -259,7 +231,6 @@
     }
     return null;
   }
-
   function cartLines() {
     return state.cart
       .map(i => { const f = findVariant(i.vid); return f ? { vid: i.vid, qty: i.qty, p: f.p, v: f.v } : null; })
@@ -279,10 +250,9 @@
       volKg += (d[0] * d[1] * d[2] / 5000) * l.qty;
     });
     const chargeable = Math.max(actualKg, volKg);
-    const base = COUNTRIES[state.country].base;
-    const shipBHD = base + Math.max(0, chargeable - 1) * 0.5; // تجريبي
+    const shipBHD = COUNTRIES[state.country].base + Math.max(0, chargeable - 1) * 0.5;
     const orderBHD = (subtotalUSD() - discountUSD()) * RATE_BHD;
-    const riskBHD = Math.max(orderBHD * 0.15, 0.3); // داخلي فقط
+    const riskBHD = Math.max(orderBHD * 0.15, 0.3);
     return { actualKg, volKg, chargeable, shipBHD, riskBHD };
   }
   const shipLocal = (bhd) => bhd * (rate() / RATE_BHD);
@@ -298,9 +268,7 @@
         let variants = (p.variants || []).filter(v => v.price != null);
         if (!variants.length) {
           const base = parseFloat(String(p.sellPrice || "").split("-")[0]);
-          if (!isNaN(base)) {
-            variants = [{ vid: "base-" + p.pid, key: "", sku: p.sku, price: base, image: p.image, weightG: p.weightG, dimsCm: p.dimsCm }];
-          }
+          if (!isNaN(base)) variants = [{ vid: "base-" + p.pid, key: "", sku: p.sku, price: base, image: p.image, weightG: p.weightG, dimsCm: p.dimsCm }];
         }
         const images = (p.images && p.images.length) ? p.images : [p.image].filter(Boolean);
         return { ...p, images, variants };
@@ -323,50 +291,36 @@
       profile = data || null;
     }
   }
-
-  // إذا فيه جلسة بدون صف في customers، نكمل التسجيل من الخطوة الصحيحة حسب ما تحقق
+  // يحدّث الخطوات حسب ما تحقق فعلًا في الجلسة
   function syncPendingFromSession() {
-    if (!me || profile) return;
+    if (!me) return;
     pending.email = me.email || pending.email;
     pending.emailVerified = !!me.email_confirmed_at;
     pending.phoneVerified = !!me.phone_confirmed_at;
-    pending.codeSent = false;
-    pending.otpSent = false;
-    pending.editPhone = false;
     savePending();
   }
-
   async function refreshAuth() {
     await loadProfile();
     if (profile) { clearPending(); return; }
-    if (me) {
-      syncPendingFromSession();
-      if (view !== "signup") view = "signup";
-    }
+    if (me) syncPendingFromSession();
   }
-
   async function initAuth() {
     try {
       const { data: { session } } = await sb.auth.getSession();
       if (session) await refreshAuth();
     } catch (e) {}
   }
-
   async function loadOrders() {
-    accountOrders = null;
-    ordersFailed = false;
-    render();
+    accountOrders = null; ordersFailed = false; render();
     try {
       const { data, error } = await sb.from("orders").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       accountOrders = data || [];
     } catch (e) {
-      ordersFailed = true;
-      accountOrders = [];
+      ordersFailed = true; accountOrders = [];
     }
     render();
   }
-
   function errMsg(e) {
     const m = String(e?.message || e || "");
     const L = T[state.lang];
@@ -391,7 +345,6 @@
         </div>
       </div>`;
   }
-
   async function doLogin() {
     const L = T[state.lang];
     const email = loginEmail.trim();
@@ -401,25 +354,20 @@
     const { error } = await sb.auth.signInWithPassword({ email, password: pass });
     if (error) return setNotice(errMsg(error));
     await loadProfile();
-    if (!profile) {
-      // حساب ناقص: نكمله من حيث توقف
-      syncPendingFromSession();
-      return go("signup", L.lockedStep);
-    }
+    if (!profile) { syncPendingFromSession(); return go("signup", L.lockedStep); }
     clearPending();
     const next = afterLogin || "shop";
     afterLogin = null;
     go(next, "");
   }
 
-  // ===== صفحة إنشاء الحساب (خطوة بخطوة في صفحة واحدة) =====
+  // ===== صفحة إنشاء الحساب (خطوات في صفحة واحدة) =====
   function viewSignup() {
     const L = T[state.lang];
     const emailOK = pending.emailVerified;
     const phoneOK = pending.phoneVerified && !pending.editPhone;
     const detailsOpen = emailOK && (!REQUIRE_PHONE || phoneOK);
 
-    // الخطوة 1: الإيميل برمز OTP
     let s1;
     if (emailOK) {
       s1 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(pending.email)}</span></span>
@@ -439,7 +387,6 @@
             </p>`;
     }
 
-    // الخطوة 2: الجوال
     let s2;
     if (!emailOK) {
       s2 = `<p class="muted">${L.lockedStep}</p>`;
@@ -464,7 +411,6 @@
             <p><button class="linkbtn" data-action="changePhone">${L.change}</button></p>`;
     }
 
-    // الخطوة 3: الاسم وكلمة المرور، وزر الإنشاء هو اللي يحفظ الحساب فعليًا
     const s3 = detailsOpen
       ? `<input id="sFirst" placeholder="${L.firstName}" value="${esc(pending.first)}">
          <input id="sLast" placeholder="${L.lastName}" value="${esc(pending.last)}">
@@ -486,7 +432,7 @@
       </div>`;
   }
 
-  // إرسال رمز OTP للإيميل (يبدأ جلسة مؤقتة، بدون صف في customers)
+  // إرسال الرمز (وإعادة الإرسال). كل رمز جديد يلغي اللي قبله
   async function sendCode() {
     const L = T[state.lang];
     const email = (document.getElementById("sEmail")?.value || pending.email || "").trim();
@@ -501,15 +447,20 @@
     render();
   }
 
+  // التحقق: يجرب الأنواع المحتملة لأن Supabase يختلف النوع حسب حالة الإيميل
   async function verifyEmail() {
     const L = T[state.lang];
     const code = (document.getElementById("sEmailCode")?.value || "").trim();
     if (!/^\d{6}$/.test(code)) return setNotice(L.badCode);
     setNotice(L.wait);
-    const { error } = await sb.auth.verifyOtp({ email: pending.email, token: code, type: "email" });
-    if (error) return setNotice(errMsg(error));
-    await loadProfile();
-    syncPendingFromSession();
+    let lastErr = null;
+    for (const type of ["email", "magiclink", "signup"]) {
+      const { error } = await sb.auth.verifyOtp({ email: pending.email, token: code, type });
+      if (!error) { lastErr = null; break; }
+      lastErr = error;
+    }
+    if (lastErr) return setNotice(errMsg(lastErr));
+    await refreshAuth();
     pending.emailVerified = true;
     savePending();
     notice = L.emailOk;
@@ -518,8 +469,7 @@
 
   async function changeEmail() {
     try { await sb.auth.signOut(); } catch (e) {}
-    me = null;
-    profile = null;
+    me = null; profile = null;
     clearPending();
     notice = "";
     render();
@@ -548,7 +498,7 @@
     setNotice(L.wait);
     const { error } = await sb.auth.verifyOtp({ phone: pending.full, token: code, type: "phone_change" });
     if (error) return setNotice(errMsg(error));
-    await loadProfile();
+    await refreshAuth();
     pending.phoneVerified = true;
     pending.otpSent = false;
     pending.editPhone = false;
@@ -565,7 +515,7 @@
     render();
   }
 
-  // الحفظ الفعلي للحساب: هنا فقط يُكتب الصف في customers
+  // هنا فقط يُكتب الحساب في customers
   async function createAccount() {
     const L = T[state.lang];
     const first = (document.getElementById("sFirst")?.value || "").trim();
@@ -586,7 +536,7 @@
     const { error } = await sb.auth.updateUser({ password: p1, data: { first_name: first, last_name: last } });
     if (error) return setNotice(errMsg(error));
 
-    const phoneValue = REQUIRE_PHONE ? (pending.full || (me.phone ? "+" + String(me.phone).replace(/^\+/, "") : null)) : null;
+    const phoneValue = REQUIRE_PHONE ? (pending.full || null) : null;
     const { error: e2 } = await sb.from("customers").upsert({
       id: me.id, email: me.email, first_name: first, last_name: last, phone: phoneValue
     });
@@ -600,9 +550,7 @@
 
   async function logout() {
     try { await sb.auth.signOut(); } catch (e) {}
-    me = null;
-    profile = null;
-    accountOrders = null;
+    me = null; profile = null; accountOrders = null;
     go("shop", "");
   }
 
@@ -619,10 +567,8 @@
 
   // ===== المنتجات والنافذة =====
   function galleryFor(p, v) {
-    const arr = [v && v.image, ...(p.images || []), p.image].filter(Boolean);
-    return [...new Set(arr)];
+    return [...new Set([v && v.image, ...(p.images || []), p.image].filter(Boolean))];
   }
-
   function curModal() {
     if (!modal) return null;
     const p = products.find(x => x.pid === modal.pid);
@@ -630,14 +576,12 @@
     const v = p.variants.find(x => x.vid === modal.vid) || p.variants[0];
     return { p, v };
   }
-
   function openProduct(pid) {
     const p = products.find(x => x.pid === pid);
     if (!p) return;
     modal = { pid: p.pid, vid: p.variants[0].vid, qty: 1, idx: 0, paused: false, details: false };
     renderModal();
   }
-
   function detailsHTML(p, v) {
     const L = T[state.lang];
     const d = v.dimsCm || p.dimsCm;
@@ -649,9 +593,8 @@
       <div class="row"><span class="muted">${L.dims}</span><span>${dims}</span></div>
       <div class="row"><span class="muted">${L.weight}</span><span>${w ? w + " g" : "—"}</span></div>
       <p style="line-height:1.8;font-size:14px;color:var(--muted)">${esc(txt ? txt.slice(0, 1500) : L.noDesc)}</p>
-      <button class="ghost" data-action="mback" style="width:100%">${L.backShort}</button>`;
+      <button class="ghost" data-action="mback" style="width:100%">${L.back}</button>`;
   }
-
   function renderModal() {
     const box = document.getElementById("pmodal");
     const c = curModal();
@@ -660,13 +603,10 @@
     const L = T[state.lang];
     const g = galleryFor(p, v);
     if (modal.idx >= g.length) modal.idx = 0;
-
     const nav = g.length > 1
-      ? `<button class="nav prev" data-action="mprev">‹</button><button class="nav next" data-action="mnext">›</button>`
-      : "";
+      ? `<button class="nav prev" data-action="mprev">‹</button><button class="nav next" data-action="mnext">›</button>` : "";
     const dots = g.length > 1
-      ? `<div class="dots">${g.map((_, i) => `<span class="dot ${i === modal.idx ? "on" : ""}"></span>`).join("")}</div>`
-      : "";
+      ? `<div class="dots">${g.map((_, i) => `<span class="dot ${i === modal.idx ? "on" : ""}"></span>`).join("")}</div>` : "";
 
     let body;
     if (modal.details) {
@@ -702,19 +642,15 @@
       </div>`;
     box.classList.remove("hidden");
   }
-
   function addLine(vid, qty) {
     const i = state.cart.find(x => x.vid === vid);
     if (i) i.qty += qty; else state.cart.push({ vid, qty });
     save();
   }
-
   function applyCoupon() {
     const code = (document.getElementById("cpn")?.value || "").trim().toUpperCase();
     if (COUPONS[code]) {
-      state.coupon = code;
-      save();
-      render();
+      state.coupon = code; save(); render();
       document.getElementById("cpnMsg").textContent = t("couponOk");
     } else {
       document.getElementById("cpnMsg").textContent = t("couponBad");
@@ -735,7 +671,6 @@
       sel.value = state.country;
     });
   }
-
   function renderGate() {
     const L = T[state.lang];
     document.getElementById("gTitle").textContent = L.welcome;
@@ -744,15 +679,11 @@
     document.getElementById("gGo").textContent = L.go;
     document.getElementById("gate").classList.toggle("hidden", state.seen);
   }
-
   function priceRange(p) {
     const prices = p.variants.map(v => v.price);
     const min = Math.min(...prices), max = Math.max(...prices);
-    return min === max
-      ? fmt(localPrice(min))
-      : `${fmt(localPrice(min))} – ${fmt(localPrice(max))}`;
+    return min === max ? fmt(localPrice(min)) : `${fmt(localPrice(min))} – ${fmt(localPrice(max))}`;
   }
-
   function viewShop() {
     if (!loaded) return `<p>${t("loading")}</p>`;
     if (loadError) return `<p>${t("loadErr")}</p>`;
@@ -778,12 +709,9 @@
         </div>`;
     }).join("") + `</div>`;
   }
-
   function viewCart() {
     const lines = cartLines();
-    if (!lines.length) {
-      return `<p>${t("empty")}</p><button class="ghost" data-action="shop">${t("back")}</button>`;
-    }
+    if (!lines.length) return `<p>${t("empty")}</p><button class="ghost" data-action="shop">${t("back")}</button>`;
     const rows = lines.map(l => `
       <div class="crow">
         <img src="${esc(l.v.image || l.p.image)}" alt="">
@@ -799,16 +727,11 @@
         </div>
         <button class="ghost" data-action="rm" data-vid="${esc(l.vid)}">✕</button>
       </div>`).join("");
-
     const disc = discountUSD();
     const couponLine = state.coupon
       ? `<div class="row"><span class="muted">${esc(state.coupon)}</span><button class="linkbtn" data-action="removeCoupon">${t("removeCoupon")}</button></div>`
-      : `<div class="couponrow">
-           <input id="cpn" placeholder="${t("coupon")}">
-           <button class="ghost" data-action="applyCoupon">${t("apply")}</button>
-         </div>
+      : `<div class="couponrow"><input id="cpn" placeholder="${t("coupon")}"><button class="ghost" data-action="applyCoupon">${t("apply")}</button></div>
          <p id="cpnMsg" class="muted"></p>`;
-
     return `
       <h3>${t("cartTitle")}</h3>
       <div class="card pad">${rows}</div>
@@ -824,7 +747,6 @@
         <button class="btn-orange" data-action="checkout" style="flex:1">${t("checkout")}</button>
       </div>`;
   }
-
   function viewCheckout() {
     const areas = AREAS[state.country][state.lang]
       .map(a => `<option value="${esc(a)}" ${state.area === a ? "selected" : ""}>${esc(a)}</option>`).join("");
@@ -842,24 +764,19 @@
       <button class="btn-orange" data-action="confirm" style="width:100%">${t("confirm")}</button>
       <p><button class="ghost" data-action="cart">${t("back")}</button></p>`;
   }
-
   function summaryHTML() {
     const sub = localPrice(subtotalUSD());
     const disc = localPrice(discountUSD());
     const discRow = disc > 0 ? `<div class="row"><span>${t("discount")}</span><span>- ${fmt(disc)}</span></div>` : "";
     if (!state.area) {
-      return `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>
-              ${discRow}
-              <p class="muted">${t("shippingNote")}</p>`;
+      return `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>${discRow}<p class="muted">${t("shippingNote")}</p>`;
     }
-    const s = shippingCalc();
-    const ship = shipLocal(s.shipBHD);
+    const ship = shipLocal(shippingCalc().shipBHD);
     return `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>
             ${discRow}
             <div class="row"><span>${t("shipping")}</span><span>${fmt(ship)}</span></div>
             <div class="row total"><strong>${t("grand")}</strong><strong class="price">${fmt(sub - disc + ship)}</strong></div>`;
   }
-
   function ordersHTML() {
     if (ordersFailed) return `<p class="muted">${t("ordersErr")}</p>`;
     if (!accountOrders || !accountOrders.length) return `<p class="muted">${t("noOrders")}</p>`;
@@ -869,7 +786,6 @@
         <div class="row"><span>${esc(o.status || "")}</span><strong>${fmtFor(o.country, o.total)}</strong></div>
       </div>`).join("");
   }
-
   function viewAccount() {
     if (!isComplete()) return `<p>${t("needLogin")}</p><button data-action="login">${t("login")}</button>`;
     const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
@@ -888,28 +804,17 @@
       <div>${accountOrders === null ? t("loading") : ordersHTML()}</div>
       <p><button class="ghost" data-action="logout">${t("logout")}</button></p>`;
   }
-
   function updateDebug() {
     const d = document.getElementById("debug");
     if (!(debugOn || location.hash === "#debug")) { d.classList.add("hidden"); return; }
     d.classList.remove("hidden");
     const s = shippingCalc();
     d.textContent = JSON.stringify({
-      country: state.country,
-      view: view,
-      products: products.length,
-      sessionUser: !!me,
-      hasProfile: !!profile,
-      emailVerified: pending.emailVerified,
-      phoneVerified: pending.phoneVerified,
-      coupon: state.coupon,
-      chargeableKg: s.chargeable.toFixed(3),
-      shippingBHD: s.shipBHD.toFixed(3),
-      riskBHD_internal: s.riskBHD.toFixed(3),
-      area: state.area
+      view, products: products.length, sessionUser: !!me, hasProfile: !!profile,
+      emailVerified: pending.emailVerified, phoneVerified: pending.phoneVerified,
+      chargeableKg: s.chargeable.toFixed(3), shippingBHD: s.shipBHD.toFixed(3), area: state.area
     }, null, 1);
   }
-
   function render() {
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
@@ -946,27 +851,19 @@
     const discount = localPrice(discountUSD());
     const ship = shipLocal(s.shipBHD);
     const row = {
-      user_id: me.id,
-      country: state.country,
-      status: "test-not-sent-to-cj",
+      user_id: me.id, country: state.country, status: "test-not-sent-to-cj",
       items: cartLines().map(l => ({ pid: l.p.pid, vid: l.vid, sku: l.v.sku, name: l.p.nameEn, variant: l.v.key, qty: l.qty, unitUSD: l.v.price })),
       shipping_address: { area: state.area, address: addr },
       contact: { name: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim(), phone: profile?.phone || null },
-      coupon: state.coupon,
-      subtotal: subtotal,
-      discount: discount,
-      shipping: ship,
-      total: subtotal - discount + ship,
-      internal_risk_bhd: s.riskBHD
+      coupon: state.coupon, subtotal, discount, shipping: ship,
+      total: subtotal - discount + ship, internal_risk_bhd: s.riskBHD
     };
 
     lastSaveOk = false;
     try {
       const { error } = await sb.from("orders").insert(row);
-      if (!error) lastSaveOk = true;
-      else console.warn(error);
+      if (!error) lastSaveOk = true; else console.warn(error);
     } catch (e) { console.warn(e); }
-
     if (!lastSaveOk) {
       try {
         const arr = JSON.parse(localStorage.getItem("showbiz_orders") || "[]");
@@ -974,10 +871,7 @@
         localStorage.setItem("showbiz_orders", JSON.stringify(arr));
       } catch (e) {}
     }
-
-    state.cart = [];
-    state.area = null;
-    state.coupon = null;
+    state.cart = []; state.area = null; state.coupon = null;
     save();
     go("done", "");
   }
@@ -997,14 +891,12 @@
       const c = curModal(); if (!c) return;
       const g = galleryFor(c.p, c.v);
       modal.idx = (modal.idx + (a === "mnext" ? 1 : -1) + g.length) % g.length;
-      modal.paused = true;
-      renderModal(); return;
+      modal.paused = true; renderModal(); return;
     }
     if (a === "mqinc") { if (modal.qty < 99) modal.qty++; renderModal(); return; }
     if (a === "mqdec") { if (modal.qty > 1) modal.qty--; renderModal(); return; }
     if (a === "mdetails") { modal.details = true; renderModal(); return; }
     if (a === "mback") { modal.details = false; renderModal(); return; }
-
     if (a === "inc" || a === "dec" || a === "rm") {
       const i = state.cart.find(x => x.vid === ds.vid);
       if (!i) return;
@@ -1017,8 +909,7 @@
     if (a === "removeCoupon") { state.coupon = null; save(); render(); return; }
     if (a === "cart") { go("cart", ""); return; }
     if (a === "shop") { go("shop", ""); return; }
-    if (a === "login") { go("login", ""); return; }
-    if (a === "toLogin") { go("login", ""); return; }
+    if (a === "login" || a === "toLogin") { go("login", ""); return; }
     if (a === "toSignup") { go("signup", ""); return; }
     if (a === "doLogin") { await doLogin(); return; }
     if (a === "account") {
@@ -1046,7 +937,6 @@
     const b = e.target.closest("[data-action]");
     if (b) handleAction(b.dataset.action, b.dataset);
   });
-
   // حفظ ما يكتبه المستخدم (بدون كلمات المرور ولا الرموز)
   document.getElementById("view").addEventListener("input", (e) => {
     const id = e.target.id;
@@ -1056,42 +946,29 @@
     else if (id === "sLast") { pending.last = e.target.value.trim(); savePending(); }
     else if (id === "lEmail") { loginEmail = e.target.value.trim(); }
   });
-
   document.getElementById("view").addEventListener("change", (e) => {
     if (e.target.id === "fArea") {
-      state.area = e.target.value || null;
-      save();
+      state.area = e.target.value || null; save();
       document.getElementById("summary").innerHTML = summaryHTML();
       updateDebug();
     }
-    if (e.target.id === "sDial") {
-      pending.dial = e.target.value;
-      savePending();
-    }
+    if (e.target.id === "sDial") { pending.dial = e.target.value; savePending(); }
   });
-
   document.getElementById("pmodal").addEventListener("click", (e) => {
     if (e.target.id === "pmodal") { modal = null; renderModal(); return; }
     if (e.target.id === "mAdd") {
       const c = curModal(); if (!c) return;
       addLine(c.v.vid, modal.qty);
-      modal = null;
-      render();
-      return;
+      modal = null; render(); return;
     }
     const b = e.target.closest("[data-action]");
     if (b) handleAction(b.dataset.action, b.dataset);
   });
-
   document.getElementById("pmodal").addEventListener("change", (e) => {
     if (e.target.id === "mVariant" && modal) {
-      modal.vid = e.target.value;
-      modal.idx = 0;
-      modal.paused = true;
-      renderModal();
+      modal.vid = e.target.value; modal.idx = 0; modal.paused = true; renderModal();
     }
   });
-
   document.getElementById("countrySel").addEventListener("change", (e) => {
     state.country = e.target.value; state.area = null; save(); fillCountrySelects(); render();
   });
@@ -1102,25 +979,13 @@
     state.lang = state.lang === "ar" ? "en" : "ar"; save(); fillCountrySelects(); render();
   });
   document.querySelectorAll("[data-glang]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      state.lang = btn.dataset.glang; save(); fillCountrySelects(); render();
-    });
+    btn.addEventListener("click", () => { state.lang = btn.dataset.glang; save(); fillCountrySelects(); render(); });
   });
-  document.getElementById("gGo").addEventListener("click", () => {
-    state.seen = true; save(); render();
-  });
-  document.getElementById("cartBtn").addEventListener("click", () => {
-    go("cart", "");
-  });
-  document.getElementById("acctBtn").addEventListener("click", () => {
-    handleAction(isComplete() ? "account" : "login", {});
-  });
+  document.getElementById("gGo").addEventListener("click", () => { state.seen = true; save(); render(); });
+  document.getElementById("cartBtn").addEventListener("click", () => go("cart", ""));
+  document.getElementById("acctBtn").addEventListener("click", () => handleAction(isComplete() ? "account" : "login", {}));
   document.addEventListener("keydown", (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "d") {
-      e.preventDefault();
-      debugOn = !debugOn;
-      updateDebug();
-    }
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "d") { e.preventDefault(); debugOn = !debugOn; updateDebug(); }
   });
 
   // تبديل الصور كل 5 ثواني
@@ -1148,13 +1013,8 @@
   }, SLIDE_MS);
 
   sb.auth.onAuthStateChange(async (_event, session) => {
-    if (session && session.user) {
-      await refreshAuth();
-    } else {
-      me = null;
-      profile = null;
-      if (view === "account") view = "shop";
-    }
+    if (session && session.user) await refreshAuth();
+    else { me = null; profile = null; if (view === "account") view = "shop"; }
     render();
   });
 
