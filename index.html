@@ -879,6 +879,14 @@
     });
   }, SLIDE_MS);
 
+  // تحديث صفحة الإتمام تلقائياً إذا تغيّرت العناوين من صفحة ثانية أو تبويب ثاني
+  // (مثلاً أضفت عنوان في عناويني ورجعت للسلة)
+  window.addEventListener("storage", (e) => {
+    if (e.key && e.key.startsWith("showbiz_addr2_")) render();
+  });
+  window.addEventListener("pageshow", () => render());
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+
   // تغيّر الجلسة (دخول أو خروج من صفحة أخرى)
   sb.auth.onAuthStateChange(async (event) => {
     if (event === "SIGNED_OUT") { me = null; profile = null; render(); return; }
