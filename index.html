@@ -1,22 +1,21 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Showbiz</title>
 <style>
-  :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --btn:#4a8fe0; --orange:#f59e4b; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; --bad:#e5566b; }
-  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+  :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; --bad:#e5566b; color-scheme:dark; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; }
   header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px 16px; background:#0d1728; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
   main { padding:16px 16px 56px; max-width:1000px; margin:auto; }
-  select, input { padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card2); color:var(--fg); width:100%; box-sizing:border-box; margin-bottom:8px; font-size:15px; }
-  input:focus, select:focus { outline:2px solid var(--blue); outline-offset:1px; }
-  input.bad { border-color:var(--bad) !important; outline:1px solid var(--bad); }
+  select, input { padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card2); color:var(--fg); width:100%; box-sizing:border-box; margin-bottom:8px; font-size:15px; font-family:inherit; }
+  select option { background:var(--card2); color:var(--fg); }
+  input:focus, select:focus { outline:2px solid var(--orange); outline-offset:1px; }
   header select { width:auto; margin:0; }
-  button { padding:10px 14px; border:0; border-radius:10px; background:var(--btn); color:#fff; cursor:pointer; font-size:14px; }
-  button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); }
-  button.btn-orange { background:var(--orange); color:#111; font-weight:bold; padding:12px 14px; }
-  button.linkbtn { background:none; color:var(--orange); padding:4px 6px; text-decoration:underline; }
+  button { padding:10px 14px; border:0; border-radius:10px; background:var(--orange); color:#111; cursor:pointer; font-size:14px; font-family:inherit; font-weight:700; }
+  button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:400; }
+  button.linkbtn { background:none; color:var(--orange); padding:4px 6px; text-decoration:underline; font-weight:400; }
   button:disabled { opacity:.45; cursor:not-allowed; }
   .btnfull { width:100%; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
@@ -35,7 +34,6 @@
   .muted { color:var(--muted); font-size:13px; line-height:1.7; }
   .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; flex-wrap:wrap; }
   .row.total { border-top:1px solid var(--line); margin-top:6px; padding-top:12px; font-size:17px; }
-  .okrow { display:flex; justify-content:space-between; align-items:center; gap:8px; color:var(--ok); padding:6px 0; }
   h4 { margin:14px 0 8px; color:var(--muted); font-size:14px; font-weight:600; }
   .overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:12px; overflow:auto; z-index:20; }
   .modal { background:var(--card); color:var(--fg); padding:18px; border-radius:18px; width:100%; max-width:440px; box-sizing:border-box; position:relative; }
@@ -50,50 +48,10 @@
   .crow img { width:72px; height:72px; object-fit:contain; background:#f3f4f6; border-radius:10px; }
   .cinfo { flex:1; }
   .couponrow { display:flex; gap:8px; } .couponrow input { margin:0; } .couponrow button { white-space:nowrap; }
-  .narrow { max-width:480px; margin:0 auto; }
   .hidden { display:none !important; }
-
-  /* ===== صفحات الدخول والتسجيل ===== */
-  .auth { padding:20px; }
-  .authlogo { text-align:center; font-size:28px; font-weight:800; color:var(--orange); letter-spacing:.5px; margin:4px 0 8px; }
-  .auth h2 { margin:0 0 4px; font-size:22px; text-align:center; }
-  .auth .sub { color:var(--muted); font-size:14px; margin:0 0 16px; text-align:center; }
-  .topbar { display:flex; justify-content:flex-start; margin-bottom:6px; }
-  .field label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
-  .ferr { color:var(--err); font-size:13px; line-height:1.6; margin:-2px 0 8px; }
-  .pwwrap { position:relative; margin-bottom:8px; }
-  .pwwrap input { margin-bottom:0; padding-inline-end:44px; }
-  .eye { position:absolute; top:0; bottom:0; inset-inline-end:0; width:44px; padding:0; margin:0; border-radius:0 10px 10px 0; background:transparent; color:var(--muted); display:flex; align-items:center; justify-content:center; }
-  .linkline { display:flex; justify-content:flex-start; margin:2px 0 12px; }
-  .step { border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; background:var(--card2); }
-  .step.done { border-color:#2f6b4f; }
-  .step.locked { opacity:.55; }
-  .stephead { display:flex; align-items:center; gap:10px; font-weight:600; margin-bottom:10px; }
-  .badge { width:26px; height:26px; border-radius:50%; background:var(--btn); display:inline-flex; align-items:center; justify-content:center; font-size:13px; flex:0 0 auto; }
-  .step.done .badge { background:#2f8f5f; }
-  .phone-row { display:flex; gap:8px; }
-  .phone-row select { width:130px; flex:0 0 auto; margin:0; }
-  .phone-row input { margin:0; flex:1; }
-  .addr { text-align:center; font-weight:bold; font-size:16px; direction:ltr; margin:4px 0 8px; word-break:break-all; }
-  .otp-row { display:flex; gap:8px; justify-content:center; margin:10px 0 8px; direction:ltr; }
-  .obox { width:46px; height:56px; text-align:center; font-size:24px; font-weight:bold; margin:0; padding:0; }
-  .otpmsg { text-align:center; font-size:14px; margin:4px 0 10px; padding:8px 10px; border-radius:10px; line-height:1.6; }
-  .otpmsg.err { color:var(--err); background:#3b1620; border:1px solid #7a2b3b; }
-  .otpmsg.info { color:var(--fg); background:var(--card2); border:1px solid var(--line); }
-  .linkrow { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center; margin-top:10px; }
-  .loadline { display:flex; align-items:center; justify-content:center; gap:10px; padding:14px 0; color:var(--muted); font-size:15px; }
-  .spin { display:inline-block; width:18px; height:18px; border:3px solid var(--line); border-top-color:var(--blue); border-radius:50%; animation:sp .8s linear infinite; }
-  @keyframes sp { to { transform:rotate(360deg); } }
-  .msg { padding:10px 12px; border-radius:10px; font-size:14px; margin-top:12px; line-height:1.7; }
-  .msg.err { background:#3b1620; color:var(--err); border:1px solid #7a2b3b; }
-  .msg.ok { background:#12301f; color:var(--ok); border:1px solid #2f6b4f; }
-  .msg.info { background:var(--card2); color:var(--fg); border:1px solid var(--line); }
-
-  /* إشعار النجاح في منتصف الشاشة */
-  .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#12301f; color:var(--ok); border:1px solid #2f6b4f; padding:16px 26px; border-radius:14px; font-size:17px; font-weight:bold; z-index:60; box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:90vw; text-align:center; }
-
+  .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card); color:var(--ok); border:1px solid #2f6b4f; padding:16px 26px; border-radius:14px; font-size:17px; font-weight:bold; z-index:60; box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:90vw; text-align:center; }
+  .notice { padding:10px 12px; border-radius:10px; font-size:14px; margin:8px 0; color:var(--err); background:#3b1620; border:1px solid #7a2b3b; }
   .build { position:fixed; bottom:0; left:0; right:0; background:#070d18; color:#6b7a94; font:12px monospace; text-align:center; padding:6px; direction:ltr; z-index:4; border-top:1px solid var(--line); }
-  #debug { position:fixed; bottom:30px; left:0; right:0; background:#000; color:#0f0; font:12px monospace; padding:8px; direction:ltr; white-space:pre-wrap; max-height:40vh; overflow:auto; z-index:30; }
 </style>
 </head>
 <body>
@@ -102,9 +60,9 @@
   <strong id="siteName">Showbiz</strong>
   <div>
     <select id="countrySel"></select>
-    <button class="ghost" id="langBtn">English</button>
-    <button class="ghost" id="cartBtn">السلة (0)</button>
-    <button class="ghost" id="acctBtn">تسجيل الدخول</button>
+    <button class="ghost" id="langBtn"></button>
+    <button class="ghost" id="cartBtn"></button>
+    <button class="ghost" id="acctBtn"></button>
   </div>
 </header>
 
@@ -124,33 +82,19 @@
     <button id="gGo" style="width:100%"></button>
   </div>
 </div>
-<div id="debug" class="hidden"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
-  // ===== رقم النسخة: غيّر version و updated مع كل تحديث =====
-  const BUILD = { version: "v18", updated: "2026-11-23 08:50" };
+  // رقم النسخة: يتشال من هنا بعد اعتماد الموقع
+  const BUILD = { version: "v24", updated: "2026-11-23 09:30" };
 
-  // ===== الإعدادات =====
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
-  const REQUIRE_PHONE = true; // false إذا SMS ما اشتغل في الحساب التجريبي
   const RATE_BHD = 0.377;
   const COUPONS = { TEST10: 0.10 };
   const SLIDE_MS = 5000;
-  const TOAST_MS = 1500;      // مدة إشعار النجاح
-  const SEND_DELAY_MS = 5000; // مدة التحميل قبل ما تظهر خانات الرمز
-
-  // ===== مسح البيانات المحلية عند تغيّر النسخة فقط (للتجربة) =====
-  try {
-    if (localStorage.getItem("showbiz_build") !== BUILD.version) {
-      Object.keys(localStorage).forEach(k => {
-        if (k.startsWith("showbiz") || k.startsWith("sb-")) localStorage.removeItem(k);
-      });
-      localStorage.setItem("showbiz_build", BUILD.version);
-    }
-  } catch (e) {}
+  const TOAST_MS = 1500;
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -182,41 +126,13 @@
       keepShopping:"متابعة التسوق", checkout:"إتمام الطلب", areaPh:"اختر المنطقة أو المدينة",
       address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع",
       done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم الحفظ في هذا المتصفح فقط",
-      loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...", wait:"جاري التنفيذ...",
-      verifying:"جاري التحقق...", sendingCode:"جاري إرسال الرمز...",
+      loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...",
       noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول",
       dims:"الأبعاد", weight:"الوزن", noDesc:"لا توجد تفاصيل إضافية", defaultVariant:"افتراضي",
-      login:"تسجيل الدخول", logout:"تسجيل الخروج", account:"حسابي", myOrders:"طلباتي", noOrders:"ما عندك طلبات بعد",
+      login:"تسجيل الدخول", account:"حسابي", logout:"تسجيل الخروج", myOrders:"طلباتي", noOrders:"ما عندك طلبات بعد",
       ordersErr:"تعذر تحميل الطلبات", editProfile:"تعديل بياناتي", save:"حفظ", saved:"تم الحفظ",
-      needLogin:"سجّل دخولك أو أنشئ حساب لإتمام الطلب", loginTitle:"تسجيل الدخول", loginSub:"ادخل ببيانات حسابك",
-      email:"البريد الإلكتروني", password:"كلمة المرور", loginBtn:"دخول",
-      noAccount:"سجّل حساب الآن", noAccountAsk:"ليس لديك حساب؟", haveAccount:"عندي حساب، سجّل دخول",
-      forgotLink:"نسيت كلمة المرور؟", forgotTitle:"نسيت كلمة المرور",
-      forgotSub:"اكتب بريدك الإلكتروني، وبنرسل لك رابط لإعادة تعيين كلمة المرور",
-      forgotBtn:"إرسال الرابط",
-      forgotSent:"تم إرسال لك رابط عبر البريد الإلكتروني لإعادة تعيين كلمة المرور",
-      backToLogin:"العودة إلى تسجيل الدخول", goLogin:"العودة إلى تسجيل الدخول", cancel:"إلغاء",
-      newPassTitle:"إعادة تعيين كلمة المرور", newPassSub:"اكتب كلمة المرور الجديدة لحسابك",
-      newPassLbl:"كلمة المرور الجديدة", newPassConfirmLbl:"تأكيد كلمة المرور الجديدة",
-      newPassBtn:"حفظ", passChanged:"تم تغيير كلمة المرور بنجاح. سجّل دخولك بكلمة المرور الجديدة",
-      passReq:"اكتب كلمة المرور",
-      showPass:"إظهار كلمة المرور", hidePass:"إخفاء كلمة المرور",
-      signupTitle:"إنشاء حساب", signupSub:"ثلاث خطوات بسيطة وتكون حسابك جاهز",
-      stepEmail:"البريد الإلكتروني", stepPhone:"رقم الجوال", stepDetails:"بيانات الحساب",
-      sendCode:"إرسال رمز التحقق", sentTo:"تم إرسال الرمز إلى:", enterCode:"اكتب الرمز المكون من 6 أرقام",
-      resendCode:"إعادة إرسال الرمز",
-      emailOk:"تم التحقق من بريدك الإلكتروني ✅", phoneOk:"تم التحقق من جوالك ✅",
-      change:"تغيير", lockedStep:"أكمل الخطوة اللي قبلها أولًا", skipPhone:"التحقق من الجوال غير مفعّل حاليًا",
-      sendSms:"إرسال رمز التحقق", verifyBtn:"تحقق", firstName:"الاسم الأول", lastName:"الاسم الأخير",
-      confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب", accountDone:"تم إنشاء الحساب بنجاح",
-      emailBad:"البريد الإلكتروني غير صحيح، لأنه لم يتم كتابته بشكل صحيح",
-      phoneBad:"رقم الجوال غير صحيح",
-      codeWrong:"الرمز غير صحيح. اكتب الرمز من جديد",
-      codeExpired:"الرمز منتهي. اضغط إعادة إرسال الرمز واستخدم الجديد",
-      namesReq:"الاسم الأول والأخير مطلوبين",
-      passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر", passMismatch:"كلمتا المرور غير متطابقتين",
-      loginFail:"البريد الإلكتروني أو كلمة المرور غير صحيحة",
-      rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول",
+      namesReq:"الاسم الأول والأخير مطلوبين", firstName:"الاسم الأول", lastName:"الاسم الأخير",
+      needLogin:"سجّل دخولك لإتمام الطلب", goLogin:"تسجيل الدخول",
       buildLabel:"النسخة", updatedLabel:"آخر تحديث"
     },
     en: {
@@ -229,41 +145,13 @@
       keepShopping:"Keep shopping", checkout:"Checkout", areaPh:"Please select your area or city",
       address:"Full address", confirm:"Confirm order", back:"Back",
       done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
-      loadErr:"Could not load products, please try again", loading:"Loading...", wait:"Working...",
-      verifying:"Verifying...", sendingCode:"Sending code...",
+      loadErr:"Could not load products, please try again", loading:"Loading...",
       noProducts:"No products available right now", fillAll:"Please fill all fields",
       dims:"Dimensions", weight:"Weight", noDesc:"No extra details", defaultVariant:"Default",
-      login:"Log in", logout:"Log out", account:"My account", myOrders:"My orders", noOrders:"You have no orders yet",
+      login:"Log in", account:"My account", logout:"Log out", myOrders:"My orders", noOrders:"You have no orders yet",
       ordersErr:"Could not load orders", editProfile:"Edit my details", save:"Save", saved:"Saved",
-      needLogin:"Log in or create an account to complete your order", loginTitle:"Log in", loginSub:"Sign in with your account details",
-      email:"Email", password:"Password", loginBtn:"Log in",
-      noAccount:"Create an account now", noAccountAsk:"Don't have an account?", haveAccount:"I have an account, log in",
-      forgotLink:"Forgot password?", forgotTitle:"Forgot password",
-      forgotSub:"Enter your email and we will send you a link to reset your password",
-      forgotBtn:"Send link",
-      forgotSent:"A password reset link has been sent to your email",
-      backToLogin:"Back to log in", goLogin:"Back to log in", cancel:"Cancel",
-      newPassTitle:"Reset password", newPassSub:"Enter your new password for your account",
-      newPassLbl:"New password", newPassConfirmLbl:"Confirm new password",
-      newPassBtn:"Save", passChanged:"Password changed successfully. Log in with your new password",
-      passReq:"Enter your password",
-      showPass:"Show password", hidePass:"Hide password",
-      signupTitle:"Create account", signupSub:"Three simple steps and your account is ready",
-      stepEmail:"Email", stepPhone:"Mobile number", stepDetails:"Account details",
-      sendCode:"Send verification code", sentTo:"Code sent to:", enterCode:"Enter the 6-digit code",
-      resendCode:"Resend code",
-      emailOk:"Your email is verified ✅", phoneOk:"Your mobile is verified ✅",
-      change:"Change", lockedStep:"Complete the previous step first", skipPhone:"Phone verification is currently off",
-      sendSms:"Send verification code", verifyBtn:"Verify", firstName:"First name", lastName:"Last name",
-      confirmPass:"Confirm password", createBtn:"Create account", accountDone:"Account created successfully",
-      emailBad:"The email is not valid, it was not typed correctly",
-      phoneBad:"Invalid mobile number",
-      codeWrong:"The code is incorrect. Type it again",
-      codeExpired:"The code has expired. Press resend and use the new code",
-      namesReq:"First and last name are required",
-      passShort:"Password must be 8 characters or more", passMismatch:"Passwords do not match",
-      loginFail:"Email or password is incorrect",
-      rateLimit:"Too many attempts, wait a moment and try again",
+      namesReq:"First and last name are required", firstName:"First name", lastName:"Last name",
+      needLogin:"Log in to complete your order", goLogin:"Log in",
       buildLabel:"Build", updatedLabel:"Last update"
     }
   };
@@ -274,102 +162,25 @@
   if (!Array.isArray(state.cart)) state.cart = [];
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
 
-  // بيانات التسجيل المؤقتة (بدون كلمات المرور)
-  const blankPending = () => ({
-    email:"", codeSent:false, emailVerified:false, dial:"+973", phone:"", otpSent:false,
-    full:"", phoneVerified:false, editPhone:false, first:"", last:""
-  });
-  let pending = blankPending();
-  try { Object.assign(pending, JSON.parse(localStorage.getItem("showbiz_signup") || "{}")); } catch (e) {}
-  function savePending() { try { localStorage.setItem("showbiz_signup", JSON.stringify(pending)); } catch (e) {} }
-  function clearPending() { pending = blankPending(); try { localStorage.removeItem("showbiz_signup"); } catch (e) {} }
-
   let products = [], loaded = false, loadError = false;
-  let view = "shop", notice = "", noticeType = "err", loginEmail = "", afterLogin = null;
-  let authReturn = "shop";   // الصفحة اللي كان فيها الزائر قبل صفحات الدخول
-  let forgotDone = false;    // تم إرسال رابط إعادة التعيين
-  let recovering = false;    // الزائر فتح رابط إعادة تعيين كلمة المرور من بريده
-  let passDone = false;      // تم حفظ كلمة المرور الجديدة
+  let view = "shop", notice = "";
   let modal = null, cardIdx = {};
   let me = null, profile = null;
   let accountOrders = null, ordersFailed = false, lastSaveOk = true, debugOn = false;
-  let busy = false;          // يمنع تكرار الطلبات المتزامنة
-  let sending = null;        // "email" أو "sms" أثناء فترة التحميل قبل ظهور الخانات
-  let sendSeq = 0;           // رقم الإرسال الحالي: أي إرسال قديم يتجاهل نفسه
-  const otpMsg = { email: null, sms: null }; // رسالة الخطأ/الحالة تحت خانات الرمز
-  const AUTH_VIEWS = ["login", "signup", "forgot", "newpass"];
 
   // ===== مساعدات =====
   const t = (k) => T[state.lang][k];
-  const wait = (ms) => new Promise(r => setTimeout(r, ms));
-  const rate = () => COUNTRIES[state.country].rate;
-  const localPrice = (usd) => usd * rate();
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  // بريد صحيح: اسم + @ + دومين + امتداد من حرفين أو أكثر (مثل .com)
-  const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
-  const isEmail = (s) => EMAIL_RE.test(String(s || "").trim());
-  const digitsOnly = (s) => String(s || "").replace(/\D/g, "");
-  const samePhone = (a, b) => !!a && !!b && digitsOnly(a) === digitsOnly(b);
+  const localPrice = (usd) => usd * COUNTRIES[state.country].rate;
   const isComplete = () => !!(me && profile);
-  const smsFull = () => pending.full || (pending.dial + pending.phone);
 
-  // إشعار النجاح في منتصف الشاشة
   function toast(msg) {
     const d = document.createElement("div");
-    d.className = "toast";
-    d.textContent = msg;
+    d.className = "toast"; d.textContent = msg;
     document.body.appendChild(d);
     setTimeout(() => d.remove(), TOAST_MS);
   }
-
-  // رسائل عامة: نوعها err أو ok أو info
-  function noticeHTML() {
-    return `<div id="notice" class="msg ${noticeType} ${notice ? "" : "hidden"}">${esc(notice)}</div>`;
-  }
-  function setNotice(m, type = "err") {
-    notice = m; noticeType = type;
-    const el = document.getElementById("notice");
-    if (el) { el.className = `msg ${type} ${m ? "" : "hidden"}`; el.textContent = m; }
-  }
-  function go(v, msg, type = "err") { view = v; notice = msg || ""; noticeType = type; render(); }
-  // دخول صفحة من صفحات الدخول: نتذكر الصفحة الحالية عشان زر الإلغاء يرجع لها
-  function openAuth(v, msg) {
-    if (!AUTH_VIEWS.includes(view)) authReturn = view;
-    go(v, msg || "");
-  }
-
-  // خطأ تحت حقل معيّن (يحدد الإطار بالأحمر)
-  function setFieldErr(id, msg) {
-    const inp = document.getElementById(id);
-    const box = document.getElementById(id + "Err");
-    if (inp) inp.classList.toggle("bad", !!msg);
-    if (box) { box.textContent = msg || ""; box.classList.toggle("hidden", !msg); }
-  }
-
-  // رسالة تحت خانات الرمز مباشرة
-  function setOtpMsg(prefix, msg, type = "err") {
-    otpMsg[prefix] = msg ? { msg, type } : null;
-    const el = document.getElementById(prefix + "Msg");
-    if (el) { el.className = `otpmsg ${type} ${msg ? "" : "hidden"}`; el.textContent = msg || ""; }
-  }
-  function otpMsgHTML(prefix) {
-    const m = otpMsg[prefix];
-    return `<div id="${prefix}Msg" class="otpmsg ${m ? m.type : ""} ${m ? "" : "hidden"}">${m ? esc(m.msg) : ""}</div>`;
-  }
-  const loadingHTML = () => `<div class="loadline"><span class="spin"></span><span>${t("sendingCode")}</span></div>`;
-
-  // زر العين لإظهار أو إخفاء كلمة المرور
-  const EYE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
-  function eyeBtn(id) {
-    const L = T[state.lang];
-    return `<button type="button" class="eye" data-action="eye" data-target="${id}" aria-label="${L.showPass}" title="${L.showPass}">${EYE_SVG}</button>`;
-  }
-  // شعار وزر اللغة في أعلى كل صفحة دخول
-  function authHead() {
-    const L = T[state.lang];
-    return `<div class="topbar"><button class="ghost" data-action="toggleLang">${state.lang === "ar" ? "English" : "العربية"}</button></div>
-            <div class="authlogo">${L.siteName}</div>`;
-  }
+  function go(v, msg) { view = v; notice = msg || ""; render(); }
 
   function fmtFor(code, amount) {
     const c = COUNTRIES[code] || COUNTRIES[state.country];
@@ -415,9 +226,9 @@
     const riskBHD = Math.max(orderBHD * 0.15, 0.3);
     return { actualKg, volKg, chargeable, shipBHD, riskBHD };
   }
-  const shipLocal = (bhd) => bhd * (rate() / RATE_BHD);
+  const shipLocal = (bhd) => bhd * (COUNTRIES[state.country].rate / RATE_BHD);
 
-  // ===== تحميل المنتجات من الوسيط =====
+  // ===== تحميل المنتجات =====
   async function loadProducts() {
     loadError = false;
     try {
@@ -441,49 +252,22 @@
     render();
   }
 
-  // ===== الحساب =====
-  // المستخدم الحالي من الجلسة المحلية (بدون طلب شبكة ينتظره المتصفح)
-  async function currentUser() {
+  // ===== الحساب (الدخول يتم من صفحات login و signup و forgot) =====
+  async function loadProfile() {
+    me = null; profile = null;
     try {
       const { data: { session } } = await sb.auth.getSession();
-      return session?.user || null;
-    } catch (e) { return null; }
-  }
-  async function loadProfile() {
-    me = await currentUser();
-    profile = null;
+      me = session?.user || null;
+    } catch (e) {}
     if (me) {
       try {
         const { data } = await sb.from("customers").select("*").eq("id", me.id).maybeSingle();
         profile = data || null;
       } catch (e) {}
     }
-  }
-  // يحدّث الخطوات حسب ما تحقق فعلًا في الجلسة
-  function syncPendingFromSession() {
-    if (!me) return;
-    pending.email = me.email || pending.email;
-    pending.emailVerified = !!me.email_confirmed_at;
-    pending.phoneVerified = !!me.phone_confirmed_at;
-    savePending();
-  }
-  async function refreshAuth() {
-    await loadProfile();
-    if (profile) {
-      clearPending();
-      if (AUTH_VIEWS.includes(view)) view = "shop";
-      return;
-    }
-    if (me) {
-      syncPendingFromSession();
-      if (view !== "signup") view = "signup";
-    }
-  }
-  async function initAuth() {
-    try {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session) await refreshAuth();
-    } catch (e) {}
+    // الدولة المفضلة المحفوظة في الحساب تنطبق تلقائيًا
+    const pref = me?.user_metadata?.preferred_country;
+    if (pref && COUNTRIES[pref] && pref !== state.country) { state.country = pref; state.area = null; save(); }
   }
   async function loadOrders() {
     accountOrders = null; ordersFailed = false; render();
@@ -496,505 +280,42 @@
     }
     render();
   }
-  // رسالة الخطأ: الحقيقية من Supabase مع الكود والحالة، عدا الحالات المعروفة
-  function errMsg(e) {
-    const L = T[state.lang];
-    const m = String(e?.message || e || "");
-    if (/invalid login/i.test(m)) return L.loginFail;
-    if (/rate|too many|seconds/i.test(m)) return L.rateLimit;
-    const extra = [e?.code, e?.status].filter(Boolean).join(" · ");
-    return extra ? `${m} (${extra})` : m;
-  }
-  // خطأ الرمز: منتهي أو غلط
-  function codeErr(e) {
-    const L = T[state.lang];
-    return /expired/i.test(String(e?.message || e || "")) ? L.codeExpired : L.codeWrong;
-  }
 
-  // ===== خانات الرمز (6 خانات) =====
-  function otpBoxes(prefix) {
-    const boxes = [0, 1, 2, 3, 4, 5].map(i =>
-      `<input class="obox" data-otp="${prefix}" data-i="${i}" inputmode="numeric" autocomplete="one-time-code" maxlength="1" aria-label="${i + 1}">`
-    ).join("");
-    return `<div class="otp-row">${boxes}</div>`;
-  }
-  function readOtp(prefix) {
-    return [...document.querySelectorAll(`[data-otp="${prefix}"]`)].map(x => x.value).join("");
-  }
-  function clearOtp(prefix) {
-    document.querySelectorAll(`[data-otp="${prefix}"]`).forEach(x => { x.value = ""; });
-  }
-  function focusOtp(prefix, i) {
-    setTimeout(() => {
-      const el = document.querySelector(`[data-otp="${prefix}"][data-i="${i}"]`);
-      if (el) { el.focus(); el.select(); }
-    }, 0);
-  }
-  // عنوان الإرسال: الإيميل أو الرقم كامل مع مفتاح الدولة
-  function sentLine(prefix) {
-    const L = T[state.lang];
-    const addr = prefix === "email" ? pending.email : smsFull();
-    return `<p class="muted">${L.sentTo}</p><div class="addr">${esc(addr)}</div>`;
-  }
-  // تحقق تلقائي عند اكتمال 6 أرقام (كأنك ضغطت زر تحقق)
-  function maybeVerify(prefix) {
-    if (busy) return;
-    if (readOtp(prefix).length !== 6) return;
-    if (prefix === "email") verifyEmail(); else verifySms();
-  }
-  // خطأ في الرمز: يتمسح الرمز ويرجع المؤشر للخانة الأولى، والخطأ يبقى ظاهر
-  function failOtp(prefix, msg) {
-    clearOtp(prefix);
-    focusOtp(prefix, 0);
-    setOtpMsg(prefix, msg, "err");
-  }
+  // ===== خانات الرسائل والطلب =====
+  async function confirmOrder() {
+    const addr = document.getElementById("fAddr").value.trim();
+    const msg = document.getElementById("formMsg");
+    if (!state.area || !addr) { msg.textContent = t("fillAll"); return; }
+    if (!isComplete()) { localStorage.setItem("showbiz_next", "checkout"); location.href = "login.html"; return; }
 
-  // ===== صفحة تسجيل الدخول =====
-  function viewLogin() {
-    const L = T[state.lang];
-    return `
-      <div class="narrow">
-        <div class="card auth">
-          ${authHead()}
-          <h2>${L.loginTitle}</h2>
-          <p class="sub">${L.loginSub}</p>
-          <div class="field">
-            <label>${L.email}</label>
-            <input id="lEmail" type="email" dir="ltr" autocomplete="email" value="${esc(loginEmail)}">
-            <div id="lEmailErr" class="ferr hidden"></div>
-          </div>
-          <div class="field">
-            <label>${L.password}</label>
-            <div class="pwwrap">
-              <input id="lPass" type="password" dir="ltr" autocomplete="current-password">
-              ${eyeBtn("lPass")}
-            </div>
-            <div id="lPassErr" class="ferr hidden"></div>
-          </div>
-          <div class="linkline"><button class="linkbtn" data-action="toForgot">${L.forgotLink}</button></div>
-          <button class="btn-orange btnfull" data-action="doLogin">${L.loginBtn}</button>
-          ${noticeHTML()}
-          <div class="linkrow"><span class="muted">${L.noAccountAsk}</span> <button class="linkbtn" data-action="toSignup">${L.noAccount}</button></div>
-          <div class="linkrow"><button class="ghost" data-action="authCancel">${L.cancel}</button></div>
-        </div>
-      </div>`;
-  }
-  async function doLogin() {
-    if (busy) return;
-    const L = T[state.lang];
-    const email = loginEmail.trim();
-    const pass = document.getElementById("lPass")?.value || "";
-    setFieldErr("lEmail", ""); setFieldErr("lPass", "");
-    if (!isEmail(email)) return setFieldErr("lEmail", L.emailBad);
-    if (!pass) return setFieldErr("lPass", L.passReq);
-    busy = true; setNotice("", "info");
+    const s = shippingCalc();
+    const subtotal = localPrice(subtotalUSD());
+    const discount = localPrice(discountUSD());
+    const ship = shipLocal(s.shipBHD);
+    const row = {
+      user_id: me.id, country: state.country, status: "test-not-sent-to-cj",
+      items: cartLines().map(l => ({ pid: l.p.pid, vid: l.vid, sku: l.v.sku, name: l.p.nameEn, variant: l.v.key, qty: l.qty, unitUSD: l.v.price })),
+      shipping_address: { area: state.area, address: addr },
+      contact: { name: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim(), phone: profile?.phone || null },
+      coupon: state.coupon, subtotal, discount, shipping: ship,
+      total: subtotal - discount + ship, internal_risk_bhd: s.riskBHD
+    };
+
+    lastSaveOk = false;
     try {
-      const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-      if (error) {
-        // Supabase ما يفرّق بين البريد الغلط وكلمة المرور الغلط، فنعرض الرسالة على الاثنين
-        if (/invalid login/i.test(String(error.message || ""))) {
-          setFieldErr("lPass", L.loginFail);
-          document.getElementById("lEmail")?.classList.add("bad");
-          return;
-        }
-        return setNotice(errMsg(error), "err");
-      }
-      await loadProfile();
-      if (!profile) { syncPendingFromSession(); return go("signup", L.lockedStep); }
-      clearPending();
-      const next = afterLogin || "shop";
-      afterLogin = null;
-      go(next, "");
-    } catch (e) {
-      setNotice(errMsg(e), "err");
-    } finally { busy = false; }
-  }
-
-  // ===== صفحة نسيت كلمة المرور =====
-  function viewForgot() {
-    const L = T[state.lang];
-    return `
-      <div class="narrow">
-        <div class="card auth">
-          ${authHead()}
-          <h2>${L.forgotTitle}</h2>
-          <p class="sub">${L.forgotSub}</p>
-          ${forgotDone
-            ? `<div class="msg ok">${L.forgotSent}</div>`
-            : `<div class="field">
-                 <label>${L.email}</label>
-                 <input id="fEmail" type="email" dir="ltr" autocomplete="email" value="${esc(loginEmail)}">
-                 <div id="fEmailErr" class="ferr hidden"></div>
-               </div>
-               <button class="btn-orange btnfull" data-action="sendReset">${L.forgotBtn}</button>`}
-          ${noticeHTML()}
-          <div class="linkrow"><button class="linkbtn" data-action="toLogin">${L.backToLogin}</button></div>
-          <div class="linkrow"><span class="muted">${L.noAccountAsk}</span> <button class="linkbtn" data-action="toSignup">${L.noAccount}</button></div>
-          <div class="linkrow"><button class="ghost" data-action="authCancel">${L.cancel}</button></div>
-        </div>
-      </div>`;
-  }
-  // إرسال رابط إعادة التعيين
-  async function sendReset() {
-    if (busy) return;
-    const L = T[state.lang];
-    const email = (document.getElementById("fEmail")?.value || "").trim();
-    setFieldErr("fEmail", "");
-    if (!isEmail(email)) return setFieldErr("fEmail", L.emailBad);
-    busy = true; setNotice("", "info");
-    try {
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
-      if (error) return setNotice(errMsg(error), "err");
-      loginEmail = email; forgotDone = true; notice = "";
-      render();
-    } catch (e) {
-      setNotice(errMsg(e), "err");
-    } finally { busy = false; }
-  }
-
-  // ===== صفحة إعادة تعيين كلمة المرور (تفتح من رابط البريد) =====
-  function viewNewPass() {
-    const L = T[state.lang];
-    if (passDone) {
-      return `
-        <div class="narrow">
-          <div class="card auth">
-            ${authHead()}
-            <h2>${L.newPassTitle}</h2>
-            <div class="msg ok">${L.passChanged}</div>
-            <button class="btn-orange btnfull" style="margin-top:12px" data-action="backToLogin">${L.goLogin}</button>
-          </div>
-        </div>`;
+      const { error } = await sb.from("orders").insert(row);
+      if (!error) lastSaveOk = true; else console.warn(error);
+    } catch (e) { console.warn(e); }
+    if (!lastSaveOk) {
+      try {
+        const arr = JSON.parse(localStorage.getItem("showbiz_orders") || "[]");
+        arr.push({ ...row, created: new Date().toISOString() });
+        localStorage.setItem("showbiz_orders", JSON.stringify(arr));
+      } catch (e) {}
     }
-    return `
-      <div class="narrow">
-        <div class="card auth">
-          ${authHead()}
-          <h2>${L.newPassTitle}</h2>
-          <p class="sub">${L.newPassSub}</p>
-          <div class="field">
-            <label>${L.newPassLbl}</label>
-            <div class="pwwrap"><input id="nPass" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("nPass")}</div>
-            <div id="nPassErr" class="ferr hidden"></div>
-          </div>
-          <div class="field">
-            <label>${L.newPassConfirmLbl}</label>
-            <div class="pwwrap"><input id="nPass2" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("nPass2")}</div>
-            <div id="nPass2Err" class="ferr hidden"></div>
-          </div>
-          <button class="btn-orange btnfull" data-action="setNewPass">${L.newPassBtn}</button>
-          ${noticeHTML()}
-        </div>
-      </div>`;
-  }
-  async function setNewPass() {
-    if (busy) return;
-    const L = T[state.lang];
-    const p1 = document.getElementById("nPass")?.value || "";
-    const p2 = document.getElementById("nPass2")?.value || "";
-    setFieldErr("nPass", ""); setFieldErr("nPass2", "");
-    if (p1.length < 8) return setFieldErr("nPass", L.passShort);
-    if (p1 !== p2) return setFieldErr("nPass2", L.passMismatch);
-    busy = true; setNotice("", "info");
-    try {
-      const { error } = await sb.auth.updateUser({ password: p1 });
-      if (error) return setNotice(errMsg(error), "err");
-      // نسجّل خروج الجلسة المؤقتة، ويسجل الزائر دخوله بكلمة المرور الجديدة
-      recovering = false;
-      await sb.auth.signOut().catch(() => {});
-      me = null; profile = null;
-      passDone = true; notice = "";
-      render();
-    } catch (e) {
-      setNotice(errMsg(e), "err");
-    } finally { busy = false; }
-  }
-
-  // ===== صفحة إنشاء الحساب (خطوات في صفحة واحدة) =====
-  function viewSignup() {
-    const L = T[state.lang];
-    const emailOK = pending.emailVerified;
-    const phoneOK = REQUIRE_PHONE && pending.phoneVerified && !pending.editPhone;
-    const detailsOpen = emailOK && (!REQUIRE_PHONE || phoneOK);
-    const phoneDone = !REQUIRE_PHONE || phoneOK;
-
-    // الخطوة 1: البريد
-    let b1;
-    if (emailOK) {
-      b1 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(pending.email)}</span></span>
-              <button class="linkbtn" data-action="changeEmail">${L.change}</button></div>`;
-    } else if (sending === "email") {
-      b1 = loadingHTML();
-    } else if (!pending.codeSent) {
-      b1 = `<div class="field">
-              <input id="sEmail" type="email" dir="ltr" placeholder="name@example.com" value="${esc(pending.email)}">
-              <div id="sEmailErr" class="ferr hidden"></div>
-            </div>
-            <button class="btn-orange btnfull" data-action="sendCode">${L.sendCode}</button>`;
-    } else {
-      b1 = `${sentLine("email")}
-            ${otpBoxes("email")}
-            ${otpMsgHTML("email")}
-            <button class="btn-orange btnfull" data-action="verifyEmail">${L.verifyBtn}</button>
-            <div class="linkrow">
-              <button class="linkbtn" data-action="sendCode">${L.resendCode}</button>
-              <button class="linkbtn" data-action="changeEmail">${L.change}</button>
-            </div>`;
-    }
-
-    // الخطوة 2: الجوال
-    let b2;
-    if (!emailOK) {
-      b2 = `<p class="muted">${L.lockedStep}</p>`;
-    } else if (!REQUIRE_PHONE) {
-      b2 = `<p class="muted">${L.skipPhone}</p>`;
-    } else if (phoneOK) {
-      b2 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(pending.full)}</span></span>
-              <button class="linkbtn" data-action="changePhone">${L.change}</button></div>`;
-    } else if (sending === "sms") {
-      b2 = loadingHTML();
-    } else if (!pending.otpSent) {
-      const opts = Object.values(COUNTRIES).map(c =>
-        `<option value="${c.dial}" ${pending.dial === c.dial ? "selected" : ""}>${c.flag} ${c.dial}</option>`
-      ).join("");
-      b2 = `<div class="phone-row">
-              <select id="sDial">${opts}</select>
-              <input id="sPhone" type="tel" dir="ltr" placeholder="36123456" value="${esc(pending.phone)}">
-            </div>
-            <button class="btn-orange btnfull" style="margin-top:10px" data-action="sendSms">${L.sendSms}</button>`;
-    } else {
-      b2 = `${sentLine("sms")}
-            ${otpBoxes("sms")}
-            ${otpMsgHTML("sms")}
-            <button class="btn-orange btnfull" data-action="verifySms">${L.verifyBtn}</button>
-            <div class="linkrow">
-              <button class="linkbtn" data-action="sendSms">${L.resendCode}</button>
-              <button class="linkbtn" data-action="changePhone">${L.change}</button>
-            </div>`;
-    }
-
-    // الخطوة 3: بيانات الحساب
-    const b3 = detailsOpen
-      ? `<div class="field"><label>${L.firstName}</label><input id="sFirst" value="${esc(pending.first)}"></div>
-         <div class="field"><label>${L.lastName}</label><input id="sLast" value="${esc(pending.last)}"></div>
-         <div class="field">
-           <label>${L.password}</label>
-           <div class="pwwrap"><input id="sPass" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("sPass")}</div>
-           <div id="sPassErr" class="ferr hidden"></div>
-         </div>
-         <div class="field">
-           <label>${L.confirmPass}</label>
-           <div class="pwwrap"><input id="sPass2" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("sPass2")}</div>
-           <div id="sPass2Err" class="ferr hidden"></div>
-         </div>
-         <button class="btn-orange btnfull" data-action="createAccount">${L.createBtn}</button>`
-      : `<p class="muted">${L.lockedStep}</p>`;
-
-    const stepCls = (done, locked) => `step ${done ? "done" : ""} ${locked ? "locked" : ""}`;
-    const badge = (n, done) => `<span class="badge">${done ? "✓" : n}</span>`;
-
-    return `
-      <div class="narrow">
-        <div class="card auth">
-          ${authHead()}
-          <h2>${L.signupTitle}</h2>
-          <p class="sub">${L.signupSub}</p>
-          <section class="${stepCls(emailOK, false)}">
-            <div class="stephead">${badge(1, emailOK)} ${L.stepEmail}</div>${b1}
-          </section>
-          <section class="${stepCls(phoneDone, !emailOK)}">
-            <div class="stephead">${badge(2, phoneDone)} ${L.stepPhone}</div>${b2}
-          </section>
-          <section id="stepDetails" class="${stepCls(false, !detailsOpen)}">
-            <div class="stephead">${badge(3, false)} ${L.stepDetails}</div>${b3}
-          </section>
-          ${noticeHTML()}
-          <div class="linkrow"><button class="linkbtn" data-action="toLogin">${L.haveAccount}</button></div>
-          <div class="linkrow"><button class="ghost" data-action="authCancel">${L.cancel}</button></div>
-        </div>
-      </div>`;
-  }
-
-  // إرسال رمز البريد (وإعادة الإرسال): تحميل ~5 ثواني ثم تظهر الخانات دائمًا.
-  // الطلب يكمل في الخلفية، وإذا رجع خطأ حقيقي يظهر تحت الخانات.
-  async function sendCode() {
-    const L = T[state.lang];
-    const email = (document.getElementById("sEmail")?.value || pending.email || "").trim();
-    if (!isEmail(email)) return setFieldErr("sEmail", L.emailBad);
-    setFieldErr("sEmail", "");
-    pending.email = email; savePending();
-    notice = ""; otpMsg.email = null;
-    const seq = ++sendSeq;
-    sending = "email"; render();
-
-    sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
-      .then(({ error }) => { if (error && seq === sendSeq) setOtpMsg("email", errMsg(error), "err"); })
-      .catch((e) => { if (seq === sendSeq) setOtpMsg("email", errMsg(e), "err"); });
-
-    await wait(SEND_DELAY_MS);
-    if (seq !== sendSeq) return;
-    sending = null; pending.codeSent = true; savePending();
-    render(); focusOtp("email", 0);
-  }
-
-  // التحقق من رمز البريد: تلقائي عند اكتمال 6 أرقام، أو بالضغط على الزر
-  // بعد نجاح الرمز نستخدم المستخدم اللي يرجعه Supabase مباشرة، بدون طلب شبكة إضافي
-  async function verifyEmail() {
-    if (busy) return;
-    const L = T[state.lang];
-    const code = readOtp("email");
-    if (!/^\d{6}$/.test(code)) return setOtpMsg("email", L.enterCode, "err");
-    busy = true; setOtpMsg("email", L.verifying, "info");
-    try {
-      let res = await sb.auth.verifyOtp({ email: pending.email, token: code, type: "email" });
-      if (res.error) res = await sb.auth.verifyOtp({ email: pending.email, token: code, type: "magiclink" });
-      if (res.error) {
-        // إذا كان البريد متحقق منه من قبل في الجلسة، نعتبره ناجحًا
-        const u = await currentUser();
-        const ok = u && u.email_confirmed_at && String(u.email).toLowerCase() === pending.email.toLowerCase();
-        if (!ok) return failOtp("email", codeErr(res.error));
-        me = u;
-      } else {
-        me = res.data?.user || me;
-      }
-      pending.emailVerified = true; pending.codeSent = false; savePending();
-      otpMsg.email = null;
-      toast(L.emailOk);
-      render();
-    } catch (e) {
-      failOtp("email", errMsg(e));
-    } finally { busy = false; }
-  }
-
-  // تغيير البريد: يشتغل مباشرة
-  function changeEmail() {
-    busy = false; sending = null; sendSeq++;
-    me = null; profile = null; clearPending();
-    otpMsg.email = null; otpMsg.sms = null;
-    notice = ""; render();
-    sb.auth.signOut().catch(() => {});
-  }
-
-  // إرسال رمز الجوال (وإعادة الإرسال): تحميل ~5 ثواني ثم تظهر الخانات دائمًا
-  async function sendSms() {
-    const L = T[state.lang];
-    const digits = digitsOnly(document.getElementById("sPhone")?.value || pending.phone || "");
-    if (!/^\d{6,12}$/.test(digits)) return setNotice(L.phoneBad, "err");
-    const full = pending.dial + digits;
-    // إذا الرقم نفسه متحقق منه من قبل، ما نرسل شي
-    if (me && me.phone_confirmed_at && samePhone(me.phone, full)) {
-      pending.phone = digits; pending.full = full; pending.phoneVerified = true; pending.otpSent = false; pending.editPhone = false; savePending();
-      toast(L.phoneOk); render();
-      document.getElementById("stepDetails")?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
-    pending.phone = digits; pending.full = full; pending.phoneVerified = false; pending.editPhone = false; savePending();
-    notice = ""; otpMsg.sms = null;
-    const seq = ++sendSeq;
-    sending = "sms"; render();
-
-    sb.auth.updateUser({ phone: full })
-      .then(({ data, error }) => {
-        console.log("[sendSms response]", { data, error });
-        if (error && seq === sendSeq) setOtpMsg("sms", errMsg(error), "err");
-      })
-      .catch((e) => {
-        console.log("[sendSms error]", e);
-        if (seq === sendSeq) setOtpMsg("sms", errMsg(e), "err");
-      });
-
-    await wait(SEND_DELAY_MS);
-    if (seq !== sendSeq) return;
-    sending = null; pending.otpSent = true; savePending();
-    render(); focusOtp("sms", 0);
-  }
-
-  // التحقق من رمز الجوال: تلقائي عند اكتمال 6 أرقام، أو بالضغط على الزر
-  // بعد نجاح الرمز ننتقل فورًا بدون انتظار getUser
-  async function verifySms() {
-    if (busy) return;
-    const L = T[state.lang];
-    const code = readOtp("sms");
-    if (!/^\d{6}$/.test(code)) return setOtpMsg("sms", L.enterCode, "err");
-    busy = true; setOtpMsg("sms", L.verifying, "info");
-    try {
-      const { data, error } = await sb.auth.verifyOtp({ phone: smsFull(), token: code, type: "phone_change" });
-      if (error) {
-        // إذا الرقم متحقق منه فعلًا في الجلسة، نكمل بدل ما نطلب رمز جديد
-        const u = await currentUser();
-        const ok = u && u.phone_confirmed_at && samePhone(u.phone, smsFull());
-        if (!ok) return failOtp("sms", codeErr(error));
-        me = u;
-      } else {
-        me = data?.user || me;
-      }
-      pending.phoneVerified = true; pending.otpSent = false; pending.editPhone = false; savePending();
-      otpMsg.sms = null;
-      toast(L.phoneOk);
-      render();
-      document.getElementById("stepDetails")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    } catch (e) {
-      failOtp("sms", errMsg(e));
-    } finally { busy = false; }
-  }
-
-  // تغيير الجوال: يشتغل مباشرة ويرجعك لخانة الرقم
-  function changePhone() {
-    busy = false; sending = null; sendSeq++;
-    pending.otpSent = false; pending.phoneVerified = false; pending.editPhone = true; savePending();
-    otpMsg.sms = null;
-    notice = ""; render();
-  }
-
-  // هنا فقط يُكتب الحساب في customers
-  async function createAccount() {
-    if (busy) return;
-    const L = T[state.lang];
-    const first = (document.getElementById("sFirst")?.value || "").trim();
-    const last = (document.getElementById("sLast")?.value || "").trim();
-    const p1 = document.getElementById("sPass")?.value || "";
-    const p2 = document.getElementById("sPass2")?.value || "";
-    pending.first = first; pending.last = last; savePending();
-    setFieldErr("sPass", ""); setFieldErr("sPass2", "");
-    if (!first || !last) return setNotice(L.namesReq, "err");
-    if (p1.length < 8) return setFieldErr("sPass", L.passShort);
-    if (p1 !== p2) return setFieldErr("sPass2", L.passMismatch);
-    busy = true; setNotice(L.wait, "info");
-    try {
-      await loadProfile();
-      if (!me) return setNotice(L.codeExpired, "err");
-      const { error } = await sb.auth.updateUser({ password: p1, data: { first_name: first, last_name: last } });
-      if (error) return setNotice(errMsg(error), "err");
-      const phoneValue = REQUIRE_PHONE ? (pending.full || null) : null;
-      const { error: e2 } = await sb.from("customers").upsert({
-        id: me.id, email: me.email, first_name: first, last_name: last, phone: phoneValue
-      });
-      if (e2) return setNotice(e2.message, "err");
-      await loadProfile();
-      clearPending();
-      toast(L.accountDone);
-      go("account", "", "ok");
-      loadOrders();
-    } catch (e) {
-      setNotice(errMsg(e), "err");
-    } finally { busy = false; }
-  }
-
-  async function logout() {
-    try { await sb.auth.signOut(); } catch (e) {}
-    me = null; profile = null; accountOrders = null;
-    go("shop", "");
-  }
-
-  async function saveProfile() {
-    const first = document.getElementById("pFirst").value.trim();
-    const last = document.getElementById("pLast").value.trim();
-    const m = document.getElementById("pMsg");
-    if (!first || !last) { m.textContent = t("namesReq"); return; }
-    const { error } = await sb.from("customers").update({ first_name: first, last_name: last }).eq("id", me.id);
-    if (error) { m.textContent = error.message; return; }
-    await loadProfile();
-    m.textContent = t("saved");
+    state.cart = []; state.area = null; state.coupon = null;
+    save();
+    go("done", "");
   }
 
   // ===== المنتجات والنافذة =====
@@ -1018,24 +339,22 @@
     renderModal();
   }
   function detailsHTML(p, v) {
-    const L = T[state.lang];
     const d = v.dimsCm || p.dimsCm;
     const dims = d ? d.map(x => Number(x).toFixed(1)).join(" × ") + " cm" : "—";
     const w = v.weightG || p.weightG;
     const txt = stripHTML(p.description);
     return `
-      <h4 style="margin:4px 0 10px">${L.detailsTitle}</h4>
-      <div class="row"><span class="muted">${L.dims}</span><span>${dims}</span></div>
-      <div class="row"><span class="muted">${L.weight}</span><span>${w ? w + " g" : "—"}</span></div>
-      <p style="line-height:1.8;font-size:14px;color:var(--muted)">${esc(txt ? txt.slice(0, 1500) : L.noDesc)}</p>
-      <button class="ghost" data-action="mback" style="width:100%">${L.back}</button>`;
+      <h4 style="margin:4px 0 10px">${t("detailsTitle")}</h4>
+      <div class="row"><span class="muted">${t("dims")}</span><span>${dims}</span></div>
+      <div class="row"><span class="muted">${t("weight")}</span><span>${w ? w + " g" : "—"}</span></div>
+      <p style="line-height:1.8;font-size:14px;color:var(--muted)">${esc(txt ? txt.slice(0, 1500) : t("noDesc"))}</p>
+      <button class="ghost" data-action="mback" style="width:100%">${t("back")}</button>`;
   }
   function renderModal() {
     const box = document.getElementById("pmodal");
     const c = curModal();
     if (!c) { box.classList.add("hidden"); box.innerHTML = ""; return; }
     const { p, v } = c;
-    const L = T[state.lang];
     const g = galleryFor(p, v);
     if (modal.idx >= g.length) modal.idx = 0;
     const nav = g.length > 1
@@ -1048,7 +367,7 @@
       body = detailsHTML(p, v);
     } else {
       const opts = p.variants.length > 1
-        ? `<label class="muted">${L.chooseOpt}</label>
+        ? `<label class="muted">${t("chooseOpt")}</label>
            <select id="mVariant">${p.variants.map(x =>
               `<option value="${esc(x.vid)}" ${x.vid === v.vid ? "selected" : ""}>${esc(variantLabel(x))}</option>`
             ).join("")}</select>`
@@ -1057,11 +376,11 @@
         <div class="price">${fmt(localPrice(v.price))}</div>
         ${opts}
         <div class="qtyrow">
-          <span>${L.qty}</span>
+          <span>${t("qty")}</span>
           <span class="qtyctl"><button class="ghost" data-action="mqdec">−</button> <strong>${modal.qty}</strong> <button class="ghost" data-action="mqinc">+</button></span>
         </div>
-        <button class="btn-orange" id="mAdd" style="width:100%">${L.add}</button>
-        <button class="ghost" data-action="mdetails" style="width:100%;margin-top:8px">${L.details}</button>`;
+        <button id="mAdd" style="width:100%">${t("add")}</button>
+        <button class="ghost" data-action="mdetails" style="width:100%;margin-top:8px">${t("details")}</button>`;
     }
 
     box.innerHTML = `
@@ -1107,16 +426,14 @@
     });
   }
   function renderGate() {
-    const L = T[state.lang];
-    document.getElementById("gTitle").textContent = L.welcome;
-    document.getElementById("gCountryLbl").textContent = L.chooseCountry;
-    document.getElementById("gLangLbl").textContent = L.chooseLang;
-    document.getElementById("gGo").textContent = L.go;
+    document.getElementById("gTitle").textContent = t("welcome");
+    document.getElementById("gCountryLbl").textContent = t("chooseCountry");
+    document.getElementById("gLangLbl").textContent = t("chooseLang");
+    document.getElementById("gGo").textContent = t("go");
     document.getElementById("gate").classList.toggle("hidden", state.seen);
   }
   function renderBuild() {
-    const L = T[state.lang];
-    document.getElementById("buildInfo").textContent = `${L.buildLabel}: ${BUILD.version} · ${L.updatedLabel}: ${BUILD.updated}`;
+    document.getElementById("buildInfo").textContent = `${t("buildLabel")}: ${BUILD.version} · ${t("updatedLabel")}: ${BUILD.updated}`;
   }
   function viewShop() {
     if (!loaded) return `<p>${t("loading")}</p>`;
@@ -1178,7 +495,7 @@
       </div>
       <div style="display:flex;gap:8px">
         <button class="ghost" data-action="shop" style="flex:1">${t("keepShopping")}</button>
-        <button class="btn-orange" data-action="checkout" style="flex:1">${t("checkout")}</button>
+        <button data-action="checkout" style="flex:1">${t("checkout")}</button>
       </div>`;
   }
   function viewCheckout() {
@@ -1195,7 +512,7 @@
       <input id="fAddr" placeholder="${t("address")}">
       <div class="card pad" id="summary"></div>
       <p id="formMsg" class="muted"></p>
-      <button class="btn-orange" data-action="confirm" style="width:100%">${t("confirm")}</button>
+      <button data-action="confirm" style="width:100%">${t("confirm")}</button>
       <p><button class="ghost" data-action="cart">${t("back")}</button></p>`;
   }
   function summaryHTML() {
@@ -1221,10 +538,9 @@
       </div>`).join("");
   }
   function viewAccount() {
-    if (!isComplete()) return `<p>${t("needLogin")}</p><button data-action="login">${t("login")}</button>`;
+    if (!isComplete()) return `<p>${t("needLogin")}</p><a class="btn" href="login.html">${t("goLogin")}</a>`;
     const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
     return `
-      ${noticeHTML()}
       <div class="card pad">
         <strong>${esc(name || me.email)}</strong>
         <div class="muted" dir="ltr">${esc(me.email)}</div>
@@ -1238,17 +554,6 @@
       <div>${accountOrders === null ? t("loading") : ordersHTML()}</div>
       <p><button class="ghost" data-action="logout">${t("logout")}</button></p>`;
   }
-  function updateDebug() {
-    const d = document.getElementById("debug");
-    if (!(debugOn || location.hash === "#debug")) { d.classList.add("hidden"); return; }
-    d.classList.remove("hidden");
-    const s = shippingCalc();
-    d.textContent = JSON.stringify({
-      build: BUILD, view, products: products.length, sessionUser: !!me, hasProfile: !!profile,
-      emailVerified: pending.emailVerified, phoneVerified: pending.phoneVerified,
-      chargeableKg: s.chargeable.toFixed(3), shippingBHD: s.shipBHD.toFixed(3), area: state.area
-    }, null, 1);
-  }
   function render() {
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
@@ -1258,59 +563,19 @@
     document.getElementById("siteName").textContent = t("siteName");
 
     let html;
-    if (view === "cart") html = viewCart();
-    else if (view === "checkout") html = viewCheckout();
-    else if (view === "account") html = viewAccount();
-    else if (view === "login") html = viewLogin();
-    else if (view === "forgot") html = viewForgot();
-    else if (view === "newpass") html = viewNewPass();
-    else if (view === "signup") html = viewSignup();
-    else if (view === "done") html = `<p>${lastSaveOk ? t("done") : t("doneLocal")}</p><button data-action="shop">${t("back")}</button>`;
-    else html = viewShop();
+    if (notice) html = `<div class="notice">${esc(notice)}</div>`; else html = "";
+    if (view === "cart") html += viewCart();
+    else if (view === "checkout") html += viewCheckout();
+    else if (view === "account") html += viewAccount();
+    else if (view === "done") html += `<p>${lastSaveOk ? t("done") : t("doneLocal")}</p><button data-action="shop">${t("back")}</button>`;
+    else html += viewShop();
     document.getElementById("view").innerHTML = html;
 
     if (view === "checkout") document.getElementById("summary").innerHTML = summaryHTML();
+    fillCountrySelects();
     renderGate();
     renderBuild();
     renderModal();
-    updateDebug();
-  }
-
-  // ===== الطلب =====
-  async function confirmOrder() {
-    const addr = document.getElementById("fAddr").value.trim();
-    const msg = document.getElementById("formMsg");
-    if (!state.area || !addr) { msg.textContent = t("fillAll"); return; }
-    if (!isComplete()) { afterLogin = "checkout"; openAuth("login", t("needLogin")); return; }
-
-    const s = shippingCalc();
-    const subtotal = localPrice(subtotalUSD());
-    const discount = localPrice(discountUSD());
-    const ship = shipLocal(s.shipBHD);
-    const row = {
-      user_id: me.id, country: state.country, status: "test-not-sent-to-cj",
-      items: cartLines().map(l => ({ pid: l.p.pid, vid: l.vid, sku: l.v.sku, name: l.p.nameEn, variant: l.v.key, qty: l.qty, unitUSD: l.v.price })),
-      shipping_address: { area: state.area, address: addr },
-      contact: { name: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim(), phone: profile?.phone || null },
-      coupon: state.coupon, subtotal, discount, shipping: ship,
-      total: subtotal - discount + ship, internal_risk_bhd: s.riskBHD
-    };
-
-    lastSaveOk = false;
-    try {
-      const { error } = await sb.from("orders").insert(row);
-      if (!error) lastSaveOk = true; else console.warn(error);
-    } catch (e) { console.warn(e); }
-    if (!lastSaveOk) {
-      try {
-        const arr = JSON.parse(localStorage.getItem("showbiz_orders") || "[]");
-        arr.push({ ...row, created: new Date().toISOString() });
-        localStorage.setItem("showbiz_orders", JSON.stringify(arr));
-      } catch (e) {}
-    }
-    state.cart = []; state.area = null; state.coupon = null;
-    save();
-    go("done", "");
   }
 
   // ===== الأحداث =====
@@ -1346,52 +611,33 @@
     if (a === "removeCoupon") { state.coupon = null; save(); render(); return; }
     if (a === "cart") { go("cart", ""); return; }
     if (a === "shop") { go("shop", ""); return; }
-
-    // صفحات الدخول
-    if (a === "login" || a === "toLogin") { openAuth("login"); return; }
-    if (a === "toSignup") { openAuth("signup"); return; }
-    if (a === "toForgot") { forgotDone = false; openAuth("forgot"); return; }
-    if (a === "backToLogin") { passDone = false; authReturn = "shop"; go("login", ""); return; }
-    if (a === "authCancel") {
-      afterLogin = null;
-      const back = authReturn && !AUTH_VIEWS.includes(authReturn) ? authReturn : "shop";
-      go(back, "");
-      return;
-    }
-    if (a === "toggleLang") { state.lang = state.lang === "ar" ? "en" : "ar"; save(); fillCountrySelects(); render(); return; }
-    if (a === "eye") {
-      const inp = document.getElementById(ds.target);
-      const L = T[state.lang];
-      if (inp) {
-        inp.type = inp.type === "password" ? "text" : "password";
-        const btn = inp.parentElement?.querySelector(".eye");
-        if (btn) { const show = inp.type === "password"; btn.setAttribute("aria-label", show ? L.showPass : L.hidePass); btn.title = show ? L.showPass : L.hidePass; }
-      }
-      return;
-    }
-    if (a === "doLogin") { await doLogin(); return; }
-    if (a === "sendReset") { await sendReset(); return; }
-    if (a === "setNewPass") { await setNewPass(); return; }
-
-    if (a === "account") {
-      if (!isComplete()) { openAuth("login"); return; }
-      view = "account"; render(); loadOrders(); return;
-    }
     if (a === "checkout") {
       if (!cartCount()) return;
-      if (!isComplete()) { afterLogin = "checkout"; openAuth("login", t("needLogin")); return; }
+      if (!isComplete()) { localStorage.setItem("showbiz_next", "checkout"); location.href = "login.html"; return; }
       go("checkout", ""); return;
     }
     if (a === "confirm") { await confirmOrder(); return; }
-    if (a === "sendCode") { await sendCode(); return; }
-    if (a === "verifyEmail") { await verifyEmail(); return; }
-    if (a === "changeEmail") { changeEmail(); return; }
-    if (a === "sendSms") { await sendSms(); return; }
-    if (a === "verifySms") { await verifySms(); return; }
-    if (a === "changePhone") { changePhone(); return; }
-    if (a === "createAccount") { await createAccount(); return; }
-    if (a === "saveProfile") { await saveProfile(); return; }
-    if (a === "logout") { await logout(); return; }
+    if (a === "account") {
+      if (!isComplete()) { location.href = "login.html"; return; }
+      view = "account"; render(); loadOrders(); return;
+    }
+    if (a === "saveProfile") {
+      const first = document.getElementById("pFirst").value.trim();
+      const last = document.getElementById("pLast").value.trim();
+      const m = document.getElementById("pMsg");
+      if (!first || !last) { m.textContent = t("namesReq"); return; }
+      const { error } = await sb.from("customers").update({ first_name: first, last_name: last }).eq("id", me.id);
+      if (error) { m.textContent = error.message; return; }
+      await loadProfile();
+      m.textContent = t("saved");
+      return;
+    }
+    if (a === "logout") {
+      try { await sb.auth.signOut(); } catch (e) {}
+      me = null; profile = null; accountOrders = null;
+      go("shop", "");
+      return;
+    }
   }
 
   document.getElementById("view").addEventListener("click", (e) => {
@@ -1399,77 +645,12 @@
     if (b && !b.disabled) handleAction(b.dataset.action, b.dataset);
   });
 
-  // خانات الرمز: كتابة تنتقل للتالي، وعند اكتمال 6 أرقام يتحقق تلقائيًا
-  document.getElementById("view").addEventListener("input", (e) => {
-    const el = e.target;
-    if (el.classList.contains("obox")) {
-      const v = digitsOnly(el.value).slice(-1);
-      el.value = v;
-      const i = Number(el.dataset.i);
-      if (v && i < 5) focusOtp(el.dataset.otp, i + 1);
-      if (v) maybeVerify(el.dataset.otp);
-      return;
-    }
-    // أي كتابة في حقل فيه خطأ تمسح الخطأ
-    if (el.id && document.getElementById(el.id + "Err")) setFieldErr(el.id, "");
-    const id = el.id;
-    if (id === "sEmail") { pending.email = el.value.trim(); savePending(); }
-    else if (id === "sPhone") { pending.phone = el.value.trim(); savePending(); }
-    else if (id === "sFirst") { pending.first = el.value.trim(); savePending(); }
-    else if (id === "sLast") { pending.last = el.value.trim(); savePending(); }
-    else if (id === "lEmail" || id === "fEmail") { loginEmail = el.value.trim(); }
-  });
-  document.getElementById("view").addEventListener("keydown", (e) => {
-    const el = e.target;
-    if (el.classList.contains("obox")) {
-      const i = Number(el.dataset.i);
-      const prefix = el.dataset.otp;
-      if (e.key === "Backspace") {
-        e.preventDefault();
-        if (el.value) { el.value = ""; }
-        else if (i > 0) {
-          const prev = document.querySelector(`[data-otp="${prefix}"][data-i="${i - 1}"]`);
-          if (prev) { prev.value = ""; prev.focus(); }
-        }
-      } else if (e.key === "ArrowLeft" && i > 0) {
-        e.preventDefault(); focusOtp(prefix, i - 1);
-      } else if (e.key === "ArrowRight" && i < 5) {
-        e.preventDefault(); focusOtp(prefix, i + 1);
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        if (prefix === "email") verifyEmail(); else verifySms();
-      }
-      return;
-    }
-    if (e.key !== "Enter") return;
-    if (el.id === "lPass" || el.id === "lEmail") doLogin();
-    else if (el.id === "fEmail") sendReset();
-    else if (el.id === "nPass2") setNewPass();
-    else if (el.id === "sEmail") sendCode();
-    else if (el.id === "sPass2") createAccount();
-  });
-  document.getElementById("view").addEventListener("paste", (e) => {
-    const el = e.target;
-    if (!el.classList.contains("obox")) return;
-    e.preventDefault();
-    const digits = digitsOnly(e.clipboardData?.getData("text") || "").slice(0, 6);
-    if (!digits) return;
-    const prefix = el.dataset.otp;
-    const start = Number(el.dataset.i);
-    [...digits].forEach((d, k) => {
-      const box = document.querySelector(`[data-otp="${prefix}"][data-i="${start + k}"]`);
-      if (box) box.value = d;
-    });
-    focusOtp(prefix, Math.min(start + digits.length, 5));
-    maybeVerify(prefix);
-  });
+  // خانات: الكتابة تسحب الفوكس وما فيه خانات هنا، فقط حقل المنطقة والعنوان
   document.getElementById("view").addEventListener("change", (e) => {
     if (e.target.id === "fArea") {
       state.area = e.target.value || null; save();
       document.getElementById("summary").innerHTML = summaryHTML();
-      updateDebug();
     }
-    if (e.target.id === "sDial") { pending.dial = e.target.value; savePending(); }
   });
   document.getElementById("pmodal").addEventListener("click", (e) => {
     if (e.target.id === "pmodal") { modal = null; renderModal(); return; }
@@ -1486,23 +667,28 @@
       modal.vid = e.target.value; modal.idx = 0; modal.paused = true; renderModal();
     }
   });
-  document.getElementById("countrySel").addEventListener("change", (e) => {
-    state.country = e.target.value; state.area = null; save(); fillCountrySelects(); render();
-  });
-  document.getElementById("gCountry").addEventListener("change", (e) => {
-    state.country = e.target.value; state.area = null; save(); fillCountrySelects(); render();
-  });
+
+  // تغيير الدولة من الهيدر: يتحفظ كدولة مفضلة لو الزائر مسجل دخول
+  async function changeCountry(code) {
+    state.country = code; state.area = null; save();
+    if (isComplete()) { try { await sb.auth.updateUser({ data: { preferred_country: code } }); } catch (e) {} }
+    render();
+  }
+  document.getElementById("countrySel").addEventListener("change", (e) => changeCountry(e.target.value));
+  document.getElementById("gCountry").addEventListener("change", (e) => changeCountry(e.target.value));
   document.getElementById("langBtn").addEventListener("click", () => {
-    state.lang = state.lang === "ar" ? "en" : "ar"; save(); fillCountrySelects(); render();
+    state.lang = state.lang === "ar" ? "en" : "ar"; save(); render();
   });
   document.querySelectorAll("[data-glang]").forEach(btn => {
-    btn.addEventListener("click", () => { state.lang = btn.dataset.glang; save(); fillCountrySelects(); render(); });
+    btn.addEventListener("click", () => { state.lang = btn.dataset.glang; save(); render(); });
   });
   document.getElementById("gGo").addEventListener("click", () => { state.seen = true; save(); render(); });
   document.getElementById("cartBtn").addEventListener("click", () => go("cart", ""));
-  document.getElementById("acctBtn").addEventListener("click", () => handleAction(isComplete() ? "account" : "login", {}));
+  document.getElementById("acctBtn").addEventListener("click", () => {
+    if (isComplete()) handleAction("account", {}); else location.href = "login.html";
+  });
   document.addEventListener("keydown", (e) => {
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "d") { e.preventDefault(); debugOn = !debugOn; updateDebug(); }
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "d") { e.preventDefault(); debugOn = !debugOn; }
   });
 
   // تبديل الصور كل 5 ثواني
@@ -1529,20 +715,27 @@
     });
   }, SLIDE_MS);
 
-  sb.auth.onAuthStateChange(async (event, session) => {
-    // فتح رابط إعادة تعيين كلمة المرور من البريد
-    if (event === "PASSWORD_RECOVERY") { recovering = true; passDone = false; view = "newpass"; render(); return; }
-    if (recovering) { render(); return; }
-    if (session && session.user) await refreshAuth();
-    else { me = null; profile = null; if (view === "account") view = "shop"; }
+  // تغيّر الجلسة (مثلًا بعد الدخول من صفحة أخرى)
+  sb.auth.onAuthStateChange(async () => {
+    await loadProfile();
     render();
   });
 
   // ===== البدء =====
-  fillCountrySelects();
+  (async () => {
+    await loadProfile();
+    // إذا جا من صفحة الدخول وكان ناوي إتمام الطلب، نرجعه لصفحة الطلب
+    const next = localStorage.getItem("showbiz_next");
+    if (next === "checkout" && isComplete() && cartCount()) {
+      localStorage.removeItem("showbiz_next");
+      view = "checkout";
+    } else if (next) {
+      localStorage.removeItem("showbiz_next");
+    }
+    render();
+  })();
   render();
   loadProducts();
-  initAuth().then(() => render());
 </script>
 </body>
 </html>
