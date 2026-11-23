@@ -71,7 +71,7 @@
     <h1 data-k="title"></h1>
     <p class="sub" data-k="intro"></p>
 
-    <div class="card">
+    <div class="card" id="info">
       <h2 data-k="infoTitle"></h2>
       <div id="infoMsg" class="msg hidden"></div>
       <div class="grid">
@@ -86,7 +86,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="addresses">
       <h2 data-k="addrTitle"></h2>
       <p class="sub" data-k="addrSub"></p>
       <div id="addrNotice" class="msg hidden"></div>
@@ -113,7 +113,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card" id="delete">
       <h2 data-k="dangerTitle"></h2>
       <div class="danger-box">
         <p data-k="dangerText"></p>
@@ -142,7 +142,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
-  const BUILD = { version: "v1", updated: "2026-11-23 17:30" };
+  const BUILD = { version: "v2", updated: "2026-11-23 17:45" };
 
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
@@ -183,6 +183,15 @@
     }
   };
 
+  // مسح مرة وحدة للبيانات القديمة (نفس وسم الرئيسية)
+  try {
+    if (localStorage.getItem("showbiz_reset") !== "showbiz-reset-v28") {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith("showbiz") || (k.startsWith("sb-") && k.endsWith("-auth-token"))) localStorage.removeItem(k);
+      });
+      localStorage.setItem("showbiz_reset", "showbiz-reset-v28");
+    }
+  } catch (e) {}
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   let lang = "ar";
   let user = null, profile = {}, addresses = [], editId = null, busy = false;
@@ -267,6 +276,10 @@
     fill();
     $("loading").classList.add("hidden");
     $("page").classList.remove("hidden");
+    if (location.hash) {
+      const target = document.getElementById(location.hash.slice(1));
+      if (target) setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    }
     apply();
   }
 
