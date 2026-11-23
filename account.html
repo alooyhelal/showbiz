@@ -116,7 +116,7 @@
   <div class="ver" id="ver"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" onerror="document.write('<script src=\'https://unpkg.com/@supabase/supabase-js@2.50.0/dist/umd/supabase.js\'><\/script>')"></script>
 <script>
   const BUILD = { version: "v3", updated: "2026-11-23 18:30" };
 
@@ -195,7 +195,7 @@
       const s = $(id), cur = s.value;
       s.innerHTML = "";
       COUNTRIES.forEach(c => {
-        const text = id === "country" ? `${c.flag} ${lang === "ar" ? c.ar : c.en}` : `${c.flag} ${c.dial}`;
+        const text = id === "country" ? (lang === "ar" ? c.ar : c.en) : c.dial;
         s.appendChild(new Option(text, c.code));
       });
       if (cur) s.value = cur;

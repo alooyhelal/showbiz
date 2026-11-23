@@ -69,7 +69,7 @@
   <div class="ver">v26 · 2026-11-23 09:40</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" onerror="document.write('<script src=\'https://unpkg.com/@supabase/supabase-js@2.50.0/dist/umd/supabase.js\'><\/script>')"></script>
 <script>
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
@@ -231,14 +231,14 @@
     else if (S.pVerified) b2 = `<div class="okline"><span dir="ltr">${esc(S.pFull)}</span><button class="link" type="button" data-act="changePhone">${t().change}</button></div>`;
     else if (S.pLoading) b2 = loading(t().sending);
     else if (!S.pCodeSent) {
-      const opts = COUNTRIES.map(c => `<option value="${c.dial}" ${c.dial === S.pDial ? "selected" : ""}>${c.flag} ${c.dial}</option>`).join("");
+      const opts = COUNTRIES.map(c => `<option value="${c.dial}" ${c.dial === S.pDial ? "selected" : ""}>${c.dial}</option>`).join("");
       b2 = `<div class="phonerow"><select id="sDial">${opts}</select><input id="sPhone" type="tel" dir="ltr" placeholder="36123456" value="${esc(S.pPhone)}"></div>
             <div class="ferr hidden" id="sPhoneErr"></div>
             ${msgHTML("sms")}
             <button class="btn btn-main" type="button" data-act="sendPhoneCode">${t().sendCode}</button>`;
     } else b2 = codeBlock("sms");
 
-    const countryOpts = COUNTRIES.map(c => `<option value="${c.code}" ${c.code === S.country ? "selected" : ""}>${c.flag} ${lang === "ar" ? c.ar : c.en}</option>`).join("");
+    const countryOpts = COUNTRIES.map(c => `<option value="${c.code}" ${c.code === S.country ? "selected" : ""}>${lang === "ar" ? c.ar : c.en}</option>`).join("");
     const b3 = detailsOpen ? `
         <label for="sFirst">${t().first}</label>
         <input id="sFirst" value="${esc(S.first)}">
