@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Showbiz</title>
 <style>
-  :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --btn:#4a8fe0; --orange:#f59e4b; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; }
+  :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --btn:#4a8fe0; --orange:#f59e4b; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; --bad:#e5566b; }
   body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
   header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px 16px; background:#0d1728; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
   main { padding:16px 16px 56px; max-width:1000px; margin:auto; }
   select, input { padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card2); color:var(--fg); width:100%; box-sizing:border-box; margin-bottom:8px; font-size:15px; }
   input:focus, select:focus { outline:2px solid var(--blue); outline-offset:1px; }
+  input.bad { border-color:var(--bad) !important; outline:1px solid var(--bad); }
   header select { width:auto; margin:0; }
   button { padding:10px 14px; border:0; border-radius:10px; background:var(--btn); color:#fff; cursor:pointer; font-size:14px; }
   button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); }
@@ -54,9 +55,16 @@
 
   /* ===== صفحات الدخول والتسجيل ===== */
   .auth { padding:20px; }
-  .auth h2 { margin:0 0 4px; font-size:22px; }
-  .auth .sub { color:var(--muted); font-size:14px; margin:0 0 16px; }
+  .authlogo { text-align:center; font-size:28px; font-weight:800; color:var(--orange); letter-spacing:.5px; margin:4px 0 8px; }
+  .auth h2 { margin:0 0 4px; font-size:22px; text-align:center; }
+  .auth .sub { color:var(--muted); font-size:14px; margin:0 0 16px; text-align:center; }
+  .topbar { display:flex; justify-content:flex-start; margin-bottom:6px; }
   .field label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+  .ferr { color:var(--err); font-size:13px; line-height:1.6; margin:-2px 0 8px; }
+  .pwwrap { position:relative; margin-bottom:8px; }
+  .pwwrap input { margin-bottom:0; padding-inline-end:44px; }
+  .eye { position:absolute; top:0; bottom:0; inset-inline-end:0; width:44px; padding:0; margin:0; border-radius:0 10px 10px 0; background:transparent; color:var(--muted); display:flex; align-items:center; justify-content:center; }
+  .linkline { display:flex; justify-content:flex-start; margin:2px 0 12px; }
   .step { border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px; background:var(--card2); }
   .step.done { border-color:#2f6b4f; }
   .step.locked { opacity:.55; }
@@ -72,7 +80,7 @@
   .otpmsg { text-align:center; font-size:14px; margin:4px 0 10px; padding:8px 10px; border-radius:10px; line-height:1.6; }
   .otpmsg.err { color:var(--err); background:#3b1620; border:1px solid #7a2b3b; }
   .otpmsg.info { color:var(--fg); background:var(--card2); border:1px solid var(--line); }
-  .linkrow { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
+  .linkrow { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:center; margin-top:10px; }
   .loadline { display:flex; align-items:center; justify-content:center; gap:10px; padding:14px 0; color:var(--muted); font-size:15px; }
   .spin { display:inline-block; width:18px; height:18px; border:3px solid var(--line); border-top-color:var(--blue); border-radius:50%; animation:sp .8s linear infinite; }
   @keyframes sp { to { transform:rotate(360deg); } }
@@ -121,7 +129,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
   // ===== رقم النسخة: غيّر version و updated مع كل تحديث =====
-  const BUILD = { version: "v16", updated: "2026-11-23 08:20" };
+  const BUILD = { version: "v18", updated: "2026-11-23 08:50" };
 
   // ===== الإعدادات =====
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
@@ -180,10 +188,20 @@
       dims:"الأبعاد", weight:"الوزن", noDesc:"لا توجد تفاصيل إضافية", defaultVariant:"افتراضي",
       login:"تسجيل الدخول", logout:"تسجيل الخروج", account:"حسابي", myOrders:"طلباتي", noOrders:"ما عندك طلبات بعد",
       ordersErr:"تعذر تحميل الطلبات", editProfile:"تعديل بياناتي", save:"حفظ", saved:"تم الحفظ",
-      needLogin:"سجّل دخولك أو أنشئ حساب لإتمام الطلب", loginTitle:"تسجيل الدخول", loginSub:"ادخل ببريدك وكلمة المرور",
+      needLogin:"سجّل دخولك أو أنشئ حساب لإتمام الطلب", loginTitle:"تسجيل الدخول", loginSub:"ادخل ببيانات حسابك",
       email:"البريد الإلكتروني", password:"كلمة المرور", loginBtn:"دخول",
-      noAccount:"ليس لدي حساب، أنشئ حساب", haveAccount:"عندي حساب، سجّل دخول",
-      signupTitle:"إنشاء حساب جديد", signupSub:"ثلاث خطوات بسيطة وتكون حسابك جاهز",
+      noAccount:"سجّل حساب الآن", noAccountAsk:"ليس لديك حساب؟", haveAccount:"عندي حساب، سجّل دخول",
+      forgotLink:"نسيت كلمة المرور؟", forgotTitle:"نسيت كلمة المرور",
+      forgotSub:"اكتب بريدك الإلكتروني، وبنرسل لك رابط لإعادة تعيين كلمة المرور",
+      forgotBtn:"إرسال الرابط",
+      forgotSent:"تم إرسال لك رابط عبر البريد الإلكتروني لإعادة تعيين كلمة المرور",
+      backToLogin:"العودة إلى تسجيل الدخول", goLogin:"العودة إلى تسجيل الدخول", cancel:"إلغاء",
+      newPassTitle:"إعادة تعيين كلمة المرور", newPassSub:"اكتب كلمة المرور الجديدة لحسابك",
+      newPassLbl:"كلمة المرور الجديدة", newPassConfirmLbl:"تأكيد كلمة المرور الجديدة",
+      newPassBtn:"حفظ", passChanged:"تم تغيير كلمة المرور بنجاح. سجّل دخولك بكلمة المرور الجديدة",
+      passReq:"اكتب كلمة المرور",
+      showPass:"إظهار كلمة المرور", hidePass:"إخفاء كلمة المرور",
+      signupTitle:"إنشاء حساب", signupSub:"ثلاث خطوات بسيطة وتكون حسابك جاهز",
       stepEmail:"البريد الإلكتروني", stepPhone:"رقم الجوال", stepDetails:"بيانات الحساب",
       sendCode:"إرسال رمز التحقق", sentTo:"تم إرسال الرمز إلى:", enterCode:"اكتب الرمز المكون من 6 أرقام",
       resendCode:"إعادة إرسال الرمز",
@@ -191,12 +209,14 @@
       change:"تغيير", lockedStep:"أكمل الخطوة اللي قبلها أولًا", skipPhone:"التحقق من الجوال غير مفعّل حاليًا",
       sendSms:"إرسال رمز التحقق", verifyBtn:"تحقق", firstName:"الاسم الأول", lastName:"الاسم الأخير",
       confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب", accountDone:"تم إنشاء الحساب بنجاح",
-      emailBad:"البريد الإلكتروني غير صحيح", phoneBad:"رقم الجوال غير صحيح",
+      emailBad:"البريد الإلكتروني غير صحيح، لأنه لم يتم كتابته بشكل صحيح",
+      phoneBad:"رقم الجوال غير صحيح",
       codeWrong:"الرمز غير صحيح. اكتب الرمز من جديد",
       codeExpired:"الرمز منتهي. اضغط إعادة إرسال الرمز واستخدم الجديد",
       namesReq:"الاسم الأول والأخير مطلوبين",
       passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر", passMismatch:"كلمتا المرور غير متطابقتين",
-      loginFail:"البريد أو كلمة المرور غير صحيحة", rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول",
+      loginFail:"البريد الإلكتروني أو كلمة المرور غير صحيحة",
+      rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول",
       buildLabel:"النسخة", updatedLabel:"آخر تحديث"
     },
     en: {
@@ -215,10 +235,20 @@
       dims:"Dimensions", weight:"Weight", noDesc:"No extra details", defaultVariant:"Default",
       login:"Log in", logout:"Log out", account:"My account", myOrders:"My orders", noOrders:"You have no orders yet",
       ordersErr:"Could not load orders", editProfile:"Edit my details", save:"Save", saved:"Saved",
-      needLogin:"Log in or create an account to complete your order", loginTitle:"Log in", loginSub:"Sign in with your email and password",
+      needLogin:"Log in or create an account to complete your order", loginTitle:"Log in", loginSub:"Sign in with your account details",
       email:"Email", password:"Password", loginBtn:"Log in",
-      noAccount:"No account? Create one", haveAccount:"I have an account, log in",
-      signupTitle:"Create a new account", signupSub:"Three simple steps and your account is ready",
+      noAccount:"Create an account now", noAccountAsk:"Don't have an account?", haveAccount:"I have an account, log in",
+      forgotLink:"Forgot password?", forgotTitle:"Forgot password",
+      forgotSub:"Enter your email and we will send you a link to reset your password",
+      forgotBtn:"Send link",
+      forgotSent:"A password reset link has been sent to your email",
+      backToLogin:"Back to log in", goLogin:"Back to log in", cancel:"Cancel",
+      newPassTitle:"Reset password", newPassSub:"Enter your new password for your account",
+      newPassLbl:"New password", newPassConfirmLbl:"Confirm new password",
+      newPassBtn:"Save", passChanged:"Password changed successfully. Log in with your new password",
+      passReq:"Enter your password",
+      showPass:"Show password", hidePass:"Hide password",
+      signupTitle:"Create account", signupSub:"Three simple steps and your account is ready",
       stepEmail:"Email", stepPhone:"Mobile number", stepDetails:"Account details",
       sendCode:"Send verification code", sentTo:"Code sent to:", enterCode:"Enter the 6-digit code",
       resendCode:"Resend code",
@@ -226,12 +256,14 @@
       change:"Change", lockedStep:"Complete the previous step first", skipPhone:"Phone verification is currently off",
       sendSms:"Send verification code", verifyBtn:"Verify", firstName:"First name", lastName:"Last name",
       confirmPass:"Confirm password", createBtn:"Create account", accountDone:"Account created successfully",
-      emailBad:"Invalid email address", phoneBad:"Invalid mobile number",
+      emailBad:"The email is not valid, it was not typed correctly",
+      phoneBad:"Invalid mobile number",
       codeWrong:"The code is incorrect. Type it again",
       codeExpired:"The code has expired. Press resend and use the new code",
       namesReq:"First and last name are required",
       passShort:"Password must be 8 characters or more", passMismatch:"Passwords do not match",
-      loginFail:"Email or password is incorrect", rateLimit:"Too many attempts, wait a moment and try again",
+      loginFail:"Email or password is incorrect",
+      rateLimit:"Too many attempts, wait a moment and try again",
       buildLabel:"Build", updatedLabel:"Last update"
     }
   };
@@ -254,13 +286,18 @@
 
   let products = [], loaded = false, loadError = false;
   let view = "shop", notice = "", noticeType = "err", loginEmail = "", afterLogin = null;
+  let authReturn = "shop";   // الصفحة اللي كان فيها الزائر قبل صفحات الدخول
+  let forgotDone = false;    // تم إرسال رابط إعادة التعيين
+  let recovering = false;    // الزائر فتح رابط إعادة تعيين كلمة المرور من بريده
+  let passDone = false;      // تم حفظ كلمة المرور الجديدة
   let modal = null, cardIdx = {};
   let me = null, profile = null;
   let accountOrders = null, ordersFailed = false, lastSaveOk = true, debugOn = false;
-  let busy = false;          // يمنع تكرار التحقق فقط
+  let busy = false;          // يمنع تكرار الطلبات المتزامنة
   let sending = null;        // "email" أو "sms" أثناء فترة التحميل قبل ظهور الخانات
   let sendSeq = 0;           // رقم الإرسال الحالي: أي إرسال قديم يتجاهل نفسه
   const otpMsg = { email: null, sms: null }; // رسالة الخطأ/الحالة تحت خانات الرمز
+  const AUTH_VIEWS = ["login", "signup", "forgot", "newpass"];
 
   // ===== مساعدات =====
   const t = (k) => T[state.lang][k];
@@ -268,7 +305,9 @@
   const rate = () => COUNTRIES[state.country].rate;
   const localPrice = (usd) => usd * rate();
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+  // بريد صحيح: اسم + @ + دومين + امتداد من حرفين أو أكثر (مثل .com)
+  const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
+  const isEmail = (s) => EMAIL_RE.test(String(s || "").trim());
   const digitsOnly = (s) => String(s || "").replace(/\D/g, "");
   const samePhone = (a, b) => !!a && !!b && digitsOnly(a) === digitsOnly(b);
   const isComplete = () => !!(me && profile);
@@ -293,6 +332,19 @@
     if (el) { el.className = `msg ${type} ${m ? "" : "hidden"}`; el.textContent = m; }
   }
   function go(v, msg, type = "err") { view = v; notice = msg || ""; noticeType = type; render(); }
+  // دخول صفحة من صفحات الدخول: نتذكر الصفحة الحالية عشان زر الإلغاء يرجع لها
+  function openAuth(v, msg) {
+    if (!AUTH_VIEWS.includes(view)) authReturn = view;
+    go(v, msg || "");
+  }
+
+  // خطأ تحت حقل معيّن (يحدد الإطار بالأحمر)
+  function setFieldErr(id, msg) {
+    const inp = document.getElementById(id);
+    const box = document.getElementById(id + "Err");
+    if (inp) inp.classList.toggle("bad", !!msg);
+    if (box) { box.textContent = msg || ""; box.classList.toggle("hidden", !msg); }
+  }
 
   // رسالة تحت خانات الرمز مباشرة
   function setOtpMsg(prefix, msg, type = "err") {
@@ -305,6 +357,19 @@
     return `<div id="${prefix}Msg" class="otpmsg ${m ? m.type : ""} ${m ? "" : "hidden"}">${m ? esc(m.msg) : ""}</div>`;
   }
   const loadingHTML = () => `<div class="loadline"><span class="spin"></span><span>${t("sendingCode")}</span></div>`;
+
+  // زر العين لإظهار أو إخفاء كلمة المرور
+  const EYE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  function eyeBtn(id) {
+    const L = T[state.lang];
+    return `<button type="button" class="eye" data-action="eye" data-target="${id}" aria-label="${L.showPass}" title="${L.showPass}">${EYE_SVG}</button>`;
+  }
+  // شعار وزر اللغة في أعلى كل صفحة دخول
+  function authHead() {
+    const L = T[state.lang];
+    return `<div class="topbar"><button class="ghost" data-action="toggleLang">${state.lang === "ar" ? "English" : "العربية"}</button></div>
+            <div class="authlogo">${L.siteName}</div>`;
+  }
 
   function fmtFor(code, amount) {
     const c = COUNTRIES[code] || COUNTRIES[state.country];
@@ -406,7 +471,7 @@
     await loadProfile();
     if (profile) {
       clearPending();
-      if (view === "signup" || view === "login") view = "shop";
+      if (AUTH_VIEWS.includes(view)) view = "shop";
       return;
     }
     if (me) {
@@ -484,25 +549,33 @@
     setOtpMsg(prefix, msg, "err");
   }
 
-  // ===== صفحة الدخول =====
+  // ===== صفحة تسجيل الدخول =====
   function viewLogin() {
     const L = T[state.lang];
     return `
       <div class="narrow">
         <div class="card auth">
+          ${authHead()}
           <h2>${L.loginTitle}</h2>
           <p class="sub">${L.loginSub}</p>
           <div class="field">
             <label>${L.email}</label>
-            <input id="lEmail" type="email" dir="ltr" value="${esc(loginEmail)}">
+            <input id="lEmail" type="email" dir="ltr" autocomplete="email" value="${esc(loginEmail)}">
+            <div id="lEmailErr" class="ferr hidden"></div>
           </div>
           <div class="field">
             <label>${L.password}</label>
-            <input id="lPass" type="password" dir="ltr">
+            <div class="pwwrap">
+              <input id="lPass" type="password" dir="ltr" autocomplete="current-password">
+              ${eyeBtn("lPass")}
+            </div>
+            <div id="lPassErr" class="ferr hidden"></div>
           </div>
+          <div class="linkline"><button class="linkbtn" data-action="toForgot">${L.forgotLink}</button></div>
           <button class="btn-orange btnfull" data-action="doLogin">${L.loginBtn}</button>
           ${noticeHTML()}
-          <div class="linkrow"><button class="linkbtn" data-action="toSignup">${L.noAccount}</button></div>
+          <div class="linkrow"><span class="muted">${L.noAccountAsk}</span> <button class="linkbtn" data-action="toSignup">${L.noAccount}</button></div>
+          <div class="linkrow"><button class="ghost" data-action="authCancel">${L.cancel}</button></div>
         </div>
       </div>`;
   }
@@ -511,18 +584,127 @@
     const L = T[state.lang];
     const email = loginEmail.trim();
     const pass = document.getElementById("lPass")?.value || "";
-    if (!isEmail(email)) return setNotice(L.emailBad, "err");
-    if (!pass) return setNotice(L.fillAll, "err");
-    busy = true; setNotice(L.wait, "info");
+    setFieldErr("lEmail", ""); setFieldErr("lPass", "");
+    if (!isEmail(email)) return setFieldErr("lEmail", L.emailBad);
+    if (!pass) return setFieldErr("lPass", L.passReq);
+    busy = true; setNotice("", "info");
     try {
       const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-      if (error) return setNotice(errMsg(error), "err");
+      if (error) {
+        // Supabase ما يفرّق بين البريد الغلط وكلمة المرور الغلط، فنعرض الرسالة على الاثنين
+        if (/invalid login/i.test(String(error.message || ""))) {
+          setFieldErr("lPass", L.loginFail);
+          document.getElementById("lEmail")?.classList.add("bad");
+          return;
+        }
+        return setNotice(errMsg(error), "err");
+      }
       await loadProfile();
       if (!profile) { syncPendingFromSession(); return go("signup", L.lockedStep); }
       clearPending();
       const next = afterLogin || "shop";
       afterLogin = null;
       go(next, "");
+    } catch (e) {
+      setNotice(errMsg(e), "err");
+    } finally { busy = false; }
+  }
+
+  // ===== صفحة نسيت كلمة المرور =====
+  function viewForgot() {
+    const L = T[state.lang];
+    return `
+      <div class="narrow">
+        <div class="card auth">
+          ${authHead()}
+          <h2>${L.forgotTitle}</h2>
+          <p class="sub">${L.forgotSub}</p>
+          ${forgotDone
+            ? `<div class="msg ok">${L.forgotSent}</div>`
+            : `<div class="field">
+                 <label>${L.email}</label>
+                 <input id="fEmail" type="email" dir="ltr" autocomplete="email" value="${esc(loginEmail)}">
+                 <div id="fEmailErr" class="ferr hidden"></div>
+               </div>
+               <button class="btn-orange btnfull" data-action="sendReset">${L.forgotBtn}</button>`}
+          ${noticeHTML()}
+          <div class="linkrow"><button class="linkbtn" data-action="toLogin">${L.backToLogin}</button></div>
+          <div class="linkrow"><span class="muted">${L.noAccountAsk}</span> <button class="linkbtn" data-action="toSignup">${L.noAccount}</button></div>
+          <div class="linkrow"><button class="ghost" data-action="authCancel">${L.cancel}</button></div>
+        </div>
+      </div>`;
+  }
+  // إرسال رابط إعادة التعيين
+  async function sendReset() {
+    if (busy) return;
+    const L = T[state.lang];
+    const email = (document.getElementById("fEmail")?.value || "").trim();
+    setFieldErr("fEmail", "");
+    if (!isEmail(email)) return setFieldErr("fEmail", L.emailBad);
+    busy = true; setNotice("", "info");
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      if (error) return setNotice(errMsg(error), "err");
+      loginEmail = email; forgotDone = true; notice = "";
+      render();
+    } catch (e) {
+      setNotice(errMsg(e), "err");
+    } finally { busy = false; }
+  }
+
+  // ===== صفحة إعادة تعيين كلمة المرور (تفتح من رابط البريد) =====
+  function viewNewPass() {
+    const L = T[state.lang];
+    if (passDone) {
+      return `
+        <div class="narrow">
+          <div class="card auth">
+            ${authHead()}
+            <h2>${L.newPassTitle}</h2>
+            <div class="msg ok">${L.passChanged}</div>
+            <button class="btn-orange btnfull" style="margin-top:12px" data-action="backToLogin">${L.goLogin}</button>
+          </div>
+        </div>`;
+    }
+    return `
+      <div class="narrow">
+        <div class="card auth">
+          ${authHead()}
+          <h2>${L.newPassTitle}</h2>
+          <p class="sub">${L.newPassSub}</p>
+          <div class="field">
+            <label>${L.newPassLbl}</label>
+            <div class="pwwrap"><input id="nPass" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("nPass")}</div>
+            <div id="nPassErr" class="ferr hidden"></div>
+          </div>
+          <div class="field">
+            <label>${L.newPassConfirmLbl}</label>
+            <div class="pwwrap"><input id="nPass2" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("nPass2")}</div>
+            <div id="nPass2Err" class="ferr hidden"></div>
+          </div>
+          <button class="btn-orange btnfull" data-action="setNewPass">${L.newPassBtn}</button>
+          ${noticeHTML()}
+        </div>
+      </div>`;
+  }
+  async function setNewPass() {
+    if (busy) return;
+    const L = T[state.lang];
+    const p1 = document.getElementById("nPass")?.value || "";
+    const p2 = document.getElementById("nPass2")?.value || "";
+    setFieldErr("nPass", ""); setFieldErr("nPass2", "");
+    if (p1.length < 8) return setFieldErr("nPass", L.passShort);
+    if (p1 !== p2) return setFieldErr("nPass2", L.passMismatch);
+    busy = true; setNotice("", "info");
+    try {
+      const { error } = await sb.auth.updateUser({ password: p1 });
+      if (error) return setNotice(errMsg(error), "err");
+      // نسجّل خروج الجلسة المؤقتة، ويسجل الزائر دخوله بكلمة المرور الجديدة
+      recovering = false;
+      await sb.auth.signOut().catch(() => {});
+      me = null; profile = null;
+      passDone = true; notice = "";
+      render();
     } catch (e) {
       setNotice(errMsg(e), "err");
     } finally { busy = false; }
@@ -546,6 +728,7 @@
     } else if (!pending.codeSent) {
       b1 = `<div class="field">
               <input id="sEmail" type="email" dir="ltr" placeholder="name@example.com" value="${esc(pending.email)}">
+              <div id="sEmailErr" class="ferr hidden"></div>
             </div>
             <button class="btn-orange btnfull" data-action="sendCode">${L.sendCode}</button>`;
     } else {
@@ -594,8 +777,16 @@
     const b3 = detailsOpen
       ? `<div class="field"><label>${L.firstName}</label><input id="sFirst" value="${esc(pending.first)}"></div>
          <div class="field"><label>${L.lastName}</label><input id="sLast" value="${esc(pending.last)}"></div>
-         <div class="field"><label>${L.password}</label><input id="sPass" type="password" dir="ltr"></div>
-         <div class="field"><label>${L.confirmPass}</label><input id="sPass2" type="password" dir="ltr"></div>
+         <div class="field">
+           <label>${L.password}</label>
+           <div class="pwwrap"><input id="sPass" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("sPass")}</div>
+           <div id="sPassErr" class="ferr hidden"></div>
+         </div>
+         <div class="field">
+           <label>${L.confirmPass}</label>
+           <div class="pwwrap"><input id="sPass2" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("sPass2")}</div>
+           <div id="sPass2Err" class="ferr hidden"></div>
+         </div>
          <button class="btn-orange btnfull" data-action="createAccount">${L.createBtn}</button>`
       : `<p class="muted">${L.lockedStep}</p>`;
 
@@ -605,6 +796,7 @@
     return `
       <div class="narrow">
         <div class="card auth">
+          ${authHead()}
           <h2>${L.signupTitle}</h2>
           <p class="sub">${L.signupSub}</p>
           <section class="${stepCls(emailOK, false)}">
@@ -617,8 +809,9 @@
             <div class="stephead">${badge(3, false)} ${L.stepDetails}</div>${b3}
           </section>
           ${noticeHTML()}
+          <div class="linkrow"><button class="linkbtn" data-action="toLogin">${L.haveAccount}</button></div>
+          <div class="linkrow"><button class="ghost" data-action="authCancel">${L.cancel}</button></div>
         </div>
-        <div class="linkrow"><button class="linkbtn" data-action="toLogin">${L.haveAccount}</button></div>
       </div>`;
   }
 
@@ -627,7 +820,8 @@
   async function sendCode() {
     const L = T[state.lang];
     const email = (document.getElementById("sEmail")?.value || pending.email || "").trim();
-    if (!isEmail(email)) return setNotice(L.emailBad, "err");
+    if (!isEmail(email)) return setFieldErr("sEmail", L.emailBad);
+    setFieldErr("sEmail", "");
     pending.email = email; savePending();
     notice = ""; otpMsg.email = null;
     const seq = ++sendSeq;
@@ -761,9 +955,10 @@
     const p1 = document.getElementById("sPass")?.value || "";
     const p2 = document.getElementById("sPass2")?.value || "";
     pending.first = first; pending.last = last; savePending();
+    setFieldErr("sPass", ""); setFieldErr("sPass2", "");
     if (!first || !last) return setNotice(L.namesReq, "err");
-    if (p1.length < 8) return setNotice(L.passShort, "err");
-    if (p1 !== p2) return setNotice(L.passMismatch, "err");
+    if (p1.length < 8) return setFieldErr("sPass", L.passShort);
+    if (p1 !== p2) return setFieldErr("sPass2", L.passMismatch);
     busy = true; setNotice(L.wait, "info");
     try {
       await loadProfile();
@@ -1067,6 +1262,8 @@
     else if (view === "checkout") html = viewCheckout();
     else if (view === "account") html = viewAccount();
     else if (view === "login") html = viewLogin();
+    else if (view === "forgot") html = viewForgot();
+    else if (view === "newpass") html = viewNewPass();
     else if (view === "signup") html = viewSignup();
     else if (view === "done") html = `<p>${lastSaveOk ? t("done") : t("doneLocal")}</p><button data-action="shop">${t("back")}</button>`;
     else html = viewShop();
@@ -1084,7 +1281,7 @@
     const addr = document.getElementById("fAddr").value.trim();
     const msg = document.getElementById("formMsg");
     if (!state.area || !addr) { msg.textContent = t("fillAll"); return; }
-    if (!isComplete()) { afterLogin = "checkout"; go("login", t("needLogin")); return; }
+    if (!isComplete()) { afterLogin = "checkout"; openAuth("login", t("needLogin")); return; }
 
     const s = shippingCalc();
     const subtotal = localPrice(subtotalUSD());
@@ -1149,16 +1346,40 @@
     if (a === "removeCoupon") { state.coupon = null; save(); render(); return; }
     if (a === "cart") { go("cart", ""); return; }
     if (a === "shop") { go("shop", ""); return; }
-    if (a === "login" || a === "toLogin") { go("login", ""); return; }
-    if (a === "toSignup") { go("signup", ""); return; }
+
+    // صفحات الدخول
+    if (a === "login" || a === "toLogin") { openAuth("login"); return; }
+    if (a === "toSignup") { openAuth("signup"); return; }
+    if (a === "toForgot") { forgotDone = false; openAuth("forgot"); return; }
+    if (a === "backToLogin") { passDone = false; authReturn = "shop"; go("login", ""); return; }
+    if (a === "authCancel") {
+      afterLogin = null;
+      const back = authReturn && !AUTH_VIEWS.includes(authReturn) ? authReturn : "shop";
+      go(back, "");
+      return;
+    }
+    if (a === "toggleLang") { state.lang = state.lang === "ar" ? "en" : "ar"; save(); fillCountrySelects(); render(); return; }
+    if (a === "eye") {
+      const inp = document.getElementById(ds.target);
+      const L = T[state.lang];
+      if (inp) {
+        inp.type = inp.type === "password" ? "text" : "password";
+        const btn = inp.parentElement?.querySelector(".eye");
+        if (btn) { const show = inp.type === "password"; btn.setAttribute("aria-label", show ? L.showPass : L.hidePass); btn.title = show ? L.showPass : L.hidePass; }
+      }
+      return;
+    }
     if (a === "doLogin") { await doLogin(); return; }
+    if (a === "sendReset") { await sendReset(); return; }
+    if (a === "setNewPass") { await setNewPass(); return; }
+
     if (a === "account") {
-      if (!isComplete()) { go("login", ""); return; }
+      if (!isComplete()) { openAuth("login"); return; }
       view = "account"; render(); loadOrders(); return;
     }
     if (a === "checkout") {
       if (!cartCount()) return;
-      if (!isComplete()) { afterLogin = "checkout"; go("login", t("needLogin")); return; }
+      if (!isComplete()) { afterLogin = "checkout"; openAuth("login", t("needLogin")); return; }
       go("checkout", ""); return;
     }
     if (a === "confirm") { await confirmOrder(); return; }
@@ -1189,12 +1410,14 @@
       if (v) maybeVerify(el.dataset.otp);
       return;
     }
+    // أي كتابة في حقل فيه خطأ تمسح الخطأ
+    if (el.id && document.getElementById(el.id + "Err")) setFieldErr(el.id, "");
     const id = el.id;
     if (id === "sEmail") { pending.email = el.value.trim(); savePending(); }
     else if (id === "sPhone") { pending.phone = el.value.trim(); savePending(); }
     else if (id === "sFirst") { pending.first = el.value.trim(); savePending(); }
     else if (id === "sLast") { pending.last = el.value.trim(); savePending(); }
-    else if (id === "lEmail") { loginEmail = el.value.trim(); }
+    else if (id === "lEmail" || id === "fEmail") { loginEmail = el.value.trim(); }
   });
   document.getElementById("view").addEventListener("keydown", (e) => {
     const el = e.target;
@@ -1219,7 +1442,9 @@
       return;
     }
     if (e.key !== "Enter") return;
-    if (el.id === "lPass") doLogin();
+    if (el.id === "lPass" || el.id === "lEmail") doLogin();
+    else if (el.id === "fEmail") sendReset();
+    else if (el.id === "nPass2") setNewPass();
     else if (el.id === "sEmail") sendCode();
     else if (el.id === "sPass2") createAccount();
   });
@@ -1304,7 +1529,10 @@
     });
   }, SLIDE_MS);
 
-  sb.auth.onAuthStateChange(async (_event, session) => {
+  sb.auth.onAuthStateChange(async (event, session) => {
+    // فتح رابط إعادة تعيين كلمة المرور من البريد
+    if (event === "PASSWORD_RECOVERY") { recovering = true; passDone = false; view = "newpass"; render(); return; }
+    if (recovering) { render(); return; }
     if (session && session.user) await refreshAuth();
     else { me = null; profile = null; if (view === "account") view = "shop"; }
     render();
