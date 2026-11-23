@@ -147,7 +147,7 @@
       shippingNote:"رسوم التوصيل تُضاف عند تحديد العنوان", coupon:"هل لديك كود خصم؟", apply:"تطبيق",
       couponBad:"كود الخصم غير صحيح", couponOk:"تم تطبيق كود الخصم", removeCoupon:"إزالة الكود",
       keepShopping:"متابعة التسوق", checkout:"إتمام الطلب",
-      pickAddr:"عنوان التوصيل", addAddrBtn:"إضافة أو تعديل العناوين", noAddrCountry:"ما عندك عنوان محفوظ لهذي الدولة. أضف عنوان أولًا",
+      pickAddr:"عنوان التوصيل", addAddrBtn:"إضافة أو تعديل العناوين", noAddrCountry:"ما عندك عنوان محفوظ لهذي الدولة. أضف عنوان أولًا", noAddrAny:"ما عندك عناوين محفوظة بعد. أضف عنوان أولًا",
       pickAddrErr:"اختر عنوان التوصيل أولًا",
       confirm:"تأكيد الطلب", back:"رجوع",
       done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم الحفظ في هذا المتصفح فقط",
@@ -169,7 +169,7 @@
       shippingNote:"Delivery fee is added once you choose an address", coupon:"Have a discount code?", apply:"Apply",
       couponBad:"Invalid discount code", couponOk:"Discount code applied", removeCoupon:"Remove code",
       keepShopping:"Keep shopping", checkout:"Checkout",
-      pickAddr:"Delivery address", addAddrBtn:"Add or edit addresses", noAddrCountry:"You have no saved address for this country. Add one first",
+      pickAddr:"Delivery address", addAddrBtn:"Add or edit addresses", noAddrCountry:"You have no saved address for this country. Add one first", noAddrAny:"You have no saved addresses yet. Add one first",
       pickAddrErr:"Choose a delivery address first",
       confirm:"Confirm order", back:"Back",
       done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
@@ -256,7 +256,7 @@
     try { return JSON.parse(localStorage.getItem("showbiz_addr2_" + me.id) || "[]"); } catch (e) { return []; }
   }
   function savedAddresses() {
-    return allAddresses().filter(a => a.country === state.country);
+    return allAddresses().filter(a => COUNTRIES[a.country]);
   }
   function selectedAddr() {
     return savedAddresses().find(a => a.id === state.addrId) || null;
@@ -622,13 +622,13 @@
             <div class="pickrow">
               <input type="radio" name="addr" value="${esc(a.id)}" ${state.addrId === a.id ? "checked" : ""}>
               <div>
-                <strong>${esc(a.label)}</strong>
+                <strong>${esc(COUNTRIES[a.country]?.flag || "")} ${esc(a.label)}</strong>
                 <div class="muted">${esc(addrText(a))}</div>
                 <div class="muted" dir="ltr">${esc(a.phone || "")}</div>
               </div>
             </div>
           </label>`).join("")
-      : `<p class="muted">${t("noAddrCountry")}</p>`;
+      : `<p class="muted">${t("noAddrAny")}</p>`;
     const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
     return `
       <h3>${t("checkout")}</h3>
@@ -786,6 +786,9 @@
   document.getElementById("view").addEventListener("change", (e) => {
     if (e.target.name === "addr") {
       state.addrId = e.target.value; save();
+      const picked = selectedAddr();
+      // العنوان يحدد الدولة تلقائياً (مثلاً عنوان سعودي يفتح السعودية)
+      if (picked && picked.country !== state.country) { state.country = picked.country; save(); render(); return; }
       document.getElementById("summary").innerHTML = summaryHTML();
     }
   });
