@@ -49,7 +49,16 @@
   .crow img { width:72px; height:72px; object-fit:contain; background:#f3f4f6; border-radius:10px; }
   .cinfo { flex:1; }
   .couponrow { display:flex; gap:8px; } .couponrow input { margin:0; } .couponrow button { white-space:nowrap; }
+  .addrpick { display:block; cursor:pointer; margin-bottom:8px; }
+  .addrpick .pickrow { display:flex; gap:10px; align-items:flex-start; }
+  .addrpick input[type=radio] { width:auto; margin:4px 0 0; }
   .hidden { display:none !important; }
+  .acctwrap { position:relative; display:inline-block; }
+  .menu { position:absolute; top:calc(100% + 6px); inset-inline-end:0; min-width:210px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px; z-index:30; box-shadow:0 12px 30px rgba(0,0,0,.5); }
+  .menu-who { padding:8px 12px; color:var(--muted); font-size:13px; border-bottom:1px solid var(--line); margin-bottom:4px; word-break:break-all; direction:ltr; text-align:start; }
+  .menu a { display:block; padding:10px 12px; border-radius:8px; color:var(--fg); text-decoration:none; font-size:14px; }
+  .menu a:hover { background:var(--card2); }
+  .menu button.menu-out { width:100%; margin-top:4px; background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:400; }
   .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card); color:var(--ok); border:1px solid #2f6b4f; padding:16px 26px; border-radius:14px; font-size:17px; font-weight:bold; z-index:60; box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:90vw; text-align:center; }
   .notice { padding:10px 12px; border-radius:10px; font-size:14px; margin:8px 0; color:var(--err); background:#3b1620; border:1px solid #7a2b3b; }
   .build { position:fixed; bottom:0; left:0; right:0; background:#070d18; color:#6b7a94; font:12px monospace; text-align:center; padding:6px; direction:ltr; z-index:4; border-top:1px solid var(--line); }
@@ -63,7 +72,16 @@
     <select id="countrySel"></select>
     <button class="ghost" id="langBtn"></button>
     <button class="ghost" id="cartBtn"></button>
-    <button class="ghost" id="acctBtn"></button>
+    <div class="acctwrap">
+      <button class="ghost" id="acctBtn"></button>
+      <div class="menu hidden" id="acctMenu">
+        <div class="menu-who" id="menuWho"></div>
+        <a href="account.html" id="menuInfo"></a>
+        <a href="addresses.html" id="menuAddr"></a>
+        <a href="delete-account.html" id="menuDel"></a>
+        <button class="ghost menu-out" id="menuLogout"></button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -84,10 +102,11 @@
   </div>
 </div>
 
+<script src="locations.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
   // رقم النسخة: يتشال من هنا بعد اعتماد الموقع
-  const BUILD = { version: "v26", updated: "2026-11-23 09:45" };
+  const BUILD = { version: "v30", updated: "2026-11-23 22:20" };
 
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
@@ -96,6 +115,17 @@
   const COUPONS = { TEST10: 0.10 };
   const SLIDE_MS = 5000;
   const TOAST_MS = 1500;
+
+  // مسح مرة وحدة للبيانات القديمة في متصفحات الناس (السلة، الحالة، الجلسة) عند هذا النشر
+  const RESET_TAG = "showbiz-reset-v28";
+  try {
+    if (localStorage.getItem("showbiz_reset") !== RESET_TAG) {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith("showbiz") || (k.startsWith("sb-") && k.endsWith("-auth-token"))) localStorage.removeItem(k);
+      });
+      localStorage.setItem("showbiz_reset", RESET_TAG);
+    }
+  } catch (e) {}
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -107,25 +137,19 @@
     QA: { flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3 },
     OM: { flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
   };
-  const AREAS = {
-    BH: { ar:["المنامة","المحرق","الرفاع","مدينة عيسى","سترة","أخرى"], en:["Manama","Muharraq","Riffa","Isa Town","Sitra","Other"] },
-    SA: { ar:["الرياض","جدة","الدمام","مكة المكرمة","المدينة المنورة","أخرى"], en:["Riyadh","Jeddah","Dammam","Makkah","Madinah","Other"] },
-    AE: { ar:["دبي","أبوظبي","الشارقة","عجمان","أخرى"], en:["Dubai","Abu Dhabi","Sharjah","Ajman","Other"] },
-    KW: { ar:["الكويت","حولي","الفروانية","الجهراء","أخرى"], en:["Kuwait City","Hawalli","Farwaniya","Jahra","Other"] },
-    QA: { ar:["الدوحة","الريان","الوكرة","أخرى"], en:["Doha","Al Rayyan","Al Wakra","Other"] },
-    OM: { ar:["مسقط","صلالة","صحار","أخرى"], en:["Muscat","Salalah","Sohar","Other"] }
-  };
 
   const T = {
     ar: {
       siteName:"Showbiz", welcome:"مرحبًا بك", chooseCountry:"اختر الدولة", chooseLang:"اختر اللغة", go:"متابعة",
       details:"التفاصيل", detailsTitle:"تفاصيل المنتج", chooseOpt:"اختر اللون / النمط", add:"إضافة للسلة",
       qty:"الكمية", cart:"السلة", cartTitle:"سلة المشتريات", empty:"السلة فارغة", grand:"الإجمالي",
-      productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"رسوم التوصيل", shipLater:"تُحدد بعد اختيار المنطقة",
-      shippingNote:"رسوم التوصيل تُضاف عند تحديد المنطقة", coupon:"هل لديك كود خصم؟", apply:"تطبيق",
+      productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"رسوم التوصيل", shipLater:"تُحدد بعد اختيار العنوان",
+      shippingNote:"رسوم التوصيل تُضاف عند تحديد العنوان", coupon:"هل لديك كود خصم؟", apply:"تطبيق",
       couponBad:"كود الخصم غير صحيح", couponOk:"تم تطبيق كود الخصم", removeCoupon:"إزالة الكود",
-      keepShopping:"متابعة التسوق", checkout:"إتمام الطلب", areaPh:"اختر المنطقة أو المدينة",
-      address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع",
+      keepShopping:"متابعة التسوق", checkout:"إتمام الطلب",
+      pickAddr:"عنوان التوصيل", addAddrBtn:"إضافة أو تعديل العناوين", noAddrCountry:"ما عندك عنوان محفوظ لهذي الدولة. أضف عنوان أولًا",
+      pickAddrErr:"اختر عنوان التوصيل أولًا",
+      confirm:"تأكيد الطلب", back:"رجوع",
       done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم الحفظ في هذا المتصفح فقط",
       loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...",
       noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول",
@@ -134,17 +158,20 @@
       ordersErr:"تعذر تحميل الطلبات", editProfile:"تعديل بياناتي", save:"حفظ", saved:"تم الحفظ",
       namesReq:"الاسم الأول والأخير مطلوبين", firstName:"الاسم الأول", lastName:"الاسم الأخير",
       needLogin:"سجّل دخولك لإتمام الطلب", goLogin:"تسجيل الدخول",
-      buildLabel:"النسخة", updatedLabel:"آخر تحديث"
+      buildLabel:"النسخة", updatedLabel:"آخر تحديث",
+      menuInfo:"معلومات حسابي", menuAddr:"عناويني", menuDel:"حذف الحساب"
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
       details:"Details", detailsTitle:"Product details", chooseOpt:"Choose color / style", add:"Add to cart",
       qty:"Quantity", cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty", grand:"Total",
-      productsVal:"Products", discount:"Discount", shipping:"Delivery fee", shipLater:"Set after choosing area",
-      shippingNote:"Delivery fee is added once you select your area", coupon:"Have a discount code?", apply:"Apply",
+      productsVal:"Products", discount:"Discount", shipping:"Delivery fee", shipLater:"Set after choosing address",
+      shippingNote:"Delivery fee is added once you choose an address", coupon:"Have a discount code?", apply:"Apply",
       couponBad:"Invalid discount code", couponOk:"Discount code applied", removeCoupon:"Remove code",
-      keepShopping:"Keep shopping", checkout:"Checkout", areaPh:"Please select your area or city",
-      address:"Full address", confirm:"Confirm order", back:"Back",
+      keepShopping:"Keep shopping", checkout:"Checkout",
+      pickAddr:"Delivery address", addAddrBtn:"Add or edit addresses", noAddrCountry:"You have no saved address for this country. Add one first",
+      pickAddrErr:"Choose a delivery address first",
+      confirm:"Confirm order", back:"Back",
       done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
       loadErr:"Could not load products, please try again", loading:"Loading...",
       noProducts:"No products available right now", fillAll:"Please fill all fields",
@@ -153,17 +180,18 @@
       ordersErr:"Could not load orders", editProfile:"Edit my details", save:"Save", saved:"Saved",
       namesReq:"First and last name are required", firstName:"First name", lastName:"Last name",
       needLogin:"Log in to complete your order", goLogin:"Log in",
-      buildLabel:"Build", updatedLabel:"Last update"
+      buildLabel:"Build", updatedLabel:"Last update",
+      menuInfo:"My details", menuAddr:"My addresses", menuDel:"Delete account"
     }
   };
 
   // ===== الحالة =====
-  let state = { country:"BH", lang:"ar", cart:[], area:null, seen:false, coupon:null };
+  let state = { country:"BH", lang:"ar", cart:[], addrId:null, seen:false, coupon:null };
   try { Object.assign(state, JSON.parse(localStorage.getItem("showbiz_state") || "{}")); } catch (e) {}
   if (!Array.isArray(state.cart)) state.cart = [];
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
 
-  let products = [], loaded = false, loadError = false, rawCount = 0;
+  let products = [], loaded = false, loadError = false, rawCount = 0, loadMsg = "";
   let view = "shop", notice = "";
   let modal = null, cardIdx = {};
   let me = null, profile = null, sessionChecked = false;
@@ -176,7 +204,7 @@
   const t = (k) => T[state.lang][k];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const localPrice = (usd) => usd * COUNTRIES[state.country].rate;
-  const isLoggedIn = () => !!me || (!sessionChecked && sessionHint());
+  const isLoggedIn = () => !!me || sessionHint();
 
   function toast(msg) {
     const d = document.createElement("div");
@@ -221,6 +249,34 @@
   const subtotalUSD = () => cartLines().reduce((s, l) => s + l.v.price * l.qty, 0);
   const discountUSD = () => subtotalUSD() * (COUPONS[state.coupon] || 0);
 
+  // ===== العناوين المحفوظة (من صفحة عناويني) =====
+  // تقرأ نفس المفتاح اللي تكتب فيه صفحة addresses.html، وتعرض عناوين الدولة المختارة بس
+  function allAddresses() {
+    if (!me) return [];
+    try { return JSON.parse(localStorage.getItem("showbiz_addr2_" + me.id) || "[]"); } catch (e) { return []; }
+  }
+  function savedAddresses() {
+    return allAddresses().filter(a => a.country === state.country);
+  }
+  function selectedAddr() {
+    return savedAddresses().find(a => a.id === state.addrId) || null;
+  }
+  function addrText(a) {
+    const names = (a.path || []).map(id => {
+      const n = findNode(id);
+      return n ? (state.lang === "en" && n.en ? n.en : n.ar) : id;
+    }).join(" ← ");
+    const f = a.fields || {};
+    const parts = [names];
+    if (f.building) parts.push(f.building);
+    if (f.street) parts.push(f.street);
+    if (f.complex) parts.push(f.complex);
+    if (f.flat) parts.push(f.flat);
+    if (f.makani) parts.push("Makani " + f.makani);
+    if (f.pobox) parts.push("PO " + f.pobox);
+    return parts.join(" · ");
+  }
+
   // ===== الحاسبة =====
   function shippingCalc() {
     let actualKg = 0, volKg = 0;
@@ -239,29 +295,56 @@
   const shipLocal = (bhd) => bhd * (COUNTRIES[state.country].rate / RATE_BHD);
 
   // ===== تحميل المنتجات =====
-  // يقبل أي شكل قائمة من السيرفر، ويعرض عدد اللي وصل بأسفل الصفحة للتشخيص
+  // يقبل أي شكل قائمة من السيرفر، ويعرض سبب الفشل أسفل الصفحة للتشخيص
+  // يدعم شكل CJ الخام (productId, bigImage, sellPrice "15.45-16.41") وشكلنا المعدّل
+  const firstNum = (v) => { const n = parseFloat(String(v ?? "").split("-")[0]); return isNaN(n) ? null : n; };
   function normalizeProduct(p) {
+    const pid = p.pid ?? p.productId ?? p.id;
+    const image = p.image || p.bigImage || "";
+    const weightG = p.weightG || firstNum(p.weight);
+    const dimsCm = p.dimsCm || (Array.isArray(p.lengthList) && p.lengthList[0]
+      ? [firstNum(p.lengthList[0]), firstNum(p.widthList?.[0]) || 10, firstNum(p.heightList?.[0]) || 10] : null);
     let variants = (Array.isArray(p.variants) ? p.variants : [])
       .map(v => ({ ...v, price: Number(v.price) }))
       .filter(v => v.vid && !isNaN(v.price));
     if (!variants.length) {
-      const base = parseFloat(String(p.sellPrice ?? p.price ?? "").split("-")[0]);
-      if (!isNaN(base)) variants = [{ vid: "base-" + p.pid, key: "", sku: p.sku, price: base, image: p.image, weightG: p.weightG, dimsCm: p.dimsCm }];
+      const base = firstNum(p.sellPrice ?? p.price);
+      if (base !== null) variants = [{ vid: p.vid || ("base-" + pid), key: "", sku: p.sku, price: base, image, weightG, dimsCm }];
     }
-    const images = (Array.isArray(p.images) && p.images.length) ? p.images : [p.image].filter(Boolean);
-    return { ...p, images, variants };
+    const images = (Array.isArray(p.images) && p.images.length) ? p.images : [image].filter(Boolean);
+    return { ...p, pid, nameEn: p.nameEn || p.name || "", image, images, weightG, dimsCm, variants };
+  }
+  // يبحث عن قائمة المنتجات مهما كان شكل الرد
+  function findList(d) {
+    if (Array.isArray(d)) return d;
+    const cands = [d?.products, d?.items, d?.list, d?.data?.content, d?.data?.list, d?.data?.products, d?.data];
+    return cands.find(Array.isArray) || [];
   }
   async function loadProducts() {
-    loadError = false;
+    loadError = false; loadMsg = "";
     try {
       const res = await fetch(WORKER_URL + "?action=list", { cache: "no-store" });
-      const d = await res.json();
-      const list = Array.isArray(d) ? d : (Array.isArray(d.products) ? d.products : (Array.isArray(d.items) ? d.items : []));
-      rawCount = list.length;
-      products = list.map(normalizeProduct).filter(p => p.variants.length > 0);
+      if (!res.ok) loadMsg = "HTTP " + res.status;
+      const text = await res.text();
+      let d = null;
+      try { d = JSON.parse(text); } catch (e) { loadMsg = loadMsg || ("الرد مو JSON: " + text.slice(0, 120)); }
+      if (d) {
+        if (d.success === false || (d.code !== undefined && Number(d.code) !== 200)) {
+          loadMsg = String(d.message || ("code " + d.code));
+        }
+        const list = findList(d);
+        rawCount = list.length;
+        products = list.map(normalizeProduct).filter(p => p.variants.length > 0);
+        if (!products.length && !loadMsg) {
+          loadMsg = rawCount ? "المنتجات وصلت بس ما انقرأ فيها سعر أو رقم" : "الرد ما فيه قائمة منتجات";
+        }
+      } else {
+        products = [];
+      }
     } catch (e) {
       console.error("loadProducts:", e);
       loadError = true;
+      loadMsg = String(e && e.message || e);
       products = [];
     }
     loaded = true;
@@ -295,7 +378,7 @@
     }
     // الدولة المفضلة المحفوظة في الحساب تنطبق تلقائيًا
     const pref = me?.user_metadata?.preferred_country;
-    if (pref && COUNTRIES[pref] && pref !== state.country) { state.country = pref; state.area = null; save(); }
+    if (pref && COUNTRIES[pref] && pref !== state.country) { state.country = pref; state.addrId = null; save(); }
   }
   async function loadOrders() {
     accountOrders = null; ordersFailed = false; render();
@@ -311,9 +394,9 @@
 
   // ===== إتمام الطلب =====
   async function confirmOrder() {
-    const addr = document.getElementById("fAddr").value.trim();
     const msg = document.getElementById("formMsg");
-    if (!state.area || !addr) { msg.textContent = t("fillAll"); return; }
+    const addr = selectedAddr();
+    if (!addr) { msg.textContent = t("pickAddrErr"); return; }
     if (!me) { goLogin(); return; }
 
     const s = shippingCalc();
@@ -323,7 +406,10 @@
     const row = {
       user_id: me.id, country: state.country, status: "test-not-sent-to-cj",
       items: cartLines().map(l => ({ pid: l.p.pid, vid: l.vid, sku: l.v.sku, name: l.p.nameEn, variant: l.v.key, qty: l.qty, unitUSD: l.v.price })),
-      shipping_address: { area: state.area, address: addr },
+      shipping_address: {
+        id: addr.id, label: addr.label, text: addrText(addr), fields: addr.fields || {},
+        phone: addr.phone, recipient: addr.recipient || "", path: addr.path || []
+      },
       contact: { name: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim(), phone: profile?.phone || null },
       coupon: state.coupon, subtotal, discount, shipping: ship,
       total: subtotal - discount + ship, internal_risk_bhd: s.riskBHD
@@ -341,7 +427,7 @@
         localStorage.setItem("showbiz_orders", JSON.stringify(arr));
       } catch (e) {}
     }
-    state.cart = []; state.area = null; state.coupon = null;
+    state.cart = []; state.addrId = null; state.coupon = null;
     save();
     go("done", "");
   }
@@ -461,13 +547,14 @@
     document.getElementById("gate").classList.toggle("hidden", state.seen);
   }
   function renderBuild() {
+    const why = loadMsg ? ` · ${loadMsg.slice(0, 120)}` : "";
     document.getElementById("buildInfo").textContent =
-      `${t("buildLabel")}: ${BUILD.version} · ${t("updatedLabel")}: ${BUILD.updated} · products: ${products.length}/${rawCount}`;
+      `${t("buildLabel")}: ${BUILD.version} · ${t("updatedLabel")}: ${BUILD.updated} · products: ${products.length}/${rawCount}${why}`;
   }
   function viewShop() {
     if (!loaded) return `<p>${t("loading")}</p>`;
     if (loadError) return `<p>${t("loadErr")}</p>`;
-    if (!products.length) return `<p>${t("noProducts")}</p>`;
+    if (!products.length) return `<p>${t("noProducts")}</p>${loadMsg ? `<p class="muted">${esc(loadMsg)}</p>` : ""}`;
     return `<div class="grid">` + products.map(p => {
       const idx = cardIdx[p.pid] || 0;
       const img = p.images[idx] || p.image || "";
@@ -528,8 +615,20 @@
       </div>`;
   }
   function viewCheckout() {
-    const areas = AREAS[state.country][state.lang]
-      .map(a => `<option value="${esc(a)}" ${state.area === a ? "selected" : ""}>${esc(a)}</option>`).join("");
+    const list = savedAddresses();
+    const picks = list.length
+      ? list.map(a => `
+          <label class="card pad addrpick">
+            <div class="pickrow">
+              <input type="radio" name="addr" value="${esc(a.id)}" ${state.addrId === a.id ? "checked" : ""}>
+              <div>
+                <strong>${esc(a.label)}</strong>
+                <div class="muted">${esc(addrText(a))}</div>
+                <div class="muted" dir="ltr">${esc(a.phone || "")}</div>
+              </div>
+            </div>
+          </label>`).join("")
+      : `<p class="muted">${t("noAddrCountry")}</p>`;
     const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
     return `
       <h3>${t("checkout")}</h3>
@@ -537,9 +636,10 @@
         <div>${esc(name || me?.email || "")}</div>
         <div class="muted" dir="ltr">${esc(profile?.phone || me?.phone || "")}</div>
       </div>
-      <select id="fArea"><option value="">${t("areaPh")}</option>${areas}</select>
-      <input id="fAddr" placeholder="${t("address")}">
-      <div class="card pad" id="summary"></div>
+      <h4>${t("pickAddr")}</h4>
+      ${picks}
+      <button class="ghost btnfull" data-action="addAddr">${t("addAddrBtn")}</button>
+      <div class="card pad" id="summary" style="margin-top:12px"></div>
       <p id="formMsg" class="muted"></p>
       <button data-action="confirm" style="width:100%">${t("confirm")}</button>
       <p><button class="ghost" data-action="cart">${t("back")}</button></p>`;
@@ -548,7 +648,7 @@
     const sub = localPrice(subtotalUSD());
     const disc = localPrice(discountUSD());
     const discRow = disc > 0 ? `<div class="row"><span>${t("discount")}</span><span>- ${fmt(disc)}</span></div>` : "";
-    if (!state.area) {
+    if (!selectedAddr()) {
       return `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>${discRow}<p class="muted">${t("shippingNote")}</p>`;
     }
     const ship = shipLocal(shippingCalc().shipBHD);
@@ -589,6 +689,11 @@
     document.getElementById("langBtn").textContent = state.lang === "ar" ? "English" : "العربية";
     document.getElementById("cartBtn").textContent = `${t("cart")} (${cartCount()})`;
     document.getElementById("acctBtn").textContent = isLoggedIn() ? t("account") : t("login");
+    document.getElementById("menuWho").textContent = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || me?.email || "";
+    document.getElementById("menuInfo").textContent = t("menuInfo");
+    document.getElementById("menuAddr").textContent = t("menuAddr");
+    document.getElementById("menuDel").textContent = t("menuDel");
+    document.getElementById("menuLogout").textContent = t("logout");
     document.getElementById("siteName").textContent = t("siteName");
 
     let html = notice ? `<div class="notice">${esc(notice)}</div>` : "";
@@ -644,6 +749,12 @@
       if (!cartCount()) return;
       go("checkout", ""); return;
     }
+    if (a === "addAddr") {
+      // نرجع للطلب بعد ما يحفظ العنوان: index.html يقرا showbiz_next عند الفتح
+      localStorage.setItem("showbiz_next", "checkout");
+      location.href = "addresses.html";
+      return;
+    }
     if (a === "confirm") { await confirmOrder(); return; }
     if (a === "account") {
       if (!me) { goLogin(); return; }
@@ -673,8 +784,8 @@
     if (b && !b.disabled) handleAction(b.dataset.action, b.dataset);
   });
   document.getElementById("view").addEventListener("change", (e) => {
-    if (e.target.id === "fArea") {
-      state.area = e.target.value || null; save();
+    if (e.target.name === "addr") {
+      state.addrId = e.target.value; save();
       document.getElementById("summary").innerHTML = summaryHTML();
     }
   });
@@ -696,7 +807,7 @@
 
   // تغيير الدولة من الهيدر: يتحفظ كدولة مفضلة لو الزائر مسجل دخول
   async function changeCountry(code) {
-    state.country = code; state.area = null; save();
+    state.country = code; state.addrId = null; save();
     if (me) { try { await sb.auth.updateUser({ data: { preferred_country: code } }); } catch (e) {} }
     render();
   }
@@ -710,8 +821,19 @@
   });
   document.getElementById("gGo").addEventListener("click", () => { state.seen = true; save(); render(); });
   document.getElementById("cartBtn").addEventListener("click", () => go("cart", ""));
-  document.getElementById("acctBtn").addEventListener("click", () => {
-    if (me) handleAction("account", {}); else goLogin();
+  // زر "حسابي" يفتح قائمة منسدلة، وما يرجع لصفحة الدخول إلا إذا ما فيه جلسة
+  const acctMenu = document.getElementById("acctMenu");
+  document.getElementById("acctBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (isLoggedIn()) acctMenu.classList.toggle("hidden");
+    else goLogin();
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".acctwrap")) acctMenu.classList.add("hidden");
+  });
+  document.getElementById("menuLogout").addEventListener("click", () => {
+    acctMenu.classList.add("hidden");
+    handleAction("logout", {});
   });
 
   // تبديل الصور كل 5 ثواني
@@ -749,7 +871,7 @@
   render();
   (async () => {
     await loadProfile();
-    // نرجع الزائر للصفحة اللي كان فيها قبل الدخول (السلة أو إتمام الطلب)
+    // نرجع الزائر للصفحة اللي كان فيها قبل الدخول أو قبل إضافة العنوان (السلة أو إتمام الطلب)
     const next = localStorage.getItem("showbiz_next");
     localStorage.removeItem("showbiz_next");
     if (me && (next === "checkout" || next === "cart") && cartCount()) view = next;

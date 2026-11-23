@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Showbiz عناويني</title>
+<style>
+  :root { --bg:#0c1628; --card:#14213a; --card2:#1a2b4a; --field:#1d2f50; --line:#2c4168; --fg:#f2f5fa; --muted:#9aa8bf; --orange:#f59e4b; --orange-d:#e0852f; --err:#ff8593; --errbg:rgba(255,133,147,.12); --ok:#5fd39a; --okbg:rgba(95,211,154,.12); color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width:560px; margin:0 auto; padding-block:18px 40px; }
+  .hdr { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:18px; }
+  .brand { font-weight:800; font-size:18px; color:var(--fg); text-decoration:none; }
+  .brand b { color:var(--orange); }
+  .tools { display:flex; gap:8px; align-items:center; }
+  .navwrap { position:relative; }
+  .menu { position:absolute; top:calc(100% + 6px); inset-inline-start:0; min-width:220px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px; z-index:30; box-shadow:0 12px 30px rgba(0,0,0,.5); }
+  .menu a { display:block; padding:10px 12px; border-radius:8px; color:var(--fg); text-decoration:none; font-size:14px; }
+  .menu a:hover { background:var(--card2); }
+  .menu a.cur { color:var(--orange); font-weight:700; }
+  .menu .btn { width:100%; margin-top:4px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  h2 { font-size:17px; margin:0 0 12px; }
+  h3 { font-size:16px; margin:0 0 8px; }
+  .sub { color:var(--muted); font-size:13px; margin:0 0 14px; line-height:1.7; }
+  .btn { border:0; border-radius:12px; padding:12px 16px; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; text-decoration:none; display:inline-block; text-align:center; }
+  .btn:disabled { opacity:.5; cursor:not-allowed; }
+  .btn-main { background:var(--orange); color:#111; }
+  .btn-main:hover:not(:disabled) { background:var(--orange-d); }
+  .btn-line { background:transparent; color:var(--fg); border:1px solid var(--line); }
+  .btn-danger { background:#b42339; color:#fff; }
+  .btn-sm { padding:8px 12px; font-size:13px; border-radius:10px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:20px 18px; margin-bottom:16px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .full { grid-column:1 / -1; }
+  @media (max-width:480px) { .grid { grid-template-columns:1fr; } }
+  label { display:block; font-size:13px; font-weight:600; color:var(--muted); margin:0 0 6px; }
+  input, select { width:100%; padding:12px 13px; border:1px solid var(--line); border-radius:12px; background:var(--field); color:var(--fg); font-size:15px; font-family:inherit; min-width:0; }
+  input:focus, select:focus { outline:2px solid var(--orange); outline-offset:0; }
+  option { background:var(--card); color:var(--fg); }
+  .actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; justify-content:flex-end; }
+  .msg { border-radius:10px; padding:10px 12px; font-size:14px; line-height:1.6; margin-bottom:14px; border:1px solid transparent; }
+  .msg.ok { color:var(--ok); background:var(--okbg); border-color:rgba(95,211,154,.35); }
+  .msg.err { color:var(--err); background:var(--errbg); border-color:rgba(255,133,147,.35); }
+  .item .line { color:var(--muted); font-size:13px; line-height:1.7; word-break:break-word; }
+  .item .line.main { color:var(--fg); font-size:14px; }
+  .item .actions { margin-top:12px; }
+  .ltr { direction:ltr; }
+  .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:22px; direction:ltr; }
+  .loading { text-align:center; color:var(--muted); padding:60px 0; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <a class="brand" href="index.html">Show<b>biz</b></a>
+    <div class="tools">
+      <button class="btn btn-line btn-sm" id="langBtn" type="button"></button>
+      <div class="navwrap">
+        <button class="btn btn-line btn-sm" id="menuBtn" type="button">☰</button>
+        <div class="menu hidden" id="navMenu">
+          <a href="index.html" data-k="navStore"></a>
+          <a href="account.html" data-k="navAccount"></a>
+          <a href="addresses.html" class="cur" data-k="navAddr"></a>
+          <a href="delete-account.html" data-k="navDel"></a>
+          <button class="btn btn-line btn-sm" id="navLogout" type="button" data-k="logout"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading" class="loading" data-k="loading"></div>
+
+  <div id="page" class="hidden">
+    <h1 data-k="title"></h1>
+    <p class="sub" data-k="intro"></p>
+
+    <div class="card">
+      <h2 id="formTitle"></h2>
+      <div id="msg" class="msg hidden"></div>
+
+      <div class="grid">
+        <div class="full"><label for="aLabel" data-k="addrName"></label><input id="aLabel" maxlength="40"></div>
+        <div class="full"><label for="aCountry" data-k="country"></label><select id="aCountry"></select></div>
+      </div>
+
+      <div id="chain" class="grid" style="margin-top:12px;"></div>
+      <div id="fields" class="grid" style="margin-top:12px;"></div>
+
+      <div class="grid" style="margin-top:12px;">
+        <div><label for="pCc" data-k="phoneCode"></label><select id="pCc" class="ltr"></select></div>
+        <div><label for="pNum" data-k="phone"></label><input id="pNum" class="ltr" dir="ltr" inputmode="numeric" autocomplete="tel-national"></div>
+        <div class="full"><label for="aRecip" data-k="recipient"></label><input id="aRecip" maxlength="60"></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-line" id="cancelBtn" type="button" data-k="cancel"></button>
+        <button class="btn btn-main" id="saveBtn" type="button" data-k="save"></button>
+      </div>
+    </div>
+
+    <h2 data-k="savedTitle"></h2>
+    <div id="list"></div>
+  </div>
+
+  <div class="ver" id="ver"></div>
+</div>
+
+<script src="locations.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
+<script>
+  const BUILD = { version: "v3", updated: "2026-11-23 22:10" };
+
+  const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
+
+  // أكواد الجوال (مستقلة عن دولة العنوان)
+  const PHONE_CODES = [
+    { dial: "+973", flag: "🇧🇭", len: 8 },
+    { dial: "+971", flag: "🇦🇪", len: 9 },
+    { dial: "+966", flag: "🇸🇦", len: 9 },
+    { dial: "+965", flag: "🇰🇼", len: 8 },
+    { dial: "+974", flag: "🇶🇦", len: 8 },
+    { dial: "+968", flag: "🇴🇲", len: 8 }
+  ];
+
+  // حقول كل دولة (الحقول الاختيارية ما هي إلزامية)
+  const FIELDS = {
+    BH: [
+      { k: "building", ar: "رقم المنزل أو المبنى", en: "Building no.", req: true, digits: true },
+      { k: "street", ar: "رقم الطريق", en: "Road no.", req: true, digits: true },
+      { k: "complex", ar: "رقم المجمع (اختياري)", en: "Complex no. (optional)", req: false, digits: true },
+      { k: "flat", ar: "رقم الشقة (اختياري)", en: "Flat no. (optional)", req: false, digits: true }
+    ],
+    AE: [
+      { k: "building", ar: "رقم المبنى", en: "Building no.", req: true, digits: false },
+      { k: "street", ar: "اسم الشارع", en: "Street name", req: true, digits: false },
+      { k: "flat", ar: "رقم الشقة أو الفيلا (اختياري)", en: "Flat or villa no. (optional)", req: false, digits: false },
+      { k: "makani", ar: "رقم مكاني (اختياري)", en: "Makani no. (optional)", req: false, digits: true },
+      { k: "pobox", ar: "صندوق البريد (اختياري)", en: "P.O. box (optional)", req: false, digits: true }
+    ]
+  };
+
+  const TYPE_LABEL = {
+    gov: ["المحافظة", "Governorate"],
+    emirate: ["الإمارة", "Emirate"],
+    region: ["المنطقة الكبيرة", "Region"],
+    city: ["المدينة", "City"],
+    area: ["المنطقة", "Area"]
+  };
+
+  const T = {
+    ar: {
+      title: "عناويني", intro: "أضف عناوين التوصيل. القوائم تتغير حسب الدولة، وكل مستوى يظهر تحت اللي قبله.", loading: "جاري التحميل...",
+      newAddr: "إضافة عنوان", editAddr: "تعديل العنوان", addrName: "اسم العنوان", country: "الدولة",
+      phoneCode: "رمز الدولة", phone: "رقم الهاتف", recipient: "الاسم (اختياري)", save: "حفظ العنوان", cancel: "إلغاء",
+      savedTitle: "عناويني المحفوظة", none: "ما عندك عناوين محفوظة بعد", edit: "تعديل", del: "حذف", confirmDel: "تأكيد الحذف",
+      choose: "اختر...", errLabel: "اكتب اسم العنوان", errArea: "أكمل اختيار الموقع حتى آخر مستوى",
+      errField: "أكمل الحقل: ", errPhone: "رقم الجوال لازم يكون {n} أرقام",
+      saved: "تم حفظ العنوان", updated: "تم تحديث العنوان", deleted: "تم حذف العنوان", err: "حدث خطأ",
+      storeErr: "تعذّر حفظ العنوان على هذا المتصفح", phoneLbl: "الهاتف: ", recipLbl: "المستلم: ",
+      navStore: "المتجر", navAccount: "معلومات الحساب", navAddr: "عناويني", navDel: "حذف الحساب", logout: "تسجيل الخروج", switchLabel: "English"
+    },
+    en: {
+      title: "My addresses", intro: "Add your delivery addresses. Each list changes based on the country and the level above it.", loading: "Loading...",
+      newAddr: "Add address", editAddr: "Edit address", addrName: "Address name", country: "Country",
+      phoneCode: "Country code", phone: "Phone number", recipient: "Recipient name (optional)", save: "Save address", cancel: "Cancel",
+      savedTitle: "Saved addresses", none: "You have no saved addresses yet", edit: "Edit", del: "Delete", confirmDel: "Confirm delete",
+      choose: "Select...", errLabel: "Enter an address name", errArea: "Complete the location down to the last level",
+      errField: "Complete the field: ", errPhone: "Phone number must be {n} digits",
+      saved: "Address saved", updated: "Address updated", deleted: "Address deleted", err: "Something went wrong",
+      storeErr: "Could not save the address in this browser", phoneLbl: "Phone: ", recipLbl: "Recipient: ",
+      navStore: "Store", navAccount: "Account details", navAddr: "My addresses", navDel: "Delete account", logout: "Log out", switchLabel: "العربية"
+    }
+  };
+
+  // مسح مرة وحدة للبيانات القديمة (نفس وسم الرئيسية)
+  try {
+    if (localStorage.getItem("showbiz_reset") !== "showbiz-reset-v28") {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith("showbiz") || (k.startsWith("sb-") && k.endsWith("-auth-token"))) localStorage.removeItem(k);
+      });
+      localStorage.setItem("showbiz_reset", "showbiz-reset-v28");
+    }
+  } catch (e) {}
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const $ = (id) => document.getElementById(id);
+  const L = () => T[lang];
+  const digits = (s) => String(s || "").replace(/\D/g, "");
+
+  let lang = "ar";
+  let user = null;
+  let editId = null;          // معرّف العنوان اللي ينعدل حاليًا
+  let curCountry = "BH";
+  let chosen = [];            // اختيارات القوائم المتسلسلة (معرّفات)
+  let vals = {};              // قيم حقول التفاصيل
+  let list = [];
+
+  function readState() { try { return JSON.parse(localStorage.getItem("showbiz_state") || "{}"); } catch (e) { return {}; } }
+  function writeState(patch) { try { const st = readState(); Object.assign(st, patch); localStorage.setItem("showbiz_state", JSON.stringify(st)); } catch (e) {} }
+  { const st = readState(); if (st.lang === "en" || st.lang === "ar") lang = st.lang; }
+
+  // ===== التخزين (لكل مستخدم، في هذا المتصفح) =====
+  function storeKey() { return "showbiz_addr2_" + user.id; }
+  function loadList() { try { return JSON.parse(localStorage.getItem(storeKey()) || "[]"); } catch (e) { return []; } }
+  function saveList(arr) { try { localStorage.setItem(storeKey(), JSON.stringify(arr)); return true; } catch (e) { return false; } }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  // ===== أسماء =====
+  function txt(n) { return lang === "en" && n.en ? n.en : n.ar; }
+  function countryName(c) { return lang === "en" ? c.en : c.ar; }
+  function fieldsKey() { return FIELDS[curCountry] ? curCountry : "BH"; }
+  function pathNames(path) {
+    return path.map(id => { const n = findNode(id); return n ? txt(n) : id; }).join(" ← ");
+  }
+
+  // ===== رسائل =====
+  function showMsg(type, text) { const m = $("msg"); m.className = "msg " + type; m.textContent = text; }
+  function hideMsg() { $("msg").className = "msg hidden"; }
+
+  // ===== الدولة ورمز الجوال =====
+  function fillCountries() {
+    const s = $("aCountry");
+    s.innerHTML = "";
+    getCountries().forEach(c => s.appendChild(new Option(c.flag + " " + countryName(c), c.code)));
+    s.value = curCountry;
+  }
+  function fillPhoneCodes(sel) {
+    const s = $("pCc");
+    s.innerHTML = "";
+    PHONE_CODES.forEach(p => s.appendChild(new Option(p.flag + " " + p.dial, p.dial)));
+    if (sel) s.value = sel;
+  }
+
+  // ===== القوائم المتسلسلة =====
+  // تمشي على الشجرة: كل اختيار يفتح مستوى جديد إذا كان العنصر عنده تابعين
+  function renderChain() {
+    const box = $("chain");
+    box.innerHTML = "";
+    let items = getTopLevel(curCountry);
+    for (let depth = 0; items.length; depth++) {
+      const wrap = document.createElement("div");
+      wrap.className = "full";
+      const lab = document.createElement("label");
+      const tl = TYPE_LABEL[items[0].type] || TYPE_LABEL.area;
+      lab.textContent = lang === "en" ? tl[1] : tl[0];
+      const sel = document.createElement("select");
+      sel.appendChild(new Option(L().choose, ""));
+      items.forEach(n => sel.appendChild(new Option(txt(n), n.id)));
+      sel.value = chosen[depth] || "";
+      const d = depth;
+      sel.addEventListener("change", () => {
+        chosen = chosen.slice(0, d);
+        chosen[d] = sel.value;
+        renderChain();
+      });
+      wrap.append(lab, sel);
+      box.appendChild(wrap);
+
+      const picked = items.find(n => n.id === chosen[depth]);
+      if (!picked) break;
+      items = getChildren(picked);
+    }
+  }
+
+  // يتحقق إن الاختيار وصل لآخر مستوى ويرجّع المسار
+  function chainResult() {
+    const path = [];
+    let items = getTopLevel(curCountry);
+    let node = null;
+    for (let d = 0; items.length; d++) {
+      node = items.find(n => n.id === chosen[d]) || null;
+      if (!node) return { ok: false, path: [] };
+      path.push(node.id);
+      items = getChildren(node);
+    }
+    return { ok: !!node, path: path };
+  }
+
+  // ===== حقول التفاصيل حسب الدولة =====
+  function renderFields() {
+    const box = $("fields");
+    box.innerHTML = "";
+    FIELDS[fieldsKey()].forEach(f => {
+      const d = document.createElement("div");
+      const lab = document.createElement("label");
+      lab.htmlFor = "f_" + f.k;
+      lab.textContent = lang === "en" ? f.en : f.ar;
+      const inp = document.createElement("input");
+      inp.id = "f_" + f.k;
+      inp.value = vals[f.k] || "";
+      if (f.digits) {
+        inp.className = "ltr";
+        inp.dir = "ltr";
+        inp.inputMode = "numeric";
+        inp.addEventListener("input", () => { inp.value = digits(inp.value); vals[f.k] = inp.value; });
+      } else {
+        inp.addEventListener("input", () => { vals[f.k] = inp.value; });
+      }
+      d.append(lab, inp);
+      box.appendChild(d);
+    });
+  }
+
+  function resetForm() {
+    editId = null;
+    curCountry = "BH";
+    chosen = [];
+    vals = {};
+    $("aLabel").value = "";
+    $("pNum").value = "";
+    $("aRecip").value = "";
+    $("formTitle").textContent = L().newAddr;
+    fillCountries();
+    $("pCc").value = getCountry(curCountry).dial;
+    renderChain();
+    renderFields();
+  }
+
+  function startEdit(a) {
+    editId = a.id;
+    curCountry = a.country;
+    chosen = a.path.slice();
+    vals = Object.assign({}, a.fields || {});
+    $("aLabel").value = a.label;
+    const pc = PHONE_CODES.find(p => (a.phone || "").startsWith(p.dial)) || PHONE_CODES[0];
+    $("pCc").value = pc.dial;
+    $("pNum").value = (a.phone || "").slice(pc.dial.length);
+    $("aRecip").value = a.recipient || "";
+    $("formTitle").textContent = L().editAddr;
+    hideMsg();
+    fillCountries();
+    renderChain();
+    renderFields();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // ===== الحفظ =====
+  function save() {
+    hideMsg();
+    const wasEdit = editId;
+    const label = $("aLabel").value.trim();
+    if (!label) return showMsg("err", L().errLabel);
+
+    const r = chainResult();
+    if (!r.ok) return showMsg("err", L().errArea);
+
+    const fields = {};
+    for (const f of FIELDS[fieldsKey()]) {
+      let v = (vals[f.k] || "").trim();
+      if (f.digits) v = digits(v);
+      if (f.req && !v) return showMsg("err", L().errField + (lang === "en" ? f.en : f.ar));
+      fields[f.k] = v;
+    }
+
+    const pc = PHONE_CODES.find(p => p.dial === $("pCc").value) || PHONE_CODES[0];
+    const num = digits($("pNum").value);
+    if (num.length !== pc.len) return showMsg("err", L().errPhone.replace("{n}", pc.len));
+
+    const entry = {
+      id: editId || uid(),
+      label: label,
+      country: curCountry,
+      path: r.path,
+      fields: fields,
+      phone: pc.dial + num,
+      recipient: $("aRecip").value.trim()
+    };
+
+    const arr = loadList();
+    const i = arr.findIndex(x => x.id === entry.id);
+    if (i >= 0) arr[i] = entry; else arr.push(entry);
+
+    if (!saveList(arr)) return showMsg("err", L().storeErr);
+
+    list = arr;
+    resetForm();
+    showMsg("ok", wasEdit ? L().updated : L().saved);
+    renderList();
+  }
+
+  // ===== عرض العناوين المحفوظة =====
+  function renderList() {
+    const box = $("list");
+    box.innerHTML = "";
+    const arr = loadList();
+    list = arr;
+    if (!arr.length) {
+      const p = document.createElement("p");
+      p.className = "sub";
+      p.textContent = L().none;
+      box.appendChild(p);
+      return;
+    }
+    arr.forEach(a => {
+      const card = document.createElement("div");
+      card.className = "card item";
+
+      const h = document.createElement("h3");
+      h.textContent = a.label;
+      card.appendChild(h);
+
+      const c = getCountry(a.country);
+      const main = document.createElement("div");
+      main.className = "line main";
+      main.textContent = (c ? countryName(c) : a.country) + " · " + pathNames(a.path);
+      card.appendChild(main);
+
+      (FIELDS[a.country] || FIELDS.BH).forEach(f => {
+        if (a.fields && a.fields[f.k]) {
+          const d = document.createElement("div");
+          d.className = "line";
+          d.textContent = (lang === "en" ? f.en : f.ar) + ": " + a.fields[f.k];
+          card.appendChild(d);
+        }
+      });
+
+      const ph = document.createElement("div");
+      ph.className = "line ltr";
+      ph.textContent = (lang === "en" ? "Phone: " : T.ar.phoneLbl) + a.phone;
+      card.appendChild(ph);
+
+      if (a.recipient) {
+        const rc = document.createElement("div");
+        rc.className = "line";
+        rc.textContent = (lang === "en" ? "Recipient: " : T.ar.recipLbl) + a.recipient;
+        card.appendChild(rc);
+      }
+
+      const acts = document.createElement("div");
+      acts.className = "actions";
+
+      const edit = document.createElement("button");
+      edit.className = "btn btn-line btn-sm";
+      edit.type = "button";
+      edit.textContent = L().edit;
+      edit.addEventListener("click", () => startEdit(a));
+
+      const del = document.createElement("button");
+      del.className = "btn btn-danger btn-sm";
+      del.type = "button";
+      del.textContent = L().del;
+      del.addEventListener("click", () => {
+        if (!del.dataset.arm) {
+          del.dataset.arm = "1";
+          del.textContent = L().confirmDel;
+          return;
+        }
+        saveList(loadList().filter(x => x.id !== a.id));
+        if (editId === a.id) resetForm();
+        showMsg("ok", L().deleted);
+        renderList();
+      });
+
+      acts.append(edit, del);
+      card.appendChild(acts);
+      box.appendChild(card);
+    });
+  }
+
+  // ===== اللغة =====
+  function apply() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.title = "Showbiz " + L().title;
+    document.querySelectorAll("[data-k]").forEach(el => { el.textContent = L()[el.dataset.k]; });
+    $("langBtn").textContent = L().switchLabel;
+    $("ver").textContent = "build " + BUILD.version + " · " + BUILD.updated;
+    $("formTitle").textContent = editId ? L().editAddr : L().newAddr;
+    fillCountries();
+    renderChain();
+    renderFields();
+    renderList();
+  }
+
+  async function logout() {
+    try { await sb.auth.signOut(); } catch (e) {}
+    location.replace("index.html");
+  }
+
+  async function init() {
+    let session = null;
+    try { const { data } = await sb.auth.getSession(); session = data && data.session; } catch (e) {}
+    if (!session) { location.replace("login.html"); return; }
+    user = session.user;
+
+    fillPhoneCodes("+973");
+    resetForm();
+    $("loading").classList.add("hidden");
+    $("page").classList.remove("hidden");
+    apply();
+  }
+
+  // ===== الأحداث =====
+  $("aCountry").addEventListener("change", () => {
+    curCountry = $("aCountry").value;
+    chosen = [];
+    vals = {};
+    const c = getCountry(curCountry);
+    if (c && PHONE_CODES.some(p => p.dial === c.dial)) $("pCc").value = c.dial;
+    renderChain();
+    renderFields();
+  });
+  $("pNum").addEventListener("input", () => { $("pNum").value = digits($("pNum").value); });
+  $("saveBtn").addEventListener("click", save);
+  $("cancelBtn").addEventListener("click", () => { hideMsg(); resetForm(); });
+  $("langBtn").addEventListener("click", () => {
+    lang = lang === "ar" ? "en" : "ar";
+    writeState({ lang: lang });
+    apply();
+  });
+  $("menuBtn").addEventListener("click", (e) => { e.stopPropagation(); $("navMenu").classList.toggle("hidden"); });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".navwrap")) $("navMenu").classList.add("hidden");
+  });
+  $("navLogout").addEventListener("click", logout);
+
+  init();
+</script>
+</body>
+</html>
