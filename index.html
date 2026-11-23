@@ -87,7 +87,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
   // ===== رقم النسخة: غيّر version و updated مع كل تحديث =====
-  const BUILD = { version: "v8", updated: "2026-11-23 04:00" };
+  const BUILD = { version: "v9", updated: "2026-11-23 04:10" };
 
   // ===== الإعدادات =====
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
@@ -97,6 +97,7 @@
   const RATE_BHD = 0.377;
   const COUPONS = { TEST10: 0.10 };
   const SLIDE_MS = 5000;
+  const CALL_TIMEOUT_MS = 20000;
 
   // ===== مسح البيانات المحلية عند تغيّر النسخة فقط (للتجربة) =====
   try {
@@ -147,15 +148,16 @@
       password:"كلمة المرور", loginBtn:"دخول", noAccount:"ليس لدي حساب، أنشئ حساب", haveAccount:"عندي حساب، سجّل دخول",
       signupTitle:"إنشاء حساب جديد", stepEmail:"1) البريد الإلكتروني", stepPhone:"2) رقم الجوال", stepDetails:"3) بيانات الحساب",
       sendCode:"إرسال رمز التحقق", codeSent:"أرسلنا رمز من 6 أرقام إلى بريدك. استخدم آخر رمز وصلك فقط",
-      codeHint:"اكتب الرمز، يتحقق تلقائيًا", verifyEmail:"تحقق من البريد", resendCode:"إعادة إرسال الرمز",
+      enterCode:"اكتب الرمز المكون من 6 أرقام", verifyBtn:"تحقق", resendCode:"إعادة إرسال الرمز",
       emailOk:"تم التحقق من بريدك الإلكتروني ✅", change:"تغيير", lockedStep:"أكمل الخطوة اللي قبلها أولًا",
       skipPhone:"التحقق من الجوال غير مفعّل حاليًا", sendSms:"إرسال رمز التحقق", smsSent:"تم إرسال الرمز إلى جوالك",
-      verify:"تحقق", phoneOk:"تم التحقق من جوالك ✅", firstName:"الاسم الأول", lastName:"الاسم الثاني",
+      phoneOk:"تم التحقق من جوالك ✅", firstName:"الاسم الأول", lastName:"الاسم الثاني",
       confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب", accountDone:"تم إنشاء الحساب بنجاح",
       emailBad:"البريد الإلكتروني غير صحيح", phoneBad:"رقم الجوال غير صحيح",
       badCode:"الرمز غير صحيح أو منتهي، اطلب رمز جديد", namesReq:"الاسم الأول والثاني مطلوبين",
       passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر", passMismatch:"كلمتا المرور غير متطابقتين",
       loginFail:"البريد أو كلمة المرور غير صحيحة", rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول",
+      timeout:"انتهت المهلة، تحقق من الاتصال وحاول مرة ثانية",
       buildLabel:"النسخة", updatedLabel:"آخر تحديث"
     },
     en: {
@@ -177,15 +179,16 @@
       password:"Password", loginBtn:"Log in", noAccount:"No account? Create one", haveAccount:"I have an account, log in",
       signupTitle:"Create a new account", stepEmail:"1) Email", stepPhone:"2) Mobile number", stepDetails:"3) Account details",
       sendCode:"Send verification code", codeSent:"We sent a 6-digit code to your email. Use the latest code only",
-      codeHint:"Type the code, it verifies automatically", verifyEmail:"Verify email", resendCode:"Resend code",
+      enterCode:"Enter the 6-digit code", verifyBtn:"Verify", resendCode:"Resend code",
       emailOk:"Your email is verified ✅", change:"Change", lockedStep:"Complete the previous step first",
       skipPhone:"Phone verification is currently off", sendSms:"Send verification code", smsSent:"Code sent to your mobile",
-      verify:"Verify", phoneOk:"Your mobile is verified ✅", firstName:"First name", lastName:"Last name",
+      phoneOk:"Your mobile is verified ✅", firstName:"First name", lastName:"Last name",
       confirmPass:"Confirm password", createBtn:"Create account", accountDone:"Account created successfully",
       emailBad:"Invalid email address", phoneBad:"Invalid mobile number",
       badCode:"Code is invalid or expired, request a new one", namesReq:"First and last name are required",
       passShort:"Password must be 8 characters or more", passMismatch:"Passwords do not match",
       loginFail:"Email or password is incorrect", rateLimit:"Too many attempts, wait a moment and try again",
+      timeout:"Request timed out, check your connection and try again",
       buildLabel:"Build", updatedLabel:"Last update"
     }
   };
@@ -220,6 +223,11 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
   const isComplete = () => !!(me && profile);
+  // يمنع بقاء "لحظة" للأبد إذا الطلب تأخر
+  const withTimeout = (p) => Promise.race([
+    p,
+    new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), CALL_TIMEOUT_MS))
+  ]);
 
   function setNotice(m) {
     notice = m;
@@ -348,6 +356,7 @@
   function errMsg(e) {
     const m = String(e?.message || e || "");
     const L = T[state.lang];
+    if (/timeout/i.test(m)) return L.timeout;
     if (/invalid login/i.test(m)) return L.loginFail;
     if (/rate|too many|seconds/i.test(m)) return L.rateLimit;
     if (/token|otp|expired|invalid/i.test(m)) return L.badCode;
@@ -377,7 +386,7 @@
     if (!isEmail(email) || !pass) return setNotice(L.fillAll);
     busy = true; setNotice(L.wait);
     try {
-      const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+      const { error } = await withTimeout(sb.auth.signInWithPassword({ email, password: pass }));
       if (error) return setNotice(errMsg(error));
       await loadProfile();
       if (!profile) { syncPendingFromSession(); return go("signup", L.lockedStep); }
@@ -385,6 +394,8 @@
       const next = afterLogin || "shop";
       afterLogin = null;
       go(next, "");
+    } catch (e) {
+      setNotice(errMsg(e));
     } finally { busy = false; }
   }
 
@@ -405,7 +416,7 @@
     } else {
       s1 = `<p class="muted">${L.codeSent} <span dir="ltr">(${esc(pending.email)})</span></p>
             <input id="sEmailCode" class="otp" inputmode="numeric" maxlength="6" placeholder="123456">
-            <p class="muted">${L.codeHint}</p>
+            <button data-action="verifyEmail" class="btn-orange" style="width:100%">${L.verifyBtn}</button>
             <p>
               <button class="linkbtn" data-action="sendCode">${L.resendCode}</button>
               &nbsp;
@@ -433,7 +444,12 @@
     } else {
       s2 = `<p class="muted" dir="ltr">${esc(pending.full)}</p>
             <input id="sCode" class="otp" inputmode="numeric" dir="ltr" maxlength="6" placeholder="123456">
-            <p><button class="linkbtn" data-action="changePhone">${L.change}</button></p>`;
+            <button data-action="verifySms" class="btn-orange" style="width:100%">${L.verifyBtn}</button>
+            <p>
+              <button class="linkbtn" data-action="sendSms">${L.resendCode}</button>
+              &nbsp;
+              <button class="linkbtn" data-action="changePhone">${L.change}</button>
+            </p>`;
     }
 
     const s3 = detailsOpen
@@ -457,7 +473,7 @@
       </div>`;
   }
 
-  // إرسال رمز (وإعادة الإرسال)
+  // إرسال رمز البريد (وإعادة الإرسال)
   async function sendCode() {
     if (busy) return;
     const L = T[state.lang];
@@ -465,27 +481,31 @@
     if (!isEmail(email)) return setNotice(L.emailBad);
     busy = true; setNotice(L.wait);
     try {
-      const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+      const { error } = await withTimeout(sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } }));
       if (error) return setNotice(errMsg(error));
       pending.email = email; pending.codeSent = true; savePending();
       notice = L.codeSent; render();
+    } catch (e) {
+      setNotice(errMsg(e));
     } finally { busy = false; }
   }
 
-  // التحقق من الرمز: يتنفذ تلقائيًا عند كتابة 6 أرقام
+  // التحقق من رمز البريد: يتم عند الضغط على زر تحقق فقط
   async function verifyEmail() {
     if (busy) return;
     const L = T[state.lang];
     const code = (document.getElementById("sEmailCode")?.value || "").trim();
-    if (!/^\d{6}$/.test(code)) return;
+    if (!/^\d{6}$/.test(code)) return setNotice(L.enterCode);
     busy = true; setNotice(L.wait);
     try {
-      let res = await sb.auth.verifyOtp({ email: pending.email, token: code, type: "email" });
-      if (res.error) res = await sb.auth.verifyOtp({ email: pending.email, token: code, type: "magiclink" });
+      let res = await withTimeout(sb.auth.verifyOtp({ email: pending.email, token: code, type: "email" }));
+      if (res.error) res = await withTimeout(sb.auth.verifyOtp({ email: pending.email, token: code, type: "magiclink" }));
       if (res.error) return setNotice(L.badCode);
       me = res.data.user || me;
       pending.emailVerified = true; pending.codeSent = false; savePending();
       notice = L.emailOk; render();
+    } catch (e) {
+      setNotice(errMsg(e));
     } finally { busy = false; }
   }
 
@@ -495,40 +515,51 @@
     notice = ""; render();
   }
 
+  // إرسال رمز الجوال (وإعادة الإرسال): خانة الرمز تظهر فورًا
   async function sendSms() {
     if (busy) return;
     const L = T[state.lang];
     const digits = (document.getElementById("sPhone")?.value || pending.phone || "").replace(/\s+/g, "");
     if (!/^\d{6,12}$/.test(digits)) return setNotice(L.phoneBad);
     const full = pending.dial + digits;
-    busy = true; setNotice(L.wait);
+    busy = true;
+    pending.phone = digits; pending.full = full; pending.otpSent = true; savePending();
+    notice = L.wait; render();
     try {
-      const { error } = await sb.auth.updateUser({ phone: full });
-      if (error) return setNotice(errMsg(error));
-      pending.phone = digits; pending.full = full; pending.otpSent = true; savePending();
+      const { error } = await withTimeout(sb.auth.updateUser({ phone: full }));
+      if (error) {
+        pending.otpSent = false; savePending();
+        notice = errMsg(error); render();
+        return;
+      }
       notice = L.smsSent; render();
+    } catch (e) {
+      pending.otpSent = false; savePending();
+      notice = errMsg(e); render();
     } finally { busy = false; }
   }
 
-  // التحقق من رمز الجوال: تلقائي عند كتابة 6 أرقام
+  // التحقق من رمز الجوال: يتم عند الضغط على زر تحقق فقط
   async function verifySms() {
     if (busy) return;
     const L = T[state.lang];
     const code = (document.getElementById("sCode")?.value || "").trim();
-    if (!/^\d{6}$/.test(code)) return;
+    if (!/^\d{6}$/.test(code)) return setNotice(L.enterCode);
     busy = true; setNotice(L.wait);
     try {
-      const { data, error } = await sb.auth.verifyOtp({ phone: pending.full, token: code, type: "phone_change" });
+      const { data, error } = await withTimeout(sb.auth.verifyOtp({ phone: pending.full, token: code, type: "phone_change" }));
       if (error) return setNotice(L.badCode);
       me = data.user || me;
       pending.phoneVerified = true; pending.otpSent = false; pending.editPhone = false; savePending();
       notice = L.phoneOk; render();
+    } catch (e) {
+      setNotice(errMsg(e));
     } finally { busy = false; }
   }
 
   function changePhone() {
     pending.otpSent = false; pending.phoneVerified = false; pending.editPhone = true; savePending();
-    render();
+    notice = ""; render();
   }
 
   // هنا فقط يُكتب الحساب في customers
@@ -547,17 +578,19 @@
     try {
       await loadProfile();
       if (!me) return setNotice(L.badCode);
-      const { error } = await sb.auth.updateUser({ password: p1, data: { first_name: first, last_name: last } });
+      const { error } = await withTimeout(sb.auth.updateUser({ password: p1, data: { first_name: first, last_name: last } }));
       if (error) return setNotice(errMsg(error));
       const phoneValue = REQUIRE_PHONE ? (pending.full || null) : null;
-      const { error: e2 } = await sb.from("customers").upsert({
+      const { error: e2 } = await withTimeout(sb.from("customers").upsert({
         id: me.id, email: me.email, first_name: first, last_name: last, phone: phoneValue
-      });
+      }));
       if (e2) return setNotice(e2.message);
       await loadProfile();
       clearPending();
       go("account", L.accountDone);
       loadOrders();
+    } catch (e) {
+      setNotice(errMsg(e));
     } finally { busy = false; }
   }
 
@@ -939,8 +972,10 @@
     }
     if (a === "confirm") { await confirmOrder(); return; }
     if (a === "sendCode") { await sendCode(); return; }
+    if (a === "verifyEmail") { await verifyEmail(); return; }
     if (a === "changeEmail") { await changeEmail(); return; }
     if (a === "sendSms") { await sendSms(); return; }
+    if (a === "verifySms") { await verifySms(); return; }
     if (a === "changePhone") { changePhone(); return; }
     if (a === "createAccount") { await createAccount(); return; }
     if (a === "saveProfile") { await saveProfile(); return; }
@@ -951,6 +986,7 @@
     const b = e.target.closest("[data-action]");
     if (b) handleAction(b.dataset.action, b.dataset);
   });
+  // الكتابة: تنظيف الأرقام فقط، بدون تحقق تلقائي
   document.getElementById("view").addEventListener("input", (e) => {
     const el = e.target;
     const id = el.id;
@@ -959,13 +995,8 @@
     else if (id === "sFirst") { pending.first = el.value.trim(); savePending(); }
     else if (id === "sLast") { pending.last = el.value.trim(); savePending(); }
     else if (id === "lEmail") { loginEmail = el.value.trim(); }
-    else if (id === "sEmailCode") {
+    else if (id === "sEmailCode" || id === "sCode") {
       el.value = el.value.replace(/\D/g, "").slice(0, 6);
-      if (el.value.length === 6) verifyEmail();
-    }
-    else if (id === "sCode") {
-      el.value = el.value.replace(/\D/g, "").slice(0, 6);
-      if (el.value.length === 6) verifySms();
     }
   });
   document.getElementById("view").addEventListener("change", (e) => {
