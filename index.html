@@ -95,8 +95,8 @@
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
-  const REQUIRE_PHONE = false; // true بعد ما تترقى Twilio وتفعّل SMS
-  const RATE_BHD = 0.377;      // للحاسبة فقط
+  const REQUIRE_PHONE = true; // false إذا SMS ما اشتغل في الحساب التجريبي
+  const RATE_BHD = 0.377;     // للحاسبة فقط
   const COUPONS = { TEST10: 0.10 }; // كود تجريبي
   const SLIDE_MS = 5000;
   const PENDING_KEY = "showbiz_signup";
@@ -128,7 +128,7 @@
       productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"رسوم التوصيل", shipLater:"تُحدد بعد اختيار المنطقة",
       shippingNote:"رسوم التوصيل تُضاف عند تحديد المنطقة", coupon:"هل لديك كود خصم؟", apply:"تطبيق",
       couponBad:"كود الخصم غير صحيح", couponOk:"تم تطبيق كود الخصم", removeCoupon:"إزالة الكود",
-      keepShopping:"متابعة التسوق", checkout:"إتمام الطلب", area:"المنطقة", areaPh:"اختر المنطقة أو المدينة",
+      keepShopping:"متابعة التسوق", checkout:"إتمام الطلب", areaPh:"اختر المنطقة أو المدينة",
       address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع", backShort:"رجوع",
       done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم حفظ الطلب في هذا المتصفح فقط",
       loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...", wait:"لحظة...",
@@ -142,8 +142,9 @@
       sendCode:"إرسال رمز التحقق", codeSent:"أرسلنا رمز من 6 أرقام إلى بريدك", codeHint:"اكتب الرمز اللي وصلك في الإيميل",
       verifyEmail:"تحقق من البريد", resendCode:"إعادة إرسال الرمز", emailOk:"تم التحقق من بريدك الإلكتروني ✅",
       change:"تغيير", lockedStep:"أكمل الخطوة اللي قبلها أولًا", skipPhone:"التحقق من الجوال غير مفعّل حاليًا",
-      sendSms:"إرسال رمز التحقق", smsSent:"تم إرسال الرمز إلى جوالك", verify:"تحقق",
+      sendSms:"إرسال رمز التحقق", smsSent:"تم إرسال الرمز إلى جوالك", verify:"تحقق", phoneOk:"تم التحقق من جوالك ✅",
       firstName:"الاسم الأول", lastName:"الاسم الثاني", confirmPass:"تأكيد كلمة المرور", createBtn:"إنشاء الحساب",
+      accountDone:"تم إنشاء الحساب بنجاح",
       emailBad:"البريد الإلكتروني غير صحيح", phoneBad:"رقم الجوال غير صحيح", badCode:"الرمز غير صحيح أو منتهي، اطلب رمز جديد",
       namesReq:"الاسم الأول والثاني مطلوبين", passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر",
       passMismatch:"كلمتا المرور غير متطابقتين", loginFail:"البريد أو كلمة المرور غير صحيحة",
@@ -156,7 +157,7 @@
       productsVal:"Products", discount:"Discount", shipping:"Delivery fee", shipLater:"Set after choosing area",
       shippingNote:"Delivery fee is added once you select your area", coupon:"Have a discount code?", apply:"Apply",
       couponBad:"Invalid discount code", couponOk:"Discount code applied", removeCoupon:"Remove code",
-      keepShopping:"Keep shopping", checkout:"Checkout", area:"Area", areaPh:"Please select your area or city",
+      keepShopping:"Keep shopping", checkout:"Checkout", areaPh:"Please select your area or city",
       address:"Full address", confirm:"Confirm order", back:"Back", backShort:"Back",
       done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
       loadErr:"Could not load products, please try again", loading:"Loading...", wait:"Please wait...",
@@ -170,8 +171,9 @@
       sendCode:"Send verification code", codeSent:"We sent a 6-digit code to your email", codeHint:"Enter the code from your email",
       verifyEmail:"Verify email", resendCode:"Resend code", emailOk:"Your email is verified ✅",
       change:"Change", lockedStep:"Complete the previous step first", skipPhone:"Phone verification is currently off",
-      sendSms:"Send verification code", smsSent:"Code sent to your mobile", verify:"Verify",
+      sendSms:"Send verification code", smsSent:"Code sent to your mobile", verify:"Verify", phoneOk:"Your mobile is verified ✅",
       firstName:"First name", lastName:"Last name", confirmPass:"Confirm password", createBtn:"Create account",
+      accountDone:"Account created successfully",
       emailBad:"Invalid email address", phoneBad:"Invalid mobile number", badCode:"Code is invalid or expired, request a new one",
       namesReq:"First and last name are required", passShort:"Password must be 8 characters or more",
       passMismatch:"Passwords do not match", loginFail:"Email or password is incorrect",
@@ -185,7 +187,12 @@
   if (!Array.isArray(state.cart)) state.cart = [];
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch(e) {} }
 
-  const blankPending = () => ({ email:"", codeSent:false, dial:"+973", phone:"", otpSent:false, full:"", editPhone:false, first:"", last:"" });
+  // بيانات التسجيل المؤقتة (بدون كلمات المرور)
+  const blankPending = () => ({
+    email:"", codeSent:false, emailVerified:false,
+    dial:"+973", phone:"", otpSent:false, full:"", phoneVerified:false, editPhone:false,
+    first:"", last:""
+  });
   let pending = blankPending();
   try { Object.assign(pending, JSON.parse(localStorage.getItem(PENDING_KEY) || "{}")); } catch(e) {}
   function savePending() { try { localStorage.setItem(PENDING_KEY, JSON.stringify(pending)); } catch(e) {} }
@@ -200,8 +207,8 @@
   let afterLogin = null;
   let modal = null;      // { pid, vid, qty, idx, paused, details }
   let cardIdx = {};
-  let me = null;
-  let profile = null;
+  let me = null;         // جلسة Supabase
+  let profile = null;    // صف الزبون في customers (يوجد فقط بعد إنشاء الحساب)
   let accountOrders = null;
   let ordersFailed = false;
   let lastSaveOk = true;
@@ -213,6 +220,7 @@
   const localPrice = (usd) => usd * rate();
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+  const isComplete = () => !!(me && profile);
 
   function setNotice(m) {
     notice = m;
@@ -316,15 +324,25 @@
     }
   }
 
-  // يحدّث الحالة بعد أي تغيير في الدخول
+  // إذا فيه جلسة بدون صف في customers، نكمل التسجيل من الخطوة الصحيحة حسب ما تحقق
+  function syncPendingFromSession() {
+    if (!me || profile) return;
+    pending.email = me.email || pending.email;
+    pending.emailVerified = !!me.email_confirmed_at;
+    pending.phoneVerified = !!me.phone_confirmed_at;
+    pending.codeSent = false;
+    pending.otpSent = false;
+    pending.editPhone = false;
+    savePending();
+  }
+
   async function refreshAuth() {
     await loadProfile();
-    if (me && me.email_confirmed_at) {
-      pending.email = me.email || pending.email;
-      pending.codeSent = false;
-      savePending();
+    if (profile) { clearPending(); return; }
+    if (me) {
+      syncPendingFromSession();
+      if (view !== "signup") view = "signup";
     }
-    if (me && !profile && view !== "signup") view = "signup";
   }
 
   async function initAuth() {
@@ -384,10 +402,11 @@
     if (error) return setNotice(errMsg(error));
     await loadProfile();
     if (!profile) {
-      pending.email = me.email || email;
-      savePending();
-      return go("signup", "");
+      // حساب ناقص: نكمله من حيث توقف
+      syncPendingFromSession();
+      return go("signup", L.lockedStep);
     }
+    clearPending();
     const next = afterLogin || "shop";
     afterLogin = null;
     go(next, "");
@@ -396,14 +415,14 @@
   // ===== صفحة إنشاء الحساب (خطوة بخطوة في صفحة واحدة) =====
   function viewSignup() {
     const L = T[state.lang];
-    const emailOK = !!(me && me.email_confirmed_at);
-    const phoneOK = !!(me && me.phone_confirmed_at) && !pending.editPhone;
+    const emailOK = pending.emailVerified;
+    const phoneOK = pending.phoneVerified && !pending.editPhone;
     const detailsOpen = emailOK && (!REQUIRE_PHONE || phoneOK);
 
     // الخطوة 1: الإيميل برمز OTP
     let s1;
     if (emailOK) {
-      s1 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(me.email)}</span></span>
+      s1 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(pending.email)}</span></span>
               <button class="linkbtn" data-action="changeEmail">${L.change}</button></div>`;
     } else if (!pending.codeSent) {
       s1 = `<input id="sEmail" type="email" dir="ltr" placeholder="${L.email}" value="${esc(pending.email)}">
@@ -427,7 +446,7 @@
     } else if (!REQUIRE_PHONE) {
       s2 = `<p class="muted">${L.skipPhone}</p>`;
     } else if (phoneOK) {
-      s2 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(pending.full || me.phone || "")}</span></span>
+      s2 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(pending.full)}</span></span>
               <button class="linkbtn" data-action="changePhone">${L.change}</button></div>`;
     } else if (!pending.otpSent) {
       const opts = Object.values(COUNTRIES).map(c =>
@@ -445,7 +464,7 @@
             <p><button class="linkbtn" data-action="changePhone">${L.change}</button></p>`;
     }
 
-    // الخطوة 3: الاسم وكلمة المرور
+    // الخطوة 3: الاسم وكلمة المرور، وزر الإنشاء هو اللي يحفظ الحساب فعليًا
     const s3 = detailsOpen
       ? `<input id="sFirst" placeholder="${L.firstName}" value="${esc(pending.first)}">
          <input id="sLast" placeholder="${L.lastName}" value="${esc(pending.last)}">
@@ -467,16 +486,13 @@
       </div>`;
   }
 
-  // إرسال رمز OTP للإيميل (يشتغل من أي جهاز أو متصفح)
+  // إرسال رمز OTP للإيميل (يبدأ جلسة مؤقتة، بدون صف في customers)
   async function sendCode() {
     const L = T[state.lang];
     const email = (document.getElementById("sEmail")?.value || pending.email || "").trim();
     if (!isEmail(email)) return setNotice(L.emailBad);
     setNotice(L.wait);
-    const { error } = await sb.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: true }
-    });
+    const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
     if (error) return setNotice(errMsg(error));
     pending.email = email;
     pending.codeSent = true;
@@ -485,7 +501,6 @@
     render();
   }
 
-  // التحقق من الرمز المكتوب
   async function verifyEmail() {
     const L = T[state.lang];
     const code = (document.getElementById("sEmailCode")?.value || "").trim();
@@ -493,32 +508,32 @@
     setNotice(L.wait);
     const { error } = await sb.auth.verifyOtp({ email: pending.email, token: code, type: "email" });
     if (error) return setNotice(errMsg(error));
-    pending.codeSent = false;
+    await loadProfile();
+    syncPendingFromSession();
+    pending.emailVerified = true;
     savePending();
-    await refreshAuth();
     notice = L.emailOk;
     render();
   }
 
   async function changeEmail() {
-    await sb.auth.signOut();
+    try { await sb.auth.signOut(); } catch (e) {}
     me = null;
     profile = null;
-    pending.email = "";
-    pending.codeSent = false;
-    savePending();
+    clearPending();
     notice = "";
     render();
   }
 
   async function sendSms() {
     const L = T[state.lang];
-    const digits = (pending.phone || "").replace(/\s+/g, "");
+    const digits = (document.getElementById("sPhone")?.value || pending.phone || "").replace(/\s+/g, "");
     if (!/^\d{6,12}$/.test(digits)) return setNotice(L.phoneBad);
     const full = pending.dial + digits;
     setNotice(L.wait);
     const { error } = await sb.auth.updateUser({ phone: full });
     if (error) return setNotice(errMsg(error));
+    pending.phone = digits;
     pending.full = full;
     pending.otpSent = true;
     savePending();
@@ -533,20 +548,24 @@
     setNotice(L.wait);
     const { error } = await sb.auth.verifyOtp({ phone: pending.full, token: code, type: "phone_change" });
     if (error) return setNotice(errMsg(error));
+    await loadProfile();
+    pending.phoneVerified = true;
     pending.otpSent = false;
     pending.editPhone = false;
     savePending();
-    await loadProfile();
+    notice = L.phoneOk;
     render();
   }
 
   function changePhone() {
     pending.otpSent = false;
+    pending.phoneVerified = false;
     pending.editPhone = true;
     savePending();
     render();
   }
 
+  // الحفظ الفعلي للحساب: هنا فقط يُكتب الصف في customers
   async function createAccount() {
     const L = T[state.lang];
     const first = (document.getElementById("sFirst")?.value || "").trim();
@@ -561,14 +580,13 @@
     if (p1 !== p2) return setNotice(L.passMismatch);
     setNotice(L.wait);
 
-    const { error } = await sb.auth.updateUser({ password: p1, data: { first_name: first, last_name: last } });
-    if (error) return setNotice(errMsg(error));
     await loadProfile();
     if (!me) return setNotice(L.badCode);
 
-    const phoneValue = REQUIRE_PHONE
-      ? (pending.full || (me.phone ? "+" + String(me.phone).replace(/^\+/, "") : null))
-      : null;
+    const { error } = await sb.auth.updateUser({ password: p1, data: { first_name: first, last_name: last } });
+    if (error) return setNotice(errMsg(error));
+
+    const phoneValue = REQUIRE_PHONE ? (pending.full || (me.phone ? "+" + String(me.phone).replace(/^\+/, "") : null)) : null;
     const { error: e2 } = await sb.from("customers").upsert({
       id: me.id, email: me.email, first_name: first, last_name: last, phone: phoneValue
     });
@@ -576,12 +594,12 @@
 
     await loadProfile();
     clearPending();
-    go("account", "");
+    go("account", L.accountDone);
     loadOrders();
   }
 
   async function logout() {
-    await sb.auth.signOut();
+    try { await sb.auth.signOut(); } catch (e) {}
     me = null;
     profile = null;
     accountOrders = null;
@@ -853,9 +871,10 @@
   }
 
   function viewAccount() {
-    if (!me) return `<p>${t("needLogin")}</p><button data-action="login">${t("login")}</button>`;
+    if (!isComplete()) return `<p>${t("needLogin")}</p><button data-action="login">${t("login")}</button>`;
     const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
     return `
+      <p id="notice" class="muted">${esc(notice)}</p>
       <div class="card pad">
         <strong>${esc(name || me.email)}</strong>
         <div class="muted" dir="ltr">${esc(me.email)}</div>
@@ -879,10 +898,10 @@
       country: state.country,
       view: view,
       products: products.length,
-      loggedIn: !!me,
-      emailVerified: !!(me && me.email_confirmed_at),
-      phoneVerified: !!(me && me.phone_confirmed_at),
+      sessionUser: !!me,
       hasProfile: !!profile,
+      emailVerified: pending.emailVerified,
+      phoneVerified: pending.phoneVerified,
       coupon: state.coupon,
       chargeableKg: s.chargeable.toFixed(3),
       shippingBHD: s.shipBHD.toFixed(3),
@@ -896,7 +915,7 @@
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
     document.getElementById("langBtn").textContent = state.lang === "ar" ? "English" : "العربية";
     document.getElementById("cartBtn").textContent = `${t("cart")} (${cartCount()})`;
-    document.getElementById("acctBtn").textContent = me ? t("account") : t("login");
+    document.getElementById("acctBtn").textContent = isComplete() ? t("account") : t("login");
     document.getElementById("siteName").textContent = t("siteName");
 
     let html;
@@ -920,7 +939,7 @@
     const addr = document.getElementById("fAddr").value.trim();
     const msg = document.getElementById("formMsg");
     if (!state.area || !addr) { msg.textContent = t("fillAll"); return; }
-    if (!me) { afterLogin = "checkout"; go("login", t("needLogin")); return; }
+    if (!isComplete()) { afterLogin = "checkout"; go("login", t("needLogin")); return; }
 
     const s = shippingCalc();
     const subtotal = localPrice(subtotalUSD());
@@ -1003,12 +1022,12 @@
     if (a === "toSignup") { go("signup", ""); return; }
     if (a === "doLogin") { await doLogin(); return; }
     if (a === "account") {
-      if (!me) { go("login", ""); return; }
+      if (!isComplete()) { go("login", ""); return; }
       view = "account"; render(); loadOrders(); return;
     }
     if (a === "checkout") {
       if (!cartCount()) return;
-      if (!me) { afterLogin = "checkout"; go("login", t("needLogin")); return; }
+      if (!isComplete()) { afterLogin = "checkout"; go("login", t("needLogin")); return; }
       go("checkout", ""); return;
     }
     if (a === "confirm") { await confirmOrder(); return; }
@@ -1094,7 +1113,7 @@
     go("cart", "");
   });
   document.getElementById("acctBtn").addEventListener("click", () => {
-    handleAction(me ? "account" : "login", {});
+    handleAction(isComplete() ? "account" : "login", {});
   });
   document.addEventListener("keydown", (e) => {
     if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "d") {
