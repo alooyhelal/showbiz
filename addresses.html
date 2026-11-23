@@ -46,7 +46,8 @@
   .item .line.main { color:var(--fg); font-size:14px; }
   .item .actions { margin-top:12px; }
   .item { position:relative; }
-  .flagc { position:absolute; top:14px; inset-inline-end:16px; font-size:24px; line-height:1; }
+  .flagc { position:absolute; top:14px; inset-inline-end:16px; line-height:0; }
+  .flagimg { width:24px; height:18px; border-radius:2px; object-fit:cover; vertical-align:middle; }
   .item h3 { padding-inline-end:36px; }
   .ltr { direction:ltr; }
   .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:22px; direction:ltr; }
@@ -112,7 +113,7 @@
 </div>
 
 <script src="locations.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" onerror="document.write('<script src=\'https://unpkg.com/@supabase/supabase-js@2.50.0/dist/umd/supabase.js\'><\/script>')"></script>
 <script>
   const BUILD = { version: "v3", updated: "2026-11-23 22:10" };
 
@@ -259,13 +260,13 @@
   function fillCountries() {
     const s = $("aCountry");
     s.innerHTML = "";
-    getCountries().forEach(c => s.appendChild(new Option(c.flag + " " + countryName(c), c.code)));
+    getCountries().forEach(c => s.appendChild(new Option(countryName(c), c.code)));
     s.value = curCountry;
   }
   function fillPhoneCodes(sel) {
     const s = $("pCc");
     s.innerHTML = "";
-    PHONE_CODES.forEach(p => s.appendChild(new Option(p.flag + " " + p.dial, p.dial)));
+    PHONE_CODES.forEach(p => s.appendChild(new Option(p.dial, p.dial)));
     if (sel) s.value = sel;
   }
 
@@ -347,6 +348,7 @@
     $("formCard").hidden = !showForm;
     $("addBtn").hidden = !hasAny || showForm;
   }
+  const flagImg = (code) => code ? `<img class="flagimg" src="https://flagcdn.com/w40/${String(code).toLowerCase()}.png" alt="${code}" width="24" height="18">` : "";
   function resetForm() {
     formOpen = false;
     editId = null;
@@ -459,7 +461,7 @@
       const c = getCountry(a.country);
       const flag = document.createElement("span");
       flag.className = "flagc";
-      flag.textContent = c ? c.flag : "";
+      flag.innerHTML = flagImg(a.country);
       card.appendChild(flag);
 
       const main = document.createElement("div");
