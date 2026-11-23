@@ -13,11 +13,12 @@
   select option { background:var(--card2); color:var(--fg); }
   input:focus, select:focus { outline:2px solid var(--orange); outline-offset:1px; }
   header select { width:auto; margin:0; }
-  button, .btnlink { padding:10px 14px; border:0; border-radius:10px; background:var(--orange); color:#111; cursor:pointer; font-size:14px; font-family:inherit; font-weight:700; text-decoration:none; display:inline-block; text-align:center; }
+  button { padding:10px 14px; border:0; border-radius:10px; background:var(--orange); color:#111; cursor:pointer; font-size:14px; font-family:inherit; font-weight:700; }
   button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:400; }
   button.linkbtn { background:none; color:var(--orange); padding:4px 6px; text-decoration:underline; font-weight:400; }
   button:disabled { opacity:.45; cursor:not-allowed; }
   .btnfull { width:100%; }
+  .btnlink { display:block; text-align:center; padding:12px; border-radius:10px; background:var(--orange); color:#111; text-decoration:none; font-weight:700; }
   .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
   .pad { padding:14px; margin-bottom:12px; }
@@ -86,7 +87,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
   // رقم النسخة: يتشال من هنا بعد اعتماد الموقع
-  const BUILD = { version: "v25", updated: "2026-11-23 09:40" };
+  const BUILD = { version: "v26", updated: "2026-11-23 09:45" };
 
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
@@ -162,18 +163,20 @@
   if (!Array.isArray(state.cart)) state.cart = [];
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
 
-  let products = [], loaded = false, loadError = false;
+  let products = [], loaded = false, loadError = false, rawCount = 0;
   let view = "shop", notice = "";
   let modal = null, cardIdx = {};
-  let me = null, profile = null;
+  let me = null, profile = null, sessionChecked = false;
   let accountOrders = null, ordersFailed = false, lastSaveOk = true;
+
+  // تلميح سريع: إذا فيه جلسة محفوظة في المتصفح نعرض "حسابي" من أول لحظة
+  const sessionHint = () => Object.keys(localStorage).some(k => k.startsWith("sb-") && k.endsWith("-auth-token"));
 
   // ===== مساعدات =====
   const t = (k) => T[state.lang][k];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const localPrice = (usd) => usd * COUNTRIES[state.country].rate;
-  // المسجّل = عنده جلسة دخول. بيانات العميل تكمّل بعدين، فما تمنع الدخول
-  const isComplete = () => !!me;
+  const isLoggedIn = () => !!me || (!sessionChecked && sessionHint());
 
   function toast(msg) {
     const d = document.createElement("div");
@@ -236,22 +239,28 @@
   const shipLocal = (bhd) => bhd * (COUNTRIES[state.country].rate / RATE_BHD);
 
   // ===== تحميل المنتجات =====
+  // يقبل أي شكل قائمة من السيرفر، ويعرض عدد اللي وصل بأسفل الصفحة للتشخيص
+  function normalizeProduct(p) {
+    let variants = (Array.isArray(p.variants) ? p.variants : [])
+      .map(v => ({ ...v, price: Number(v.price) }))
+      .filter(v => v.vid && !isNaN(v.price));
+    if (!variants.length) {
+      const base = parseFloat(String(p.sellPrice ?? p.price ?? "").split("-")[0]);
+      if (!isNaN(base)) variants = [{ vid: "base-" + p.pid, key: "", sku: p.sku, price: base, image: p.image, weightG: p.weightG, dimsCm: p.dimsCm }];
+    }
+    const images = (Array.isArray(p.images) && p.images.length) ? p.images : [p.image].filter(Boolean);
+    return { ...p, images, variants };
+  }
   async function loadProducts() {
     loadError = false;
     try {
-      const res = await fetch(WORKER_URL + "?action=list");
+      const res = await fetch(WORKER_URL + "?action=list", { cache: "no-store" });
       const d = await res.json();
-      if (!Array.isArray(d.products)) throw new Error("bad");
-      products = d.products.map(p => {
-        let variants = (p.variants || []).filter(v => v.price != null);
-        if (!variants.length) {
-          const base = parseFloat(String(p.sellPrice || "").split("-")[0]);
-          if (!isNaN(base)) variants = [{ vid: "base-" + p.pid, key: "", sku: p.sku, price: base, image: p.image, weightG: p.weightG, dimsCm: p.dimsCm }];
-        }
-        const images = (p.images && p.images.length) ? p.images : [p.image].filter(Boolean);
-        return { ...p, images, variants };
-      }).filter(p => p.variants.length > 0);
+      const list = Array.isArray(d) ? d : (Array.isArray(d.products) ? d.products : (Array.isArray(d.items) ? d.items : []));
+      rawCount = list.length;
+      products = list.map(normalizeProduct).filter(p => p.variants.length > 0);
     } catch (e) {
+      console.error("loadProducts:", e);
       loadError = true;
       products = [];
     }
@@ -267,6 +276,7 @@
       const { data } = await sb.auth.getSession();
       me = data?.session?.user || null;
     } catch (e) {}
+    sessionChecked = true;
     if (me) {
       try {
         const { data } = await sb.from("customers").select("*").eq("id", me.id).maybeSingle();
@@ -304,7 +314,7 @@
     const addr = document.getElementById("fAddr").value.trim();
     const msg = document.getElementById("formMsg");
     if (!state.area || !addr) { msg.textContent = t("fillAll"); return; }
-    if (!isComplete()) { goLogin(); return; }
+    if (!me) { goLogin(); return; }
 
     const s = shippingCalc();
     const subtotal = localPrice(subtotalUSD());
@@ -451,7 +461,8 @@
     document.getElementById("gate").classList.toggle("hidden", state.seen);
   }
   function renderBuild() {
-    document.getElementById("buildInfo").textContent = `${t("buildLabel")}: ${BUILD.version} · ${t("updatedLabel")}: ${BUILD.updated}`;
+    document.getElementById("buildInfo").textContent =
+      `${t("buildLabel")}: ${BUILD.version} · ${t("updatedLabel")}: ${BUILD.updated} · products: ${products.length}/${rawCount}`;
   }
   function viewShop() {
     if (!loaded) return `<p>${t("loading")}</p>`;
@@ -556,11 +567,11 @@
       </div>`).join("");
   }
   function viewAccount() {
-    if (!isComplete()) return `<p>${t("needLogin")}</p><button data-action="login">${t("goLogin")}</button>`;
+    if (!me) return `<p>${t("needLogin")}</p><a class="btnlink" href="login.html">${t("goLogin")}</a>`;
     const name = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim();
     return `
       <div class="card pad">
-        <strong>${esc(name || me.email)}</strong>
+        <strong>${esc(name || me.email || "")}</strong>
         <div class="muted" dir="ltr">${esc(me.email || "")}</div>
         ${profile?.phone ? `<div class="muted" dir="ltr">${esc(profile.phone)}</div>` : ""}
       </div>
@@ -577,7 +588,7 @@
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
     document.getElementById("langBtn").textContent = state.lang === "ar" ? "English" : "العربية";
     document.getElementById("cartBtn").textContent = `${t("cart")} (${cartCount()})`;
-    document.getElementById("acctBtn").textContent = isComplete() ? t("account") : t("login");
+    document.getElementById("acctBtn").textContent = isLoggedIn() ? t("account") : t("login");
     document.getElementById("siteName").textContent = t("siteName");
 
     let html = notice ? `<div class="notice">${esc(notice)}</div>` : "";
@@ -635,7 +646,7 @@
     }
     if (a === "confirm") { await confirmOrder(); return; }
     if (a === "account") {
-      if (!isComplete()) { goLogin(); return; }
+      if (!me) { goLogin(); return; }
       view = "account"; render(); loadOrders(); return;
     }
     if (a === "saveProfile") {
@@ -686,7 +697,7 @@
   // تغيير الدولة من الهيدر: يتحفظ كدولة مفضلة لو الزائر مسجل دخول
   async function changeCountry(code) {
     state.country = code; state.area = null; save();
-    if (isComplete()) { try { await sb.auth.updateUser({ data: { preferred_country: code } }); } catch (e) {} }
+    if (me) { try { await sb.auth.updateUser({ data: { preferred_country: code } }); } catch (e) {} }
     render();
   }
   document.getElementById("countrySel").addEventListener("change", (e) => changeCountry(e.target.value));
@@ -700,7 +711,7 @@
   document.getElementById("gGo").addEventListener("click", () => { state.seen = true; save(); render(); });
   document.getElementById("cartBtn").addEventListener("click", () => go("cart", ""));
   document.getElementById("acctBtn").addEventListener("click", () => {
-    if (isComplete()) handleAction("account", {}); else goLogin();
+    if (me) handleAction("account", {}); else goLogin();
   });
 
   // تبديل الصور كل 5 ثواني
@@ -727,24 +738,23 @@
     });
   }, SLIDE_MS);
 
-  // تغيّر الجلسة (مثلًا بعد الدخول من صفحة أخرى)
-  sb.auth.onAuthStateChange(async () => {
+  // تغيّر الجلسة (دخول أو خروج من صفحة أخرى)
+  sb.auth.onAuthStateChange(async (event) => {
+    if (event === "SIGNED_OUT") { me = null; profile = null; render(); return; }
     await loadProfile();
     render();
   });
 
   // ===== البدء =====
+  render();
   (async () => {
     await loadProfile();
     // نرجع الزائر للصفحة اللي كان فيها قبل الدخول (السلة أو إتمام الطلب)
     const next = localStorage.getItem("showbiz_next");
     localStorage.removeItem("showbiz_next");
-    if (isComplete() && (next === "checkout" || next === "cart") && cartCount()) {
-      view = next;
-    }
+    if (me && (next === "checkout" || next === "cart") && cartCount()) view = next;
     render();
   })();
-  render();
   loadProducts();
 </script>
 </body>
