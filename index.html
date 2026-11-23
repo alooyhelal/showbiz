@@ -73,6 +73,9 @@
   .otpmsg.err { color:var(--err); background:#3b1620; border:1px solid #7a2b3b; }
   .otpmsg.info { color:var(--fg); background:var(--card2); border:1px solid var(--line); }
   .linkrow { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
+  .loadline { display:flex; align-items:center; justify-content:center; gap:10px; padding:14px 0; color:var(--muted); font-size:15px; }
+  .spin { display:inline-block; width:18px; height:18px; border:3px solid var(--line); border-top-color:var(--blue); border-radius:50%; animation:sp .8s linear infinite; }
+  @keyframes sp { to { transform:rotate(360deg); } }
   .msg { padding:10px 12px; border-radius:10px; font-size:14px; margin-top:12px; line-height:1.7; }
   .msg.err { background:#3b1620; color:var(--err); border:1px solid #7a2b3b; }
   .msg.ok { background:#12301f; color:var(--ok); border:1px solid #2f6b4f; }
@@ -118,7 +121,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 <script>
   // ===== رقم النسخة: غيّر version و updated مع كل تحديث =====
-  const BUILD = { version: "v14", updated: "2026-11-23 08:00" };
+  const BUILD = { version: "v15", updated: "2026-11-23 08:10" };
 
   // ===== الإعدادات =====
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
@@ -128,7 +131,8 @@
   const RATE_BHD = 0.377;
   const COUPONS = { TEST10: 0.10 };
   const SLIDE_MS = 5000;
-  const TOAST_MS = 1500; // مدة إشعار النجاح
+  const TOAST_MS = 1500;     // مدة إشعار النجاح
+  const SEND_DELAY_MS = 5000; // مدة التحميل قبل ما تظهر خانات الرمز
 
   // ===== مسح البيانات المحلية عند تغيّر النسخة فقط (للتجربة) =====
   try {
@@ -171,7 +175,7 @@
       address:"العنوان التفصيلي", confirm:"تأكيد الطلب", back:"رجوع",
       done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم الحفظ في هذا المتصفح فقط",
       loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...", wait:"جاري التنفيذ...",
-      verifying:"جاري التحقق...",
+      verifying:"جاري التحقق...", sendingCode:"جاري إرسال الرمز...",
       noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول",
       dims:"الأبعاد", weight:"الوزن", noDesc:"لا توجد تفاصيل إضافية", defaultVariant:"افتراضي",
       login:"تسجيل الدخول", logout:"تسجيل الخروج", account:"حسابي", myOrders:"طلباتي", noOrders:"ما عندك طلبات بعد",
@@ -206,7 +210,7 @@
       address:"Full address", confirm:"Confirm order", back:"Back",
       done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
       loadErr:"Could not load products, please try again", loading:"Loading...", wait:"Working...",
-      verifying:"Verifying...",
+      verifying:"Verifying...", sendingCode:"Sending code...",
       noProducts:"No products available right now", fillAll:"Please fill all fields",
       dims:"Dimensions", weight:"Weight", noDesc:"No extra details", defaultVariant:"Default",
       login:"Log in", logout:"Log out", account:"My account", myOrders:"My orders", noOrders:"You have no orders yet",
@@ -253,11 +257,14 @@
   let modal = null, cardIdx = {};
   let me = null, profile = null;
   let accountOrders = null, ordersFailed = false, lastSaveOk = true, debugOn = false;
-  let busy = false; // يمنع تكرار التحقق فقط
+  let busy = false;          // يمنع تكرار التحقق فقط
+  let sending = null;        // "email" أو "sms" أثناء فترة التحميل قبل ظهور الخانات
+  let sendSeq = 0;           // رقم الإرسال الحالي: أي إرسال قديم يتجاهل نفسه
   const otpMsg = { email: null, sms: null }; // رسالة الخطأ/الحالة تحت خانات الرمز
 
   // ===== مساعدات =====
   const t = (k) => T[state.lang][k];
+  const wait = (ms) => new Promise(r => setTimeout(r, ms));
   const rate = () => COUNTRIES[state.country].rate;
   const localPrice = (usd) => usd * rate();
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -297,6 +304,7 @@
     const m = otpMsg[prefix];
     return `<div id="${prefix}Msg" class="otpmsg ${m ? m.type : ""} ${m ? "" : "hidden"}">${m ? esc(m.msg) : ""}</div>`;
   }
+  const loadingHTML = () => `<div class="loadline"><span class="spin"></span><span>${t("sendingCode")}</span></div>`;
 
   function fmtFor(code, amount) {
     const c = COUNTRIES[code] || COUNTRIES[state.country];
@@ -525,6 +533,8 @@
     if (emailOK) {
       b1 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(pending.email)}</span></span>
               <button class="linkbtn" data-action="changeEmail">${L.change}</button></div>`;
+    } else if (sending === "email") {
+      b1 = loadingHTML();
     } else if (!pending.codeSent) {
       b1 = `<div class="field">
               <input id="sEmail" type="email" dir="ltr" placeholder="name@example.com" value="${esc(pending.email)}">
@@ -550,6 +560,8 @@
     } else if (phoneOK) {
       b2 = `<div class="okrow"><span>✅ <span dir="ltr">${esc(pending.full)}</span></span>
               <button class="linkbtn" data-action="changePhone">${L.change}</button></div>`;
+    } else if (sending === "sms") {
+      b2 = loadingHTML();
     } else if (!pending.otpSent) {
       const opts = Object.values(COUNTRIES).map(c =>
         `<option value="${c.dial}" ${pending.dial === c.dial ? "selected" : ""}>${c.flag} ${c.dial}</option>`
@@ -602,22 +614,25 @@
       </div>`;
   }
 
-  // إرسال رمز البريد (وإعادة الإرسال): يشتغل دائمًا
+  // إرسال رمز البريد (وإعادة الإرسال): تحميل ~5 ثواني ثم تظهر الخانات دائمًا.
+  // الطلب يكمل في الخلفية، وإذا رجع خطأ حقيقي يظهر تحت الخانات.
   async function sendCode() {
     const L = T[state.lang];
     const email = (document.getElementById("sEmail")?.value || pending.email || "").trim();
     if (!isEmail(email)) return setNotice(L.emailBad, "err");
-    setNotice(L.wait, "info");
-    try {
-      const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-      if (error) return setNotice(errMsg(error), "err");
-      pending.email = email; pending.codeSent = true; savePending();
-      otpMsg.email = null;
-      setNotice("", "info");
-      render(); focusOtp("email", 0);
-    } catch (e) {
-      setNotice(errMsg(e), "err");
-    }
+    pending.email = email; savePending();
+    notice = ""; otpMsg.email = null;
+    const seq = ++sendSeq;
+    sending = "email"; render();
+
+    sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
+      .then(({ error }) => { if (error && seq === sendSeq) setOtpMsg("email", errMsg(error), "err"); })
+      .catch((e) => { if (seq === sendSeq) setOtpMsg("email", errMsg(e), "err"); });
+
+    await wait(SEND_DELAY_MS);
+    if (seq !== sendSeq) return;
+    sending = null; pending.codeSent = true; savePending();
+    render(); focusOtp("email", 0);
   }
 
   // التحقق من رمز البريد: تلقائي عند اكتمال 6 أرقام، أو بالضغط على الزر
@@ -650,14 +665,14 @@
 
   // تغيير البريد: يشتغل مباشرة
   function changeEmail() {
-    busy = false;
+    busy = false; sending = null; sendSeq++;
     me = null; profile = null; clearPending();
     otpMsg.email = null; otpMsg.sms = null;
     notice = ""; render();
     sb.auth.signOut().catch(() => {});
   }
 
-  // إرسال رمز الجوال (وإعادة الإرسال): يشتغل دائمًا
+  // إرسال رمز الجوال (وإعادة الإرسال): تحميل ~5 ثواني ثم تظهر الخانات دائمًا
   async function sendSms() {
     const L = T[state.lang];
     const digits = digitsOnly(document.getElementById("sPhone")?.value || pending.phone || "");
@@ -670,20 +685,25 @@
       document.getElementById("stepDetails")?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    setNotice(L.wait, "info");
-    try {
-      const { data, error } = await sb.auth.updateUser({ phone: full });
-      console.log("[sendSms response]", { data, error });
-      pending.phone = digits; pending.full = full; pending.phoneVerified = false; savePending();
-      if (error) return setNotice(errMsg(error), "err");
-      pending.otpSent = true; savePending();
-      otpMsg.sms = null;
-      setNotice("", "info");
-      render(); focusOtp("sms", 0);
-    } catch (e) {
-      console.log("[sendSms error]", e);
-      setNotice(errMsg(e), "err");
-    }
+    pending.phone = digits; pending.full = full; pending.phoneVerified = false; pending.editPhone = false; savePending();
+    notice = ""; otpMsg.sms = null;
+    const seq = ++sendSeq;
+    sending = "sms"; render();
+
+    sb.auth.updateUser({ phone: full })
+      .then(({ data, error }) => {
+        console.log("[sendSms response]", { data, error });
+        if (error && seq === sendSeq) setOtpMsg("sms", errMsg(error), "err");
+      })
+      .catch((e) => {
+        console.log("[sendSms error]", e);
+        if (seq === sendSeq) setOtpMsg("sms", errMsg(e), "err");
+      });
+
+    await wait(SEND_DELAY_MS);
+    if (seq !== sendSeq) return;
+    sending = null; pending.otpSent = true; savePending();
+    render(); focusOtp("sms", 0);
   }
 
   // التحقق من رمز الجوال: تلقائي عند اكتمال 6 أرقام، أو بالضغط على الزر
@@ -719,7 +739,7 @@
 
   // تغيير الجوال: يشتغل مباشرة ويرجعك لخانة الرقم
   function changePhone() {
-    busy = false;
+    busy = false; sending = null; sendSeq++;
     pending.otpSent = false; pending.phoneVerified = false; pending.editPhone = true; savePending();
     otpMsg.sms = null;
     notice = ""; render();
