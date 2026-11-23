@@ -5,36 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Showbiz تسجيل الدخول</title>
 <style>
-  :root { --bg:#eef1f6; --card:#ffffff; --fg:#1b2433; --muted:#6b7280; --navy:#1f2b3f; --navy2:#2b3a52; --orange:#f59e4b; --orange-d:#e0852f; --field:#f4f6fa; --line:#d7dce5; --err:#b42339; --errbg:#fdecef; --errline:#f5b5c0; color-scheme:light; }
+  :root { --bg:#0b1220; --card:#162033; --card2:#1d2a44; --fg:#eef2f7; --muted:#9aa7bd; --line:#2c3b5a; --orange:#f59e4b; --orange-d:#e0852f; --err:#ffb4bf; --errbg:#3b1620; --errline:#7a2b3b; color-scheme:dark; }
   * { box-sizing:border-box; }
   body { margin:0; min-height:100vh; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
   .wrap { max-width:420px; margin:0 auto; padding-block:24px 36px; }
-  .card { background:var(--card); border-radius:22px; box-shadow:0 20px 50px rgba(15,23,42,.12); padding:24px 22px 28px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:22px; box-shadow:0 20px 50px rgba(0,0,0,.35); padding:24px 22px 28px; }
   .top { display:flex; justify-content:flex-start; margin-bottom:6px; }
-  .lang { background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:7px 12px; font-size:13px; cursor:pointer; font-family:inherit; }
+  .lang { background:var(--card2); color:var(--fg); border:1px solid var(--line); border-radius:10px; padding:7px 12px; font-size:13px; cursor:pointer; font-family:inherit; }
   .brand { text-align:center; margin:4px 0 16px; }
-  .mark { width:64px; height:64px; margin:0 auto 10px; border-radius:18px; background:linear-gradient(135deg,var(--navy),var(--navy2)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:800; }
-  .mark b { color:var(--orange); }
-  .brand .name { font-weight:800; letter-spacing:.5px; color:var(--navy); font-size:15px; }
-  h1 { font-size:24px; margin:0 0 6px; text-align:center; color:var(--navy); }
+  .mark { width:64px; height:64px; margin:0 auto 10px; border-radius:18px; background:var(--orange); color:#111; display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:800; }
+  .mark b { color:var(--bg); }
+  .brand .name { font-weight:800; letter-spacing:.5px; color:var(--orange); font-size:15px; }
+  h1 { font-size:24px; margin:0 0 6px; text-align:center; color:var(--fg); }
   .sub { color:var(--muted); text-align:center; font-size:14px; margin:0 0 18px; line-height:1.7; }
   label { display:block; font-size:13px; font-weight:600; color:var(--muted); margin:14px 0 6px; }
-  input, select { width:100%; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--field); color:var(--fg); font-size:15px; font-family:inherit; }
-  input:focus, select:focus { outline:2px solid var(--navy); outline-offset:0; background:var(--card); }
-  input.bad, select.bad { border-color:var(--err); outline:1px solid var(--err); background:var(--card); }
+  input { width:100%; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--card2); color:var(--fg); font-size:15px; font-family:inherit; }
+  input:focus { outline:2px solid var(--orange); outline-offset:0; }
+  input.bad { border-color:var(--err); outline:1px solid var(--err); }
   .pw { position:relative; }
   .pw input { padding-inline-end:46px; }
   .eye { position:absolute; top:0; bottom:0; inset-inline-end:0; width:46px; border:0; background:transparent; color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
   .ferr { color:var(--err); font-size:13px; line-height:1.6; margin-top:6px; }
   .hidden { display:none !important; }
-  .link { color:var(--navy); font-weight:700; font-size:14px; text-decoration:underline; text-underline-offset:3px; padding:4px 2px; display:inline-block; }
+  .link { color:var(--orange); font-weight:700; font-size:14px; text-decoration:underline; text-underline-offset:3px; padding:4px 2px; display:inline-block; }
   .msg { text-align:center; font-size:14px; border-radius:10px; padding:9px 10px; margin-top:12px; line-height:1.6; color:var(--err); background:var(--errbg); border:1px solid var(--errline); }
   .row2 { display:flex; gap:10px; margin-top:14px; }
   .btn { flex:1; display:block; text-align:center; text-decoration:none; border:0; border-radius:12px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; }
   .btn-main { background:var(--orange); color:#111; }
   .btn-main:hover { background:var(--orange-d); }
   .btn-main:disabled { opacity:.6; cursor:wait; }
-  .btn-line { background:var(--card); color:var(--navy); border:1px solid var(--line); }
+  .btn-line { background:transparent; color:var(--fg); border:1px solid var(--line); }
   .linkrow { text-align:center; margin-top:18px; font-size:14px; color:var(--muted); }
   .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:18px; direction:ltr; }
 </style>
@@ -50,9 +50,6 @@
     <label for="lEmail" data-k="email"></label>
     <input id="lEmail" type="email" dir="ltr" autocomplete="email">
     <div class="ferr hidden" id="lEmailErr"></div>
-
-    <label for="lCountry" data-k="country"></label>
-    <select id="lCountry"></select>
 
     <label for="lPass" data-k="pass"></label>
     <div class="pw">
@@ -72,7 +69,7 @@
 
     <div class="linkrow"><span data-k="noAcc"></span> <a class="link" href="signup.html" data-k="signupLink"></a></div>
   </div>
-  <div class="ver">v20 · 2026-11-23 09:10</div>
+  <div class="ver">v21 · 2026-11-23 09:05</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
@@ -80,25 +77,16 @@
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
   const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
-
-  // دول الخليج: نفس القائمة في المتجر، والكود يحدد العملة
-  const COUNTRIES = [
-    { code:"BH", flag:"🇧🇭", ar:"البحرين", en:"Bahrain" },
-    { code:"SA", flag:"🇸🇦", ar:"السعودية", en:"Saudi Arabia" },
-    { code:"AE", flag:"🇦🇪", ar:"الإمارات", en:"UAE" },
-    { code:"KW", flag:"🇰🇼", ar:"الكويت", en:"Kuwait" },
-    { code:"QA", flag:"🇶🇦", ar:"قطر", en:"Qatar" },
-    { code:"OM", flag:"🇴🇲", ar:"عُمان", en:"Oman" }
-  ];
+  const COUNTRY_CODES = ["BH", "SA", "AE", "KW", "QA", "OM"];
 
   const T = {
-    ar: { title:"تسجيل الدخول", sub:"أدخل بيانات حسابك للمتابعة", email:"البريد الإلكتروني", country:"الدولة",
+    ar: { title:"تسجيل الدخول", sub:"أدخل بيانات حسابك للمتابعة", email:"البريد الإلكتروني",
       pass:"كلمة المرور", forgot:"نسيت كلمة المرور؟", cancel:"إلغاء", loginBtn:"دخول", loading:"جاري الدخول...",
       noAcc:"ليس لديك حساب؟", signupLink:"سجّل حساب الآن", show:"إظهار كلمة المرور", hide:"إخفاء كلمة المرور",
       emailBad:"البريد الإلكتروني غير صحيح، لأنه لم يتم كتابته بشكل صحيح", passReq:"اكتب كلمة المرور",
       loginFail:"البريد الإلكتروني أو كلمة المرور غير صحيحة", notConfirmed:"لم يتم التحقق من بريد هذا الحساب بعد",
       rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول مرة ثانية", switchLabel:"English" },
-    en: { title:"Log in", sub:"Enter your account details to continue", email:"Email", country:"Country",
+    en: { title:"Log in", sub:"Enter your account details to continue", email:"Email",
       pass:"Password", forgot:"Forgot password?", cancel:"Cancel", loginBtn:"Log in", loading:"Logging in...",
       noAcc:"Don't have an account?", signupLink:"Create an account", show:"Show password", hide:"Hide password",
       emailBad:"The email is not valid, it was not typed correctly", passReq:"Enter your password",
@@ -112,11 +100,10 @@
   const isEmail = (s) => EMAIL_RE.test(String(s || "").trim());
 
   // الحالة المشتركة مع المتجر (لغة + دولة مفضلة)
-  let lang = "ar", country = "BH";
+  let lang = "ar";
   try {
     const st = JSON.parse(localStorage.getItem("showbiz_state") || "{}");
     if (st.lang === "en" || st.lang === "ar") lang = st.lang;
-    if (COUNTRIES.some(c => c.code === st.country)) country = st.country;
   } catch (e) {}
   let busy = false;
 
@@ -150,9 +137,6 @@
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
     document.querySelectorAll("[data-k]").forEach(el => { el.textContent = L()[el.dataset.k]; });
     $("langBtn").textContent = L().switchLabel;
-    const sel = $("lCountry");
-    sel.innerHTML = COUNTRIES.map(c => `<option value="${c.code}">${c.flag} ${lang === "ar" ? c.ar : c.en}</option>`).join("");
-    sel.value = country;
     const hidden = $("lPass").type === "password";
     $("eyeBtn").setAttribute("aria-label", hidden ? L().show : L().hide);
     $("eyeBtn").title = hidden ? L().show : L().hide;
@@ -170,7 +154,7 @@
     if (!pass) return setErr("lPass", L().passReq);
     busy = true; apply();
     try {
-      const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
       if (error) {
         // Supabase ما يفرّق بين البريد الغلط وكلمة المرور الغلط، فنعرض الخطأ على الاثنين
         if (/invalid login/i.test(String(error.message || ""))) {
@@ -181,10 +165,9 @@
         }
         return;
       }
-      // الدولة اللي اختارها الزائر تصير مفضلة: تنحفظ في الحساب، وتنتقل معه عند كل دخول
-      const chosen = $("lCountry").value;
-      try { await sb.auth.updateUser({ data: { preferred_country: chosen } }); } catch (e) {}
-      mergeState({ country: chosen });
+      // الدولة المفضلة المحفوظة في الحساب تنطبق تلقائيًا عند كل دخول
+      const pref = data?.user?.user_metadata?.preferred_country;
+      if (COUNTRY_CODES.includes(pref)) mergeState({ country: pref });
       location.href = "index.html";
     } catch (e) {
       setNotice(errMsg(e));
@@ -197,10 +180,6 @@
   ["lEmail", "lPass"].forEach(id => {
     $(id).addEventListener("input", () => { setErr(id, ""); $("lEmail").classList.remove("bad"); setNotice(""); });
     $(id).addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
-  });
-  $("lCountry").addEventListener("change", (e) => {
-    country = e.target.value;
-    mergeState({ country });
   });
   $("eyeBtn").addEventListener("click", () => {
     const i = $("lPass");
