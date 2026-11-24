@@ -14,7 +14,7 @@
   .hrow2 { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
   .menubtn { display:none; padding:6px 10px; background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:400; }
   .catdd { position:relative; }
-  .catpanel { display:none; position:absolute; top:100%; inset-inline-start:0; min-width:220px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px; z-index:30; box-shadow:0 12px 30px rgba(0,0,0,.5); }
+  .catpanel { display:none; position:absolute; top:100%; inset-inline-start:0; min-width:260px; max-height:70vh; overflow-y:auto; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px; z-index:30; box-shadow:0 12px 30px rgba(0,0,0,.5); }
   .catdd:hover .catpanel, .catdd.open .catpanel { display:block; }
   .catpanel button, .side .catlink { display:block; width:100%; text-align:start; background:transparent; color:var(--fg); font-weight:400; padding:9px 10px; border-radius:8px; }
   .catpanel button:hover { background:var(--card2); }
@@ -24,7 +24,16 @@
   .sugg button { display:flex; gap:8px; align-items:center; width:100%; background:transparent; color:var(--fg); font-weight:400; padding:6px 8px; text-align:start; }
   .sugg img { width:36px; height:36px; object-fit:cover; border-radius:8px; background:#f3f4f6; }
   .sugg-h { color:var(--muted); font-size:12px; padding:4px 8px; }
-  #rangeSel, #sortSel { margin:0; width:auto; }
+  #sortSel { margin:0; width:auto; }
+  .cat-tile small { display:block; color:var(--muted); font-weight:400; font-size:12px; margin-top:4px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:-2px 0 10px; }
+  .chip { background:var(--card2); color:var(--fg); border:1px solid var(--line); border-radius:999px; padding:7px 12px; font-size:13px; font-weight:600; }
+  .ct-row { display:flex; align-items:center; gap:4px; }
+  .catpanel .ct-tog, .side .ct-tog { width:28px; height:28px; border:0; background:transparent; color:var(--muted); padding:0; font-size:14px; flex-shrink:0; }
+  .catpanel .ct-tog:disabled, .side .ct-tog:disabled { visibility:hidden; }
+  .catpanel .ct-name, .side .ct-name { flex:1; text-align:start; background:transparent; color:var(--fg); border:0; padding:8px 4px; font-size:14px; font-weight:600; border-radius:8px; }
+  .catpanel .ct-name.on, .side .ct-name.on { color:var(--orange); }
+  .catpanel .ct-name small, .side .ct-name small { color:var(--muted); font-weight:400; font-size:12px; }
   .sideov { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:44; }
   .side { position:fixed; top:0; bottom:0; inset-inline-start:0; width:min(300px,86vw); background:#0f1a2e; z-index:45; padding:14px; overflow:auto; box-shadow:0 12px 40px rgba(0,0,0,.6); }
   .side-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
@@ -140,7 +149,6 @@
       <button class="ghost" id="catBtn" type="button"></button>
       <div class="catpanel" id="catPanel"></div>
     </div>
-    <select id="rangeSel"></select>
     <select id="sortSel"></select>
     <select id="countrySel" class="hidden"></select>
   </div>
@@ -184,6 +192,7 @@
 </div>
 
 <script src="locations.js"></script>
+<script src="demo-catalog.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" onerror="document.write('<script src=\'https://unpkg.com/@supabase/supabase-js@2.50.0/dist/umd/supabase.js\'><\/script>')"></script>
 <script>
   // رقم النسخة: يتشال من هنا بعد اعتماد الموقع
@@ -234,8 +243,8 @@
       buildLabel:"النسخة", updatedLabel:"آخر تحديث",
       menuInfo:"معلومات حسابي", menuOrders:"طلباتي", menuAddr:"عناويني", menuDel:"حذف الحساب",
       cats:"الأقسام", allCats:"كل الأقسام", other:"منتجات أخرى", seeAll:"عرض الكل", clearFilter:"مسح الفلاتر",
-      noResults:"ما لقينا نتائج", searchPh:"ابحث عن منتج", recentSearch:"آخر البحوث", priceAll:"كل الأسعار",
-      upTo:"حتى", sortDef:"الترتيب الافتراضي", sortAsc:"السعر: من الأقل", sortDesc:"السعر: من الأعلى", sortName:"الاسم",
+      noResults:"ما لقينا نتائج", searchPh:"ابحث عن منتج", recentSearch:"آخر البحوث", 
+      sortDef:"الترتيب الافتراضي", sortAsc:"السعر: من الأقل إلى الأعلى", sortDesc:"السعر: من الأعلى إلى الأقل", sortName:"الاسم: من A إلى Z", sortNameDesc:"الاسم: من Z إلى A",
       isNew:"جديد", isBest:"الأكثر مبيعاً", menu:"القائمة"
     },
     en: {
@@ -260,8 +269,8 @@
       buildLabel:"Build", updatedLabel:"Last update",
       menuInfo:"My details", menuOrders:"My orders", menuAddr:"My addresses", menuDel:"Delete account",
       cats:"Categories", allCats:"All categories", other:"Other products", seeAll:"See all", clearFilter:"Clear filters",
-      noResults:"No results", searchPh:"Search products", recentSearch:"Recent searches", priceAll:"All prices",
-      upTo:"Up to", sortDef:"Default order", sortAsc:"Price: low to high", sortDesc:"Price: high to low", sortName:"Name",
+      noResults:"No results", searchPh:"Search products", recentSearch:"Recent searches", 
+      sortDef:"Default order", sortAsc:"Price: low to high", sortDesc:"Price: high to low", sortName:"Name: A to Z", sortNameDesc:"Name: Z to A",
       isNew:"New", isBest:"Best seller", menu:"Menu"
     }
   };
@@ -269,6 +278,8 @@
   // ===== الحالة =====
   let state = { country:"BH", lang:"ar", cart:[], addrId:null, seen:false, coupon:null, unsel:[] };
   try { Object.assign(state, JSON.parse(localStorage.getItem("showbiz_state") || "{}")); } catch (e) {}
+  // بوابة اللغة والعملة تظهر كل ما يفتح الموقع من جديد (تبويب جديد). داخل نفس التبويب ما تتكرر.
+  try { state.seen = sessionStorage.getItem("showbiz_gate_ok") === "1"; } catch (e) { state.seen = false; }
   if (!Array.isArray(state.cart)) state.cart = [];
   if (!Array.isArray(state.unsel)) state.unsel = [];
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
@@ -328,7 +339,7 @@
       .map(i => { const f = findVariant(i.vid); return f ? { vid: i.vid, qty: i.qty, p: f.p, v: f.v } : null; })
       .filter(Boolean);
   }
-  const cartCount = () => state.cart.reduce((s, i) => s + i.qty, 0);
+  const cartCount = () => cartLines().reduce((s, l) => s + l.qty, 0);
   // المنتجات غير المحددة في السلة تبقى فيها لكن ما تدخل في الحساب
   const isSelected = (l) => !(state.unsel || []).includes(l.vid);
   const selLines = () => cartLines().filter(isSelected);
@@ -408,15 +419,25 @@
     const cands = [d?.products, d?.items, d?.list, d?.data?.content, d?.data?.list, d?.data?.products, d?.data];
     return cands.find(Array.isArray) || [];
   }
-  // منتجات وهمية للتجربة فقط (تظهر بـ ?demo=1 عند فراغ القائمة الحقيقية)
-  const DEMO_PRODUCTS = [
-    { pid: "demo-1", nameEn: "Demo Product 1 (test)", image: "", images: [], variants: [
-      { vid: "demo-1-a", key: "Default", sku: "DEMO-1", price: 5, image: "", weightG: 300 } ] },
-    { pid: "demo-2", nameEn: "Demo Product 2 (test)", image: "", images: [], variants: [
-      { vid: "demo-2-a", key: "Default", sku: "DEMO-2", price: 8, image: "", weightG: 500 } ] }
-  ];
+  // ===== وضع تجريبي: ?demo=1 يعرض الكتالوج الوهمي (100 منتج) بدل القائمة الحقيقية =====
+  // الزوار العاديين ما يشوفون أي منتج وهمي.
+  const DEMO_ON = /[?&]demo=1(&|$)/.test(location.search);
+  // حالة الأقسام والفلاتر
+  let filt = { cat: null, q: "", sort: "default" };
+  let openCats = new Set();
+  let catRoot = { kids: [], uncat: [] };
+
   async function loadProducts() {
     loadError = false; loadMsg = "";
+    if (DEMO_ON && window.SHOWBIZ_DEMO) {
+      products = window.SHOWBIZ_DEMO.products.map(normalizeProduct);
+      rawCount = products.length;
+      loadMsg = "وضع تجريبي (منتجات وهمية)";
+      buildCatRoot();
+      loaded = true;
+      render();
+      return;
+    }
     try {
       const res = await fetch(WORKER_URL + "?action=list", { cache: "no-store" });
       if (!res.ok) loadMsg = "HTTP " + res.status;
@@ -433,12 +454,6 @@
         if (!products.length && !loadMsg) {
           loadMsg = rawCount ? "المنتجات وصلت بس ما انقرأ فيها سعر أو رقم" : "الرد ما فيه قائمة منتجات";
         }
-        // وضع تجريبي فقط: ?demo=1 يضيف منتجين وهميين إذا القائمة الحقيقية فاضية.
-        // الزوار العاديين ما يشوفون شي وهمي.
-        if (!products.length) {
-          products = DEMO_PRODUCTS.map(normalizeProduct);
-          loadMsg = "وضع تجريبي (منتجات وهمية)";
-        }
       } else {
         products = [];
       }
@@ -448,6 +463,7 @@
       loadMsg = String(e && e.message || e);
       products = [];
     }
+    buildCatRoot();
     loaded = true;
     render();
   }
@@ -677,28 +693,59 @@
     document.getElementById("buildInfo").textContent =
       `${t("buildLabel")}: ${BUILD.version} · ${t("updatedLabel")}: ${BUILD.updated} · products: ${products.length}/${rawCount} · addr: ${allAddresses().length} · user: ${me ? me.id.slice(0, 6) : "none"}${why}`;
   }
-  // ===== المتجر: الأقسام والفلاتر والبحث =====
-  const RANGES = { all: [0, Infinity], "0-5": [0, 5], "5-10": [5, 10], "10-20": [10, 20], "20+": [20, Infinity] };
-  let filt = { cat: null, q: "", range: "all", sort: "default" };
-  const catOf = (p) => (typeof p.categoryName === "string" && p.categoryName) || (typeof p.category === "string" && p.category) || null;
-  const minUSD = (p) => Math.min(...p.variants.map(v => v.price));
-  function catList() {
-    const seen = [];
-    products.forEach(p => { const c = catOf(p); if (c && !seen.includes(c)) seen.push(c); });
-    return seen;
+  // ===== المتجر: الأقسام (رئيسية وفرعية) والفلاتر والبحث =====
+  // مسار المنتج: من catPath (الوهمي) أو من categoryName (الحقيقي، قسم واحد)
+  function productPath(p) {
+    if (Array.isArray(p.catPath) && p.catPath.length) return p.catPath.map(String);
+    if (typeof p.categoryName === "string" && p.categoryName) return [p.categoryName];
+    if (typeof p.category === "string" && p.category) return [p.category];
+    return [];
+  }
+  function catOf(p) { return productPath(p)[0] || null; }
+  function catLabel(id) {
+    const L = window.SHOWBIZ_DEMO && window.SHOWBIZ_DEMO.labels[id];
+    return L ? (L[state.lang] || L.en) : id;
+  }
+  function crumbs(key) { return String(key).split("/").map(catLabel).join(" › "); }
+  function minUSD(p) { return Math.min(...p.variants.map(v => v.price)); }
+  function allItems(n) { return [...n.direct, ...n.kids.flatMap(allItems)]; }
+  function inCat(p, key) { const k = productPath(p).join("/"); return k === key || k.startsWith(key + "/"); }
+  function ensureNode(list, parent, id) {
+    let n = list.find(x => x.id === id);
+    if (!n) { n = { id, key: parent ? parent.key + "/" + id : id, kids: [], direct: [] }; list.push(n); }
+    return n;
+  }
+  // يبني الشجرة: ترتيب الأقسام من شجرة الوهمي (إذا وضع ?demo=1)، وبعدين أي قسم ثاني من المنتجات
+  function buildCatRoot() {
+    catRoot = { kids: [], uncat: [] };
+    const schema = DEMO_ON && window.SHOWBIZ_DEMO ? window.SHOWBIZ_DEMO.tree : null;
+    (function addSchema(list, parent, arr) {
+      (arr || []).forEach(s => { const n = ensureNode(list, parent, s.id); addSchema(n.kids, n, s.children); });
+    })(catRoot.kids, null, schema);
+    products.forEach(p => {
+      const path = productPath(p);
+      if (!path.length) { catRoot.uncat.push(p); return; }
+      let list = catRoot.kids, parent = null, node = null;
+      path.forEach(seg => { node = ensureNode(list, parent, seg); parent = node; list = node.kids; });
+      node.direct.push(p);
+    });
+  }
+  function nodeByKey(key) {
+    let list = catRoot.kids, n = null;
+    for (const seg of String(key).split("/")) { n = list.find(x => x.id === seg); if (!n) return null; list = n.kids; }
+    return n;
   }
   function filteredProducts() {
     const q = filt.q.trim().toLowerCase();
-    const [lo, hi] = RANGES[filt.range] || RANGES.all;
     let list = products.filter(p => {
-      if (filt.cat && catOf(p) !== filt.cat) return false;
+      if (filt.cat && !inCat(p, filt.cat)) return false;
       if (q && !String(p.nameEn).toLowerCase().includes(q)) return false;
-      const m = minUSD(p);
-      return m >= lo && m < hi;
+      return true;
     });
     if (filt.sort === "asc") list = list.slice().sort((a, b) => minUSD(a) - minUSD(b));
     if (filt.sort === "desc") list = list.slice().sort((a, b) => minUSD(b) - minUSD(a));
     if (filt.sort === "name") list = list.slice().sort((a, b) => String(a.nameEn).localeCompare(String(b.nameEn)));
+    if (filt.sort === "nameDesc") list = list.slice().sort((a, b) => String(b.nameEn).localeCompare(String(a.nameEn)));
     return list;
   }
   // سعر قبل الخصم (إذا المنتج فيه compareAt أعلى من السعر الحالي)
@@ -747,22 +794,24 @@
     if (!loaded) return `<p>${t("loading")}</p>`;
     if (loadError) return `<p>${t("loadErr")}</p>`;
     if (!products.length) return `<p>${t("noProducts")}</p>${loadMsg ? `<p class="muted">${esc(loadMsg)}</p>` : ""}`;
-    const cats = catList();
-    const filtered = filt.cat || filt.q.trim() || filt.range !== "all" || filt.sort !== "default";
+    const filtered = filt.cat || filt.q.trim() || filt.sort !== "default";
     if (filtered) {
       const list = filteredProducts();
-      const head = `<div class="sec-h"><h3>${esc(filt.cat || "")}</h3><button class="linkbtn" data-clear="1">${t("clearFilter")}</button></div>`;
+      const head = `<div class="sec-h"><h3>${esc(filt.cat ? crumbs(filt.cat) : t("allCats"))}</h3><button class="linkbtn" data-clear="1">${t("clearFilter")}</button></div>`;
       return head + (list.length ? `<div class="grid">${list.map(cardHTML).join("")}</div>` : `<p class="muted">${t("noResults")}</p>`);
     }
-    if (!cats.length) return ShowbizUI.trustHTML() + `<div class="grid">${products.map(cardHTML).join("")}</div>`;
-    let html = `<div class="cat-grid">${cats.map(c => `<button class="cat-tile" data-cat="${esc(c)}">${esc(c)}</button>`).join("")}</div>`;
+    const tops = catRoot.kids;
+    if (!tops.length) return ShowbizUI.trustHTML() + `<div class="grid">${products.map(cardHTML).join("")}</div>`;
+    let html = `<div class="cat-grid">${tops.map(n => `<button class="cat-tile" data-cat="${esc(n.key)}">${esc(catLabel(n.id))}<small>${allItems(n).length}</small></button>`).join("")}</div>`;
     html += ShowbizUI.trustHTML();
-    cats.forEach(c => {
-      const items = products.filter(p => catOf(p) === c);
-      html += sectionHTML(c, items.slice(0, 4), items.length, c);
+    // كل قسم رئيسي بترتيبه، وتحته أقسامه الفرعية كأزرار، ثم أول 4 منتجات
+    tops.forEach(n => {
+      const chips = n.kids.length
+        ? `<div class="chips">${n.kids.map(k => `<button class="chip" data-cat="${esc(k.key)}">${esc(catLabel(k.id))}</button>`).join("")}</div>`
+        : "";
+      html += `<div class="sec-h"><h3>${esc(catLabel(n.id))}</h3><button class="linkbtn" data-cat="${esc(n.key)}">${t("seeAll")}</button></div>${chips}<div class="grid">${allItems(n).slice(0, 4).map(cardHTML).join("")}</div>`;
     });
-    const rest = products.filter(p => !catOf(p));
-    if (rest.length) html += sectionHTML(t("other"), rest.slice(0, 4), rest.length, null);
+    if (catRoot.uncat.length) html += sectionHTML(t("other"), catRoot.uncat.slice(0, 4), catRoot.uncat.length, null);
     return html;
   }
   function viewShop() {
@@ -779,9 +828,8 @@
     window.scrollTo(0, 0);
   }
   function clearFilters() {
-    filt = { cat: null, q: "", range: "all", sort: "default" };
+    filt = { cat: null, q: "", sort: "default" };
     document.getElementById("q").value = "";
-    document.getElementById("rangeSel").value = "all";
     document.getElementById("sortSel").value = "default";
     closeMenus();
     refreshShop();
@@ -809,22 +857,22 @@
       : `<div class="sugg-h">${t("noResults")}</div>`;
     box.classList.remove("hidden");
   }
+  function catTreeHTML(list, depth) {
+    return list.map(n => {
+      const has = n.kids.length > 0;
+      const open = openCats.has(n.key);
+      return `<div class="ct-row" style="padding-inline-start:${depth * 14}px">` +
+        `<button class="ct-tog" data-tog="${esc(n.key)}" aria-expanded="${open}" ${has ? "" : "disabled"}>${has ? (open ? "▾" : "▸") : ""}</button>` +
+        `<button class="ct-name ${filt.cat === n.key ? "on" : ""}" data-cat="${esc(n.key)}">${esc(catLabel(n.id))} <small>${allItems(n).length}</small></button></div>` +
+        (has && open ? catTreeHTML(n.kids, depth + 1) : "");
+    }).join("");
+  }
   function catLinksHTML() {
-    return `<button data-cat="">${t("allCats")}</button>` + catList().map(c => `<button data-cat="${esc(c)}">${esc(c)}</button>`).join("");
+    return `<button class="ct-name ${!filt.cat ? "on" : ""}" data-cat="">${t("allCats")}</button>` + catTreeHTML(catRoot.kids, 0);
   }
   function fillFilters() {
-    const r = document.getElementById("rangeSel");
-    const labels = {
-      all: t("priceAll"),
-      "0-5": `${t("upTo")} ${fmt(localPrice(5))}`,
-      "5-10": `${fmt(localPrice(5))} – ${fmt(localPrice(10))}`,
-      "10-20": `${fmt(localPrice(10))} – ${fmt(localPrice(20))}`,
-      "20+": `${fmt(localPrice(20))}+`
-    };
-    r.innerHTML = Object.keys(labels).map(k => `<option value="${k}">${esc(labels[k])}</option>`).join("");
-    r.value = filt.range;
     const s = document.getElementById("sortSel");
-    const sorts = { default: t("sortDef"), asc: t("sortAsc"), desc: t("sortDesc"), name: t("sortName") };
+    const sorts = { default: t("sortDef"), asc: t("sortAsc"), desc: t("sortDesc"), name: t("sortName"), nameDesc: t("sortNameDesc") };
     s.innerHTML = Object.keys(sorts).map(k => `<option value="${k}">${esc(sorts[k])}</option>`).join("");
     s.value = filt.sort;
   }
@@ -951,7 +999,8 @@
     saveSnap();
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
-    document.getElementById("cartN").textContent = cartCount();
+    const cn = document.getElementById("cartN"), nItems = cartCount();
+    cn.textContent = nItems; cn.hidden = nItems === 0;
     document.getElementById("acctBtn").setAttribute("aria-label", isLoggedIn() ? t("account") : t("login"));
     document.getElementById("prefBtn").textContent = COUNTRIES[state.country].iso + " · " + (state.lang === "ar" ? "العربية" : "English");
     renderPrefs();
@@ -1104,7 +1153,7 @@
   document.querySelectorAll("[data-glang]").forEach(btn => {
     btn.addEventListener("click", () => { state.lang = btn.dataset.glang; save(); render(); });
   });
-  document.getElementById("gGo").addEventListener("click", () => { state.seen = true; save(); render(); });
+  document.getElementById("gGo").addEventListener("click", () => { state.seen = true; save(); try { sessionStorage.setItem("showbiz_gate_ok", "1"); } catch (e) {} render(); });
   // زر السلة يفتح اللوحة الجانبية (بدون ما يغادر الصفحة)
   document.getElementById("cartBtn").addEventListener("click", () => { ShowbizUI.open(); });
   document.getElementById("favBtn").addEventListener("click", () => { ShowbizUI.open("wish"); });
@@ -1136,6 +1185,14 @@
 
   // ===== المتجر: أقسام، بحث، فلاتر، قائمة الجوال =====
   document.addEventListener("click", (e) => {
+    const tg = e.target.closest("[data-tog]");
+    if (tg) {
+      const k = tg.dataset.tog;
+      if (openCats.has(k)) openCats.delete(k); else openCats.add(k);
+      document.getElementById("catPanel").innerHTML = catLinksHTML();
+      document.getElementById("sideCats").innerHTML = catLinksHTML();
+      return;
+    }
     const c = e.target.closest("[data-cat]");
     if (c && c.closest("#shopBody, #catPanel, #sideCats")) { setCat(c.dataset.cat || null); return; }
     const cl = e.target.closest("[data-clear]");
@@ -1168,7 +1225,6 @@
   qEl.addEventListener("input", () => { filt.q = qEl.value; refreshShop(); renderSugg(); });
   qEl.addEventListener("focus", renderSugg);
   qEl.addEventListener("keydown", (e) => { if (e.key === "Enter") { ShowbizUI.pushSearch(qEl.value); document.getElementById("sugg").classList.add("hidden"); } });
-  document.getElementById("rangeSel").addEventListener("change", (e) => { filt.range = e.target.value; refreshShop(); });
   document.getElementById("sortSel").addEventListener("change", (e) => { filt.sort = e.target.value; refreshShop(); });
   // تحديث السلة الجانبية وعدّاد الهيدر عند أي تغيير
   document.addEventListener("cartchange", () => render());
