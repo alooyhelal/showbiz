@@ -110,6 +110,18 @@
   .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card); color:var(--ok); border:1px solid #2f6b4f; padding:16px 26px; border-radius:14px; font-size:17px; font-weight:bold; z-index:60; box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:90vw; text-align:center; }
   .notice { padding:10px 12px; border-radius:10px; font-size:14px; margin:8px 0; color:var(--err); background:#3b1620; border:1px solid #7a2b3b; }
   .build { position:fixed; bottom:0; left:0; right:0; background:#070d18; color:#6b7a94; font:12px monospace; text-align:center; padding:6px; direction:ltr; z-index:4; border-top:1px solid var(--line); }
+  /* ===== حركات: طيران المنتج للسلة، نطة السلة، فتح التفاصيل مثل Hero ===== */
+  .cartbtn { overflow: visible; }
+  .fly { position:fixed; left:0; top:0; z-index:300; width:64px; height:64px; border-radius:12px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,.45); pointer-events:none; will-change:transform; }
+  .fly img { width:100%; height:100%; object-fit:cover; display:block; }
+  .plus1 { position:fixed; z-index:301; pointer-events:none; color:var(--orange); font-weight:800; font-size:14px; background:var(--card); border:1px solid var(--orange); border-radius:999px; padding:2px 8px; }
+  .hero-fly { position:fixed; z-index:310; object-fit:cover; border-radius:12px; pointer-events:none; }
+  .card .pimg img { cursor:pointer; }
+  @keyframes btnjump { 0% { transform:scale(1); } 40% { transform:scale(1.12) translateY(-3px); } 100% { transform:scale(1); } }
+  .jump { animation: btnjump .45s ease; }
+  @keyframes cartbounce { 0% { transform:scale(1); } 40% { transform:scale(1.3); } 100% { transform:scale(1); } }
+  .bounce { animation: cartbounce .4s ease; }
+  @media (prefers-reduced-motion: reduce) { .jump, .bounce { animation: none; } }
 </style>
 <script src="version.js"></script>
 <script src="shared.js"></script>
@@ -1034,13 +1046,83 @@
     renderModal();
   }
 
+  // ===== حركات الإضافة للسلة وفتح التفاصيل =====
+  const reduceMotion = () => window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function bounceEl(el, cls) {
+    if (!el || reduceMotion()) return;
+    el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+    setTimeout(() => el.classList.remove(cls), 500);
+  }
+  // المنتج يطير بمنحنى (Bezier) لحد السلة، ويصغر، وبعدين ينشال وتنط السلة وتظهر +1
+  function flyToCart(srcEl, imgSrc, done) {
+    const cartEl = document.getElementById("cartBtn");
+    if (!srcEl || !cartEl || !imgSrc || reduceMotion()) { done(); return; }
+    const s = srcEl.getBoundingClientRect(), e = cartEl.getBoundingClientRect();
+    const sx = s.left + s.width / 2, sy = s.top + s.height / 2;
+    const ex = e.left + e.width / 2, ey = e.top + e.height / 2;
+    const cx = (sx + ex) / 2, cy = Math.min(sy, ey) - 150;
+    const fly = document.createElement("div");
+    fly.className = "fly";
+    fly.innerHTML = `<img src="${esc(imgSrc)}" alt="">`;
+    document.body.appendChild(fly);
+    const dur = 650, t0 = performance.now();
+    let finished = false;
+    const finish = () => {
+      if (finished) return; finished = true;
+      fly.remove();
+      bounceEl(cartEl, "bounce");
+      const plus = document.createElement("span");
+      plus.className = "plus1"; plus.textContent = "+1";
+      plus.style.left = (ex - 16) + "px"; plus.style.top = (e.top - 26) + "px";
+      document.body.appendChild(plus);
+      setTimeout(() => plus.remove(), 700);
+      done();
+    };
+    const step = (now) => {
+      const t = Math.min(1, (now - t0) / dur);
+      const k = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; // easeInOut
+      const x = (1 - k) * (1 - k) * sx + 2 * (1 - k) * k * cx + k * k * ex;
+      const y = (1 - k) * (1 - k) * sy + 2 * (1 - k) * k * cy + k * k * ey;
+      const scale = 1 - 0.6 * k;
+      fly.style.transform = `translate(${x - 32}px, ${y - 32}px) scale(${scale})`;
+      if (t < 1) requestAnimationFrame(step); else finish();
+    };
+    requestAnimationFrame(step);
+    setTimeout(finish, dur + 200); // حماية: ما يتعلق أبداً
+  }
+  // فتح التفاصيل: صورة المنتج تطير من البطاقة لمكانها الكبير (مثل Hero)
+  function heroOpen(pid, srcImg) {
+    const r0 = srcImg.getBoundingClientRect(), src = srcImg.src;
+    openProduct(pid);
+    const mi = document.getElementById("mImg");
+    if (!mi || reduceMotion()) return;
+    const r1 = mi.getBoundingClientRect();
+    const fl = document.createElement("img");
+    fl.className = "hero-fly"; fl.src = src; fl.alt = "";
+    fl.style.cssText = `left:${r0.left}px;top:${r0.top}px;width:${r0.width}px;height:${r0.height}px;transition:none`;
+    document.body.appendChild(fl);
+    mi.style.opacity = "0";
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fl.style.transition = "all .45s ease";
+      fl.style.left = r1.left + "px"; fl.style.top = r1.top + "px";
+      fl.style.width = r1.width + "px"; fl.style.height = r1.height + "px";
+    }));
+    setTimeout(() => { fl.remove(); if (mi.isConnected) mi.style.opacity = ""; }, 480);
+  }
+
   // ===== الأحداث =====
   async function handleAction(a, ds) {
     if (a === "open") { openProduct(ds.pid); return; }
     if (a === "quickAdd") {
       const p = products.find(x => x.pid === ds.pid);
       if (!p) return;
-      if (p.variants.length === 1) { addLine(p.variants[0].vid, 1); render(); }
+      if (p.variants.length === 1) {
+        const btn = document.querySelector(`[data-action="quickAdd"][data-pid="${CSS.escape(String(p.pid))}"]`);
+        bounceEl(btn, "jump");
+        const img = document.getElementById("c-" + p.pid);
+        const vid = p.variants[0].vid;
+        flyToCart(img, img ? img.src : "", () => { addLine(vid, 1); render(); });
+      }
       else openProduct(p.pid);
       return;
     }
@@ -1128,8 +1210,10 @@
     if (e.target.id === "pmodal") { modal = null; renderModal(); return; }
     if (e.target.id === "mAdd") {
       const c = curModal(); if (!c) return;
-      addLine(c.v.vid, modal.qty);
-      modal = null; render(); return;
+      const mi = document.getElementById("mImg");
+      const vid = c.v.vid, qty = modal.qty;
+      flyToCart(mi, mi ? mi.src : "", () => { addLine(vid, qty); modal = null; render(); });
+      return;
     }
     const b = e.target.closest("[data-action]");
     if (b) handleAction(b.dataset.action, b.dataset);
@@ -1183,6 +1267,8 @@
 
   // ===== المتجر: أقسام، بحث، فلاتر، قائمة الجوال =====
   document.addEventListener("click", (e) => {
+    const ci = e.target.closest(".card .pimg img");
+    if (ci && ci.id && ci.id.startsWith("c-")) { heroOpen(ci.id.slice(2), ci); return; }
     const tg = e.target.closest("[data-tog]");
     if (tg) {
       const k = tg.dataset.tog;
