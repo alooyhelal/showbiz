@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Showbiz — السلة والدفع</title>
+<script src="version.js"></script>
+<script>
+/* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
+(function () {
+  var SITE_VERSION = window.SHOWBIZ_BUILD.version;
+  try {
+    if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
+      Object.keys(localStorage).forEach(function (k) {
+        if (k.indexOf("showbiz") === 0 || (k.indexOf("sb-") === 0 && k.slice(-11) === "-auth-token")) localStorage.removeItem(k);
+      });
+      localStorage.setItem("showbiz_ver", SITE_VERSION);
+    }
+  } catch (e) {}
+})();
+</script>
+<style>
+  :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; color-scheme:dark; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; }
+  header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px 16px; background:#0d1728; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  main { padding:16px 16px 56px; max-width:1000px; margin:auto; }
+  select, input { padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card2); color:var(--fg); width:100%; box-sizing:border-box; margin-bottom:8px; font-size:15px; font-family:inherit; }
+  select option { background:var(--card2); color:var(--fg); }
+  input:focus, select:focus { outline:2px solid var(--orange); outline-offset:1px; }
+  header select { width:auto; margin:0; }
+  button { padding:10px 14px; border:0; border-radius:10px; background:var(--orange); color:#111; cursor:pointer; font-size:14px; font-family:inherit; font-weight:700; }
+  button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:400; }
+  button.linkbtn { background:none; color:var(--orange); padding:4px 6px; text-decoration:underline; font-weight:400; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  .btnfull { width:100%; }
+  .btnlink { display:block; text-align:center; padding:12px; border-radius:10px; background:var(--orange); color:#111; text-decoration:none; font-weight:700; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .pad { padding:14px; margin-bottom:12px; }
+  .pimg { height:210px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; }
+  .pimg img { width:100%; height:100%; object-fit:contain; transition:opacity .4s; }
+  .pbody { padding:12px 14px 14px; }
+  .pname { font-size:15px; line-height:1.5; margin-bottom:6px; }
+  .price { color:var(--blue); font-weight:bold; font-size:17px; }
+  .row2 { display:flex; gap:8px; margin-top:10px; }
+  .row2 button { flex:1; }
+  .dots { display:flex; gap:6px; justify-content:center; padding:8px 0 0; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--dot); display:inline-block; }
+  .dot.on { background:var(--blue); }
+  .muted { color:var(--muted); font-size:13px; line-height:1.7; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; flex-wrap:wrap; }
+  .row.total { border-top:1px solid var(--line); margin-top:6px; padding-top:12px; font-size:17px; }
+  h4 { margin:14px 0 8px; color:var(--muted); font-size:14px; font-weight:600; }
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:12px; overflow:auto; z-index:20; }
+  .modal { background:var(--card); color:var(--fg); padding:18px; border-radius:18px; width:100%; max-width:440px; box-sizing:border-box; position:relative; }
+  .gallery { position:relative; height:300px; background:#f3f4f6; border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .gallery img { width:100%; height:100%; object-fit:contain; transition:opacity .4s; }
+  .nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.45); color:#fff; padding:6px 12px; }
+  .nav.prev { left:8px; } .nav.next { right:8px; }
+  .xbtn { position:absolute; top:10px; left:10px; background:rgba(0,0,0,.55); color:#fff; padding:4px 10px; z-index:2; }
+  .qtyrow { display:flex; justify-content:space-between; align-items:center; margin:12px 0; }
+  .qtyctl button { padding:6px 12px; }
+  .crow { display:flex; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+  .crow img { width:72px; height:72px; object-fit:contain; background:#f3f4f6; border-radius:10px; }
+  .cinfo { flex:1; }
+  .couponrow { display:flex; gap:8px; } .couponrow input { margin:0; } .couponrow button { white-space:nowrap; }
+  .addrpick { display:block; cursor:pointer; margin-bottom:8px; position:relative; }
+  .addrpick .flagc { position:absolute; top:12px; inset-inline-end:14px; line-height:0; }
+  .flagimg { width:24px; height:18px; border-radius:2px; object-fit:cover; vertical-align:middle; }
+  .addrpick strong { padding-inline-end:36px; display:block; }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  .addrpick .pickrow { display:flex; gap:10px; align-items:flex-start; }
+  .addrpick input[type=radio] { width:auto; margin:4px 0 0; }
+  .hidden { display:none !important; }
+  .acctwrap { position:relative; display:inline-block; }
+  .menu { position:absolute; top:calc(100% + 6px); inset-inline-end:0; min-width:210px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px; z-index:30; box-shadow:0 12px 30px rgba(0,0,0,.5); }
+  .menu-who { padding:8px 12px; color:var(--muted); font-size:13px; border-bottom:1px solid var(--line); margin-bottom:4px; word-break:break-all; direction:ltr; text-align:start; }
+  .menu a { display:block; padding:10px 12px; border-radius:8px; color:var(--fg); text-decoration:none; font-size:14px; }
+  .menu a:hover { background:var(--card2); }
+  .menu button.menu-out { width:100%; margin-top:4px; background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:400; }
+  .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card); color:var(--ok); border:1px solid #2f6b4f; padding:16px 26px; border-radius:14px; font-size:17px; font-weight:bold; z-index:60; box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:90vw; text-align:center; }
+  .notice { padding:10px 12px; border-radius:10px; font-size:14px; margin:8px 0; color:var(--err); background:#3b1620; border:1px solid #7a2b3b; }
+  .build { position:fixed; bottom:0; left:0; right:0; background:#070d18; color:#6b7a94; font:12px monospace; text-align:center; padding:6px; direction:ltr; z-index:4; border-top:1px solid var(--line); }
+</style>
+<style>
+  .stepbar { display:flex; gap:8px; margin:6px 0 14px; }
+  .stepbar a { flex:1; text-align:center; padding:8px; border-radius:10px; border:1px solid var(--line, #2a3850); text-decoration:none; color:var(--muted, #6b7a94); font-size:14px; }
+  .stepbar a.on { color:inherit; border-color:var(--accent, #3b82f6); }
+  .btnlink { display:inline-block; padding:10px 14px; border-radius:10px; text-decoration:none; }
+  .stack { display:flex; flex-direction:column; gap:8px; }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" style="text-decoration:none;color:inherit"><strong id="siteName">Showbiz</strong></a>
+  <div>
+    <button class="ghost" id="langBtn" data-a="lang"></button>
+    <button class="ghost" id="cartBtn" data-a="toCart"></button>
+  </div>
+</header>
+
+<main><div id="view"></div></main>
+<div id="verLine" style="text-align:center;font:12px monospace;color:#6b7a94;padding:10px 12px 18px;direction:ltr"></div>
+
+<script src="locations.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" onerror="document.write('<script src=\'https://unpkg.com/@supabase/supabase-js@2.50.0/dist/umd/supabase.js\'><\/script>')"></script>
+<script>
+  const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const RATE_BHD = 0.377;
+  const COUPONS = { TEST10: 0.10 };
+  const COUNTRIES = {
+    BH: { flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2 },
+    SA: { flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"SAR", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
+    AE: { flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"AED", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
+    KW: { flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3 },
+    QA: { flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3 },
+    OM: { flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
+  };
+
+  const T = {
+    ar: {
+      cart:"السلة", cartTitle:"سلة المشتريات", empty:"السلة فارغة", back:"رجوع", keepShopping:"متابعة التسوق",
+      checkout:"إتمام الطلب", goCheckout:"متابعة للدفع", productsVal:"قيمة المنتجات", discount:"الخصم",
+      shipping:"الشحن", shipLater:"يُحسب عند اختيار العنوان", shippingNote:"يُحسب الشحن بعد اختيار العنوان",
+      grand:"الإجمالي", coupon:"كود الخصم", apply:"تطبيق", removeCoupon:"إزالة", badCoupon:"الكود غير صحيح",
+      pickAddr:"اختر عنوان التوصيل", addAddrBtn:"إضافة عنوان جديد",
+      noAddrAny:"ما عندك عناوين محفوظة بعد. أضف عنوان أولًا", confirm:"تأكيد الطلب",
+      confirmAddrNext:"اختر عنوان أولًا", pickAddrErr:"اختر عنوان أولًا",
+      needLogin:"سجّل دخولك عشان تكمل الطلب", goLogin:"تسجيل الدخول", loading:"جاري التحميل...",
+      doneTitle:"تم استلام طلبك", doneMsg:"شكرًا لك. رح نتواصل معك قريبًا.",
+      savedLocal:"تم حفظ الطلب على هذا الجهاز مؤقتًا لأن الحفظ على السيرفر تعذر.",
+      snapMissing:"افتح الصفحة الرئيسية مرة وحدة عشان تتحدث السلة", home:"الصفحة الرئيسية",
+      qty:"الكمية", defaultVariant:"افتراضي", stepCart:"١ السلة", stepCheckout:"٢ الدفع",
+      buildLabel:"النسخة", updatedLabel:"آخر تحديث", saving:"جاري الإرسال..."
+    },
+    en: {
+      cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty", back:"Back", keepShopping:"Keep shopping",
+      checkout:"Checkout", goCheckout:"Continue to checkout", productsVal:"Products", discount:"Discount",
+      shipping:"Shipping", shipLater:"Calculated after choosing an address", shippingNote:"Shipping is calculated after you pick an address",
+      grand:"Total", coupon:"Coupon code", apply:"Apply", removeCoupon:"Remove", badCoupon:"Invalid code",
+      pickAddr:"Choose a delivery address", addAddrBtn:"Add new address",
+      noAddrAny:"You have no saved addresses yet. Add one first", confirm:"Place order",
+      confirmAddrNext:"Choose an address first", pickAddrErr:"Choose an address first",
+      needLogin:"Sign in to complete your order", goLogin:"Sign in", loading:"Loading...",
+      doneTitle:"Order received", doneMsg:"Thank you. We will contact you soon.",
+      savedLocal:"The order was saved on this device for now because the server could not be reached.",
+      snapMissing:"Open the home page once so the cart can refresh", home:"Home page",
+      qty:"Quantity", defaultVariant:"Default", stepCart:"1 Cart", stepCheckout:"2 Checkout",
+      buildLabel:"Version", updatedLabel:"Last update", saving:"Sending..."
+    }
+  };
+
+  // ===== الحالة (نفس المفاتيح اللي تستخدمها الصفحة الرئيسية) =====
+  let state = { country:"BH", lang:"ar", cart:[], addrId:null, coupon:null };
+  try { Object.assign(state, JSON.parse(localStorage.getItem("showbiz_state") || "{}")); } catch (e) {}
+  if (!Array.isArray(state.cart)) state.cart = [];
+  if (!COUNTRIES[state.country]) state.country = "BH";
+  function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
+
+  let me = null, profile = null, ready = false, step = "cart", busy = false, doneLocal = false;
+
+  const t = (k) => T[state.lang][k];
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const flagImg = (code) => (COUNTRIES[code] ? COUNTRIES[code].flag : "");
+  const localPrice = (usd) => usd * COUNTRIES[state.country].rate;
+  const shipLocal = (bhd) => bhd * (COUNTRIES[state.country].rate / RATE_BHD);
+  function fmtFor(code, amount) {
+    const c = COUNTRIES[code] || COUNTRIES[state.country];
+    const n = Number(amount).toFixed(c.dec);
+    return state.lang === "ar" ? `${n} ${c.sym.ar}` : `${c.sym.en} ${n}`;
+  }
+  const fmt = (amount) => fmtFor(state.country, amount);
+  const variantLabel = (v) => v.key ? String(v.key).replace(/-/g, " · ") : t("defaultVariant");
+
+  // ===== السلة: تفاصيل المنتجات تُقرأ من اللقطة اللي تكتبها الصفحة الرئيسية =====
+  function readSnap() { try { return JSON.parse(localStorage.getItem("showbiz_cart_snap") || "[]"); } catch (e) { return []; } }
+  function cartLines() {
+    const snap = readSnap();
+    return state.cart
+      .map(i => { const s = snap.find(x => x.vid === i.vid); return s ? { vid: i.vid, qty: i.qty, p: s.p, v: s.v } : null; })
+      .filter(Boolean);
+  }
+  const subtotalUSD = () => cartLines().reduce((s, l) => s + l.v.price * l.qty, 0);
+  const discountUSD = () => subtotalUSD() * (COUPONS[state.coupon] || 0);
+
+  function shippingCalc() {
+    let actualKg = 0, volKg = 0;
+    cartLines().forEach(l => {
+      const w = (l.v.weightG || l.p.weightG || 500) / 1000;
+      const d = l.v.dimsCm || l.p.dimsCm || [10, 10, 10];
+      actualKg += w * l.qty;
+      volKg += (d[0] * d[1] * d[2] / 5000) * l.qty;
+    });
+    const chargeable = Math.max(actualKg, volKg);
+    const shipBHD = COUNTRIES[state.country].base + Math.max(0, chargeable - 1) * 0.5;
+    const orderBHD = (subtotalUSD() - discountUSD()) * RATE_BHD;
+    const riskBHD = Math.max(orderBHD * 0.15, 0.3);
+    return { shipBHD, riskBHD };
+  }
+
+  // ===== العناوين المحفوظة من صفحة عناويني =====
+  function allAddresses() {
+    if (!me) return [];
+    try { return JSON.parse(localStorage.getItem("showbiz_addr2_" + me.id) || "[]"); } catch (e) { return []; }
+  }
+  function savedAddresses() { return allAddresses().filter(a => COUNTRIES[a.country]); }
+  function selectedAddr() { return savedAddresses().find(a => a.id === state.addrId) || null; }
+  function addrText(a) {
+    const names = (a.path || []).map(id => {
+      const n = typeof findNode === "function" ? findNode(id) : null;
+      return n ? (state.lang === "en" && n.en ? n.en : n.ar) : id;
+    }).join(" ← ");
+    const f = a.fields || {};
+    const parts = [names];
+    if (f.building) parts.push(f.building);
+    if (f.street) parts.push(f.street);
+    if (f.complex) parts.push(f.complex);
+    if (f.flat) parts.push(f.flat);
+    if (f.makani) parts.push("Makani " + f.makani);
+    if (f.pobox) parts.push("PO " + f.pobox);
+    return parts.join(" · ");
+  }
+
+  // ===== الجلسة والبروفايل =====
+  function userFromStoredToken() {
+    try {
+      const key = Object.keys(localStorage).find(k => k.startsWith("sb-") && k.endsWith("-auth-token"));
+      const o = key ? JSON.parse(localStorage.getItem(key)) : null;
+      return (o && o.user && o.user.id) ? o.user : null;
+    } catch (e) { return null; }
+  }
+  async function readUser() {
+    try {
+      const { data } = await sb.auth.getSession();
+      if (data && data.session && data.session.user) return data.session.user;
+    } catch (e) {}
+    return userFromStoredToken();
+  }
+  async function loadProfile() {
+    try {
+      const { data } = await sb.from("customers").select("*").eq("id", me.id).maybeSingle();
+      profile = data || null;
+    } catch (e) {}
+  }
+
+  // ===== تغيير السلة =====
+  function changeQty(vid, delta) {
+    const i = state.cart.find(x => x.vid === vid);
+    if (!i) return;
+    i.qty = Math.min(99, i.qty + delta);
+    if (i.qty <= 0) state.cart = state.cart.filter(x => x.vid !== vid);
+    save(); render();
+  }
+  function removeLine(vid) { state.cart = state.cart.filter(x => x.vid !== vid); save(); render(); }
+  function applyCoupon() {
+    const code = (document.getElementById("cpn").value || "").trim().toUpperCase();
+    if (COUPONS[code]) { state.coupon = code; save(); render(); }
+    else document.getElementById("cpnMsg").textContent = t("badCoupon");
+  }
+
+  // ===== الطلب (نفس الصف اللي تكتبه الصفحة الرئيسية) =====
+  async function confirmOrder() {
+    if (busy) return;
+    const msgEl = document.getElementById("formMsg");
+    const addr = selectedAddr();
+    if (!addr) { msgEl.textContent = t("pickAddrErr"); return; }
+    if (!me) { msgEl.textContent = t("needLogin"); return; }
+    busy = true; msgEl.textContent = t("saving");
+    const lines = cartLines();
+    const s = shippingCalc();
+    const subtotal = localPrice(subtotalUSD());
+    const discount = localPrice(discountUSD());
+    const ship = shipLocal(s.shipBHD);
+    const row = {
+      user_id: me.id, country: state.country, status: "test-not-sent-to-cj",
+      items: lines.map(l => ({ pid: l.p.pid, vid: l.vid, sku: l.v.sku, name: l.p.nameEn, variant: l.v.key, qty: l.qty, unitUSD: l.v.price })),
+      shipping_address: {
+        id: addr.id, label: addr.label, text: addrText(addr), fields: addr.fields || {},
+        phone: addr.phone, recipient: addr.recipient || "", path: addr.path || []
+      },
+      contact: { name: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim(), phone: profile?.phone || null },
+      coupon: state.coupon, subtotal, discount, shipping: ship,
+      total: subtotal - discount + ship, internal_risk_bhd: s.riskBHD
+    };
+    let saved = false;
+    try {
+      const { error } = await sb.from("orders").insert(row);
+      if (!error) saved = true; else console.warn(error);
+    } catch (e) { console.warn(e); }
+    if (!saved) {
+      try {
+        const arr = JSON.parse(localStorage.getItem("showbiz_orders") || "[]");
+        arr.push({ ...row, created: new Date().toISOString() });
+        localStorage.setItem("showbiz_orders", JSON.stringify(arr));
+      } catch (e) {}
+    }
+    doneLocal = !saved;
+    state.cart = []; state.addrId = null; state.coupon = null; save();
+    busy = false;
+    setStep("done");
+  }
+
+  // ===== العرض =====
+  function setStep(s) {
+    step = s;
+    if (s === "checkout") history.replaceState(null, "", "#checkout");
+    else if (s === "cart") history.replaceState(null, "", location.pathname);
+    render();
+  }
+
+  function cartHTML() {
+    const lines = cartLines();
+    if (!lines.length) {
+      const msg = state.cart.length ? t("snapMissing") : t("empty");
+      return `<h3>${t("cartTitle")}</h3><p>${msg}</p><a class="ghost btnlink" href="index.html">${state.cart.length ? t("home") : t("keepShopping")}</a>`;
+    }
+    const rows = lines.map(l => `
+      <div class="crow">
+        <img src="${esc(l.v.image || l.p.image)}" alt="">
+        <div class="cinfo">
+          <div class="pname">${esc(l.p.nameEn)}</div>
+          ${l.v.key ? `<div class="muted">${esc(variantLabel(l.v))}</div>` : ""}
+          <div class="price">${fmt(localPrice(l.v.price))}</div>
+          <div class="qtyctl">
+            <button class="ghost" data-a="dec" data-vid="${esc(l.vid)}">−</button>
+            ${l.qty}
+            <button class="ghost" data-a="inc" data-vid="${esc(l.vid)}">+</button>
+          </div>
+        </div>
+        <button class="ghost" data-a="rm" data-vid="${esc(l.vid)}">✕</button>
+      </div>`).join("");
+    const disc = discountUSD();
+    const couponLine = state.coupon
+      ? `<div class="row"><span class="muted">${esc(state.coupon)}</span><button class="linkbtn" data-a="removeCoupon">${t("removeCoupon")}</button></div>`
+      : `<div class="couponrow"><input id="cpn" placeholder="${t("coupon")}"><button class="ghost" data-a="applyCoupon">${t("apply")}</button></div>
+         <p id="cpnMsg" class="muted"></p>`;
+    return `
+      <div class="stepbar"><a class="on" href="#">${t("stepCart")}</a><a href="#checkout" data-a="goCheckout">${t("stepCheckout")}</a></div>
+      <h3>${t("cartTitle")}</h3>
+      <div class="card pad">${rows}</div>
+      <div class="card pad">
+        ${couponLine}
+        <div class="row"><span>${t("productsVal")}</span><span>${fmt(localPrice(subtotalUSD()))}</span></div>
+        ${disc > 0 ? `<div class="row"><span>${t("discount")}</span><span>- ${fmt(localPrice(disc))}</span></div>` : ""}
+        <div class="row"><span>${t("shipping")}</span><span class="muted">${t("shipLater")}</span></div>
+        <div class="row total"><strong>${t("grand")}</strong><strong class="price">${fmt(localPrice(subtotalUSD() - disc))}</strong></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <a class="ghost btnlink" href="index.html" style="flex:1;text-align:center">${t("keepShopping")}</a>
+        <button data-a="goCheckout" style="flex:1">${t("goCheckout")}</button>
+      </div>`;
+  }
+
+  function summaryHTML() {
+    const sub = localPrice(subtotalUSD());
+    const disc = localPrice(discountUSD());
+    const discRow = disc > 0 ? `<div class="row"><span>${t("discount")}</span><span>- ${fmt(disc)}</span></div>` : "";
+    if (!selectedAddr()) {
+      return `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>${discRow}<p class="muted">${t("shippingNote")}</p>`;
+    }
+    const ship = shipLocal(shippingCalc().shipBHD);
+    return `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>
+            ${discRow}
+            <div class="row"><span>${t("shipping")}</span><span>${fmt(ship)}</span></div>
+            <div class="row total"><strong>${t("grand")}</strong><strong class="price">${fmt(sub - disc + ship)}</strong></div>`;
+  }
+
+  function checkoutHTML() {
+    const stepbar = `<div class="stepbar"><a href="#" data-a="backCart">${t("stepCart")}</a><a class="on" href="#checkout">${t("stepCheckout")}</a></div>`;
+    if (!ready) return `${stepbar}<p class="muted">${t("loading")}</p>`;
+    if (!cartLines().length) return cartHTML();
+    if (!me) {
+      return `${stepbar}<div class="card pad"><p>${t("needLogin")}</p>
+        <a class="ghost btnlink" href="#" data-a="login">${t("goLogin")}</a></div>
+        <p><button class="ghost" data-a="backCart">${t("back")}</button></p>`;
+    }
+    const list = savedAddresses();
+    const picks = list.length
+      ? list.map(a => `
+          <label class="card pad addrpick">
+            <div class="pickrow">
+              <input type="radio" name="addr" data-pick="${esc(a.id)}" ${state.addrId === a.id ? "checked" : ""}>
+              <div>
+                <span class="flagc">${flagImg(a.country)}</span><strong>${esc(a.label)}</strong>
+                <div class="muted">${esc(addrText(a))}</div>
+                <div class="muted" dir="ltr">${esc(a.phone || "")}</div>
+              </div>
+            </div>
+          </label>`).join("")
+      : `<p class="muted">${t("noAddrAny")}</p>`;
+    const name = `${profile?.first_name || me.user_metadata?.first_name || ""} ${profile?.last_name || me.user_metadata?.last_name || ""}`.trim();
+    const sel = selectedAddr();
+    return `
+      ${stepbar}
+      <h3>${t("checkout")}</h3>
+      <div class="card pad">
+        <div>${esc(name || me.email || "")}</div>
+        <div class="muted" dir="ltr">${esc(profile?.phone || me.phone || "")}</div>
+      </div>
+      <h4>${t("pickAddr")}</h4>
+      ${picks}
+      <button class="ghost btnfull" data-a="addAddr">${t("addAddrBtn")}</button>
+      <div class="card pad" style="margin-top:12px">${summaryHTML()}</div>
+      <p id="formMsg" class="muted"></p>
+      <button data-a="confirm" style="width:100%" ${sel ? "" : "disabled"}>${sel ? t("confirm") : t("confirmAddrNext")}</button>
+      <p><button class="ghost" data-a="backCart">${t("back")}</button></p>`;
+  }
+
+  function doneHTML() {
+    return `<h3>${t("doneTitle")}</h3><p>${t("doneMsg")}</p>${doneLocal ? `<p class="muted">${t("savedLocal")}</p>` : ""}
+      <a class="ghost btnlink" href="index.html">${t("home")}</a>`;
+  }
+
+  function render() {
+    document.documentElement.lang = state.lang;
+    document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
+    document.getElementById("langBtn").textContent = state.lang === "ar" ? "English" : "العربية";
+    const n = state.cart.reduce((s, i) => s + i.qty, 0);
+    document.getElementById("cartBtn").textContent = `${t("cart")} (${n})`;
+    const v = document.getElementById("view");
+    if (step === "done") v.innerHTML = doneHTML();
+    else if (step === "checkout") v.innerHTML = checkoutHTML();
+    else v.innerHTML = cartHTML();
+    document.getElementById("verLine").textContent = `${t("buildLabel")}: ${window.SHOWBIZ_BUILD.version} · ${t("updatedLabel")}: ${window.SHOWBIZ_BUILD.updated}`;
+  }
+
+  // ===== الأحداث =====
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-a]");
+    if (!el) return;
+    const a = el.dataset.a;
+    if (a === "lang") { state.lang = state.lang === "ar" ? "en" : "ar"; save(); render(); return; }
+    if (a === "toCart") { setStep("cart"); return; }
+    if (a === "inc") { changeQty(el.dataset.vid, 1); return; }
+    if (a === "dec") { changeQty(el.dataset.vid, -1); return; }
+    if (a === "rm") { removeLine(el.dataset.vid); return; }
+    if (a === "applyCoupon") { applyCoupon(); return; }
+    if (a === "removeCoupon") { state.coupon = null; save(); render(); return; }
+    if (a === "goCheckout") { e.preventDefault(); if (cartLines().length) setStep("checkout"); return; }
+    if (a === "backCart") { e.preventDefault(); setStep("cart"); return; }
+    if (a === "login") {
+      e.preventDefault();
+      try { localStorage.setItem("showbiz_next", "checkout"); } catch (err) {}
+      location.href = "login.html";
+      return;
+    }
+    if (a === "addAddr") {
+      try {
+        localStorage.setItem("showbiz_next", "checkout");
+        localStorage.setItem("showbiz_open_add", "1");
+      } catch (err) {}
+      location.href = "addresses.html";
+      return;
+    }
+    if (a === "confirm") { confirmOrder(); return; }
+  });
+
+  document.addEventListener("change", (e) => {
+    const pid = e.target.dataset && e.target.dataset.pick;
+    if (!pid) return;
+    const a = savedAddresses().find(x => x.id === pid);
+    if (!a) return;
+    state.addrId = a.id; state.country = a.country; save(); render();
+  });
+
+  window.addEventListener("hashchange", () => {
+    if (step === "done") return;
+    step = location.hash === "#checkout" ? "checkout" : "cart";
+    render();
+  });
+
+  // ===== البدء =====
+  (async () => {
+    // الصفحة الرئيسية كانت تستخدم هذا المفتاح للرجوع هنا، ونحن الحين الصفحة اللي ترجع له
+    try { localStorage.removeItem("showbiz_next"); } catch (e) {}
+    if (location.hash === "#checkout") step = "checkout";
+    render();
+    me = await readUser();
+    if (me) await loadProfile();
+    // جاي من صفحة العناوين بعد الحفظ: نختار العنوان الجديد تلقائياً
+    try {
+      const pick = localStorage.getItem("showbiz_pick_addr");
+      if (pick) {
+        localStorage.removeItem("showbiz_pick_addr");
+        const pa = allAddresses().find(x => x.id === pick);
+        if (pa) { state.addrId = pa.id; state.country = pa.country; save(); }
+      }
+    } catch (e) {}
+    ready = true;
+    render();
+  })();
+</script>
+</body>
+</html>

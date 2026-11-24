@@ -729,7 +729,20 @@
       <div>${accountOrders === null ? t("loading") : ordersHTML()}</div>
       <p><button class="ghost" data-action="logout">${t("logout")}</button></p>`;
   }
+  // لقطة السلة لصفحة cart.html: تفاصيل المنتجات والأوزان والأسعار (تُكتب عند كل عرض)
+  function saveSnap() {
+    if (!products.length) return;
+    try {
+      localStorage.setItem("showbiz_cart_snap", JSON.stringify(cartLines().map(l => ({
+        vid: l.vid,
+        p: { pid: l.p.pid, nameEn: l.p.nameEn, image: l.p.image, weightG: l.p.weightG, dimsCm: l.p.dimsCm },
+        v: { vid: l.vid, key: l.v.key, sku: l.v.sku, price: l.v.price, image: l.v.image, weightG: l.v.weightG, dimsCm: l.v.dimsCm }
+      }))));
+    } catch (e) {}
+  }
+
   function render() {
+    saveSnap();
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
     document.getElementById("langBtn").textContent = state.lang === "ar" ? "English" : "العربية";
@@ -788,12 +801,12 @@
     }
     if (a === "applyCoupon") { applyCoupon(); return; }
     if (a === "removeCoupon") { state.coupon = null; save(); render(); return; }
-    if (a === "cart") { go("cart", ""); return; }
+    if (a === "cart") { location.href = "cart.html"; return; }
     if (a === "shop") { go("shop", ""); return; }
     if (a === "login") { goLogin(); return; }
     if (a === "checkout") {
       if (!cartCount()) return;
-      go("checkout", ""); return;
+      location.href = "cart.html#checkout"; return;
     }
     if (a === "addAddr") {
       // نرجع للطلب بعد ما يحفظ العنوان: index.html يقرا showbiz_next عند الفتح
@@ -872,7 +885,7 @@
     btn.addEventListener("click", () => { state.lang = btn.dataset.glang; save(); render(); });
   });
   document.getElementById("gGo").addEventListener("click", () => { state.seen = true; save(); render(); });
-  document.getElementById("cartBtn").addEventListener("click", () => go("cart", ""));
+  document.getElementById("cartBtn").addEventListener("click", () => { location.href = "cart.html"; });
   // زر "حسابي" يفتح قائمة منسدلة، وما يرجع لصفحة الدخول إلا إذا ما فيه جلسة
   const acctMenu = document.getElementById("acctMenu");
   document.getElementById("acctBtn").addEventListener("click", (e) => {
@@ -934,7 +947,10 @@
     // نرجع الزائر للصفحة اللي كان فيها قبل الدخول أو قبل إضافة العنوان (السلة أو إتمام الطلب)
     const next = localStorage.getItem("showbiz_next");
     localStorage.removeItem("showbiz_next");
-    if (me && (next === "checkout" || next === "cart") && cartCount()) view = next;
+    if (me && (next === "checkout" || next === "cart") && cartCount()) {
+      location.replace(next === "checkout" ? "cart.html#checkout" : "cart.html");
+      return;
+    }
     render();
   })();
   loadProducts();
