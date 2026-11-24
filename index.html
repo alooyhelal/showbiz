@@ -419,9 +419,9 @@
     const cands = [d?.products, d?.items, d?.list, d?.data?.content, d?.data?.list, d?.data?.products, d?.data];
     return cands.find(Array.isArray) || [];
   }
-  // ===== وضع تجريبي: ?demo=1 يعرض الكتالوج الوهمي (100 منتج) بدل القائمة الحقيقية =====
-  // الزوار العاديين ما يشوفون أي منتج وهمي.
-  const DEMO_ON = /[?&]demo=1(&|$)/.test(location.search);
+  // ===== كتالوج وهمي (100 منتج) يظهر فقط إذا القائمة الحقيقية فاضية =====
+  // أول ما تنرفع منتجات حقيقية، الوهمي يختفي تلقائياً.
+  let usingDemo = false;
   // حالة الأقسام والفلاتر
   let filt = { cat: null, q: "", sort: "default" };
   let openCats = new Set();
@@ -429,15 +429,6 @@
 
   async function loadProducts() {
     loadError = false; loadMsg = "";
-    if (DEMO_ON && window.SHOWBIZ_DEMO) {
-      products = window.SHOWBIZ_DEMO.products.map(normalizeProduct);
-      rawCount = products.length;
-      loadMsg = "وضع تجريبي (منتجات وهمية)";
-      buildCatRoot();
-      loaded = true;
-      render();
-      return;
-    }
     try {
       const res = await fetch(WORKER_URL + "?action=list", { cache: "no-store" });
       if (!res.ok) loadMsg = "HTTP " + res.status;
@@ -462,6 +453,13 @@
       loadError = true;
       loadMsg = String(e && e.message || e);
       products = [];
+    }
+    usingDemo = false;
+    if (!products.length && window.SHOWBIZ_DEMO) {
+      products = window.SHOWBIZ_DEMO.products.map(normalizeProduct);
+      usingDemo = true;
+      loadError = false;
+      loadMsg = "وضع تجريبي (منتجات وهمية)";
     }
     buildCatRoot();
     loaded = true;
@@ -718,7 +716,7 @@
   // يبني الشجرة: ترتيب الأقسام من شجرة الوهمي (إذا وضع ?demo=1)، وبعدين أي قسم ثاني من المنتجات
   function buildCatRoot() {
     catRoot = { kids: [], uncat: [] };
-    const schema = DEMO_ON && window.SHOWBIZ_DEMO ? window.SHOWBIZ_DEMO.tree : null;
+    const schema = usingDemo && window.SHOWBIZ_DEMO ? window.SHOWBIZ_DEMO.tree : null;
     (function addSchema(list, parent, arr) {
       (arr || []).forEach(s => { const n = ensureNode(list, parent, s.id); addSchema(n.kids, n, s.children); });
     })(catRoot.kids, null, schema);
