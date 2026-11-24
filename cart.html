@@ -128,6 +128,8 @@
   .addr .tag { white-space:nowrap; }
   .manage { text-align:center; margin: 12px 0 0; font-size:13px; }
   .manage a { color: var(--orange, #f59e4b); text-decoration:none; font-weight:700; }
+  .line .name { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+  .line .info, .line .name { min-width:0; }
   .verline { text-align:center; color: var(--muted, #9aa8bf); font:12px monospace; padding:18px 12px; direction:ltr; }
   .selall { display:flex; gap:8px; align-items:center; font-weight:700; margin-bottom:2px; }
   .selall input, .line > input[type="checkbox"] { accent-color: var(--orange, #f59e4b); margin: 0; }
@@ -150,12 +152,35 @@
 </head>
 <body>
 
-<div class="cwrap">
-  <div class="topbar">
-    <a class="back" href="index.html"><span class="ico">›</span><span id="backTxt"></span></a>
-    <span class="cartcount" id="cartCount"></span>
+<div class="announce" id="announce"></div>
+<header class="hd">
+  <div class="hd-row">
+    <a class="ghostbtn" href="index.html" style="padding:8px 12px;font-size:13px"><span id="backTxt"></span></a>
+    <a class="logo" href="index.html">Showbiz</a>
+    <div class="hd-acts">
+      <button class="pref-btn" id="prefBtn" type="button"></button>
+      <button class="ic-btn" id="favBtn" type="button" data-icon="heart" aria-label="wishlist"></button>
+      <button class="ic-btn" id="acctBtn" type="button" data-icon="user" aria-label="account"></button>
+      <button class="ic-btn cartbtn" id="cartBtn" type="button" data-icon="cart" aria-label="cart"><span class="cartn" id="cartN">0</span></button>
+    </div>
   </div>
+</header>
 
+<div class="overlay hidden" id="prefModal">
+  <div class="modal">
+    <button class="xbtn" id="prefX" type="button" aria-label="close">✕</button>
+    <h3 id="prefTitle"></h3>
+    <div class="pref-lbl" id="prefLangLbl"></div>
+    <div class="pref-langs">
+      <button class="ghost" data-glang="en" type="button">English</button>
+      <button class="ghost" data-glang="ar" type="button">العربية</button>
+    </div>
+    <div class="pref-lbl" id="prefCurLbl"></div>
+    <div id="prefCur" class="pref-list"></div>
+  </div>
+</div>
+
+<div class="cwrap">
   <div class="steps" id="steps"></div>
   <div id="view"></div>
   <div class="verline" id="verLine"></div>
@@ -171,12 +196,12 @@
     const RATE_BHD = 0.377;
   const COUPONS = { TEST10: 0.10 };
   const COUNTRIES = {
-    BH: { flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2 },
-    SA: { flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"SAR", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
-    AE: { flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"AED", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
-    KW: { flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3 },
-    QA: { flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3 },
-    OM: { flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
+    BH: { iso:"BHD", flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2 },
+    SA: { iso:"SAR", flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"SAR", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
+    AE: { iso:"AED", flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"AED", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
+    KW: { iso:"KWD", flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3 },
+    QA: { iso:"QAR", flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3 },
+    OM: { iso:"OMR", flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
   };
 
   const T = {
@@ -570,8 +595,10 @@
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
     document.getElementById("backTxt").textContent = t("back");
-    const n = state.cart.reduce((s, i) => s + i.qty, 0);
-    document.getElementById("cartCount").textContent = `${t("cart")} (${n})`;
+    document.getElementById("cartN").textContent = state.cart.reduce((s, i) => s + i.qty, 0);
+    document.getElementById("prefBtn").textContent = COUNTRIES[state.country].iso + " · " + (state.lang === "ar" ? "العربية" : "English");
+    document.getElementById("announce").textContent = ShowbizUI.announceText();
+    renderPrefs();
     const v = document.getElementById("view");
     if (step === "done") v.innerHTML = doneHTML();
     else if (step === "address") v.innerHTML = addressHTML();
@@ -628,6 +655,37 @@
       step = h; render();
     } else { step = "cart"; render(); }
   });
+
+  // ===== التفضيلات والهيدر =====
+  function openPref(on) { document.getElementById("prefModal").classList.toggle("hidden", !on); }
+  document.getElementById("prefBtn").addEventListener("click", () => openPref(true));
+  document.getElementById("prefX").addEventListener("click", () => openPref(false));
+  document.getElementById("prefModal").addEventListener("click", (e) => { if (e.target.id === "prefModal") openPref(false); });
+  document.getElementById("prefCur").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cur]");
+    if (!b) return;
+    state.country = b.dataset.cur; state.addrId = null; save(); openPref(false); render();
+  });
+  document.querySelectorAll("[data-glang]").forEach(b => b.addEventListener("click", () => { state.lang = b.dataset.glang; save(); render(); }));
+  document.getElementById("favBtn").addEventListener("click", () => ShowbizUI.open("wish"));
+  document.getElementById("cartBtn").addEventListener("click", () => ShowbizUI.open());
+  document.getElementById("acctBtn").addEventListener("click", () => {
+    if (me) location.href = "account.html"; else goLogin();
+  });
+  function renderPrefs() {
+    const L = state.lang === "en"
+      ? { title: "Preferences", lang: "Language", cur: "Currency" }
+      : { title: "التفضيلات", lang: "اللغة", cur: "العملة" };
+    document.getElementById("prefTitle").textContent = L.title;
+    document.getElementById("prefLangLbl").textContent = L.lang;
+    document.getElementById("prefCurLbl").textContent = L.cur;
+    document.getElementById("prefCur").innerHTML = Object.entries(COUNTRIES).map(([code, c]) => `
+      <button class="pref-item ${code === state.country ? "on" : ""}" data-cur="${code}" type="button">
+        <span>${c.flag} ${esc(c.name[state.lang])}</span>
+        <strong>${c.iso} · ${esc(c.sym[state.lang])}</strong>
+      </button>`).join("");
+    document.querySelectorAll("[data-glang]").forEach(b => b.classList.toggle("on", b.dataset.glang === state.lang));
+  }
 
   // ===== البدء =====
   (async () => {
