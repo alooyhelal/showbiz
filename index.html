@@ -109,18 +109,20 @@
 <body>
 
 <div class="announce" id="announce"></div>
-<header>
-  <div class="hrow">
-    <div style="display:flex;gap:8px;align-items:center">
-      <button class="menubtn" id="menuBtn" aria-label="menu">☰</button>
-      <strong id="siteName">Showbiz</strong>
+<header class="hd">
+  <div class="hd-row">
+    <button class="ic-btn menubtn" id="menuBtn" type="button" data-icon="menu" aria-label="menu"></button>
+    <a class="logo" href="index.html" id="siteName">Showbiz</a>
+    <div class="searchbox">
+      <span class="s-ico" data-icon="search"></span>
+      <input id="q" type="search" autocomplete="off">
+      <div class="sugg hidden" id="sugg"></div>
     </div>
-    <div class="hctl">
-      <select id="countrySel"></select>
-      <button class="ghost" id="langBtn"></button>
-      <button class="ghost" id="cartBtn"></button>
+    <div class="hd-acts">
+      <button class="pref-btn" id="prefBtn" type="button"></button>
+      <button class="ic-btn" id="favBtn" type="button" data-icon="heart" aria-label="wishlist"></button>
       <div class="acctwrap">
-        <button class="ghost" id="acctBtn"></button>
+        <button class="ic-btn" id="acctBtn" type="button" data-icon="user"></button>
         <div class="menu hidden" id="acctMenu">
           <div class="menu-who" id="menuWho"></div>
           <a href="account.html" id="menuInfo"></a>
@@ -130,19 +132,17 @@
           <button class="ghost menu-out" id="menuLogout"></button>
         </div>
       </div>
+      <button class="ic-btn cartbtn" id="cartBtn" type="button" data-icon="cart" aria-label="cart"><span class="cartn" id="cartN">0</span></button>
     </div>
   </div>
-  <div class="hrow2">
+  <div class="hd-row2">
     <div class="catdd" id="catDd">
-      <button class="ghost" id="catBtn"></button>
+      <button class="ghost" id="catBtn" type="button"></button>
       <div class="catpanel" id="catPanel"></div>
-    </div>
-    <div class="searchbox">
-      <input id="q" type="search" autocomplete="off">
-      <div class="sugg hidden" id="sugg"></div>
     </div>
     <select id="rangeSel"></select>
     <select id="sortSel"></select>
+    <select id="countrySel" class="hidden"></select>
   </div>
 </header>
 
@@ -169,6 +169,20 @@
   </div>
 </div>
 
+<div class="overlay hidden" id="prefModal">
+  <div class="modal">
+    <button class="xbtn" id="prefX" type="button" aria-label="close">✕</button>
+    <h3 id="prefTitle"></h3>
+    <div class="pref-lbl" id="prefLangLbl"></div>
+    <div class="pref-langs">
+      <button class="ghost" data-glang="en" type="button">English</button>
+      <button class="ghost" data-glang="ar" type="button">العربية</button>
+    </div>
+    <div class="pref-lbl" id="prefCurLbl"></div>
+    <div id="prefCur" class="pref-list"></div>
+  </div>
+</div>
+
 <script src="locations.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" onerror="document.write('<script src=\'https://unpkg.com/@supabase/supabase-js@2.50.0/dist/umd/supabase.js\'><\/script>')"></script>
 <script>
@@ -189,12 +203,12 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const COUNTRIES = {
-    BH: { flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2 },
-    SA: { flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"SAR", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
-    AE: { flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"AED", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
-    KW: { flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3 },
-    QA: { flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3 },
-    OM: { flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
+    BH: { iso:"BHD", flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2 },
+    SA: { iso:"SAR", flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"SAR", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
+    AE: { iso:"AED", flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"AED", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
+    KW: { iso:"KWD", flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3 },
+    QA: { iso:"QAR", flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3 },
+    OM: { iso:"OMR", flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
   };
 
   const T = {
@@ -706,7 +720,8 @@
       + (p.bestseller ? `<span class="badge alt">${t("isBest")}</span>` : "");
     return `
       <div class="card">
-        <div class="pimg">${img ? `<img id="c-${esc(p.pid)}" src="${esc(img)}" alt="">` : ""}${badges}
+        <div class="pimg">${img ? `<img id="c-${esc(p.pid)}" src="${esc(img)}" alt="" loading="lazy">` : ""}${badges}
+          <button class="heartbtn ${ShowbizUI.wishedPids().includes(String(p.pid)) ? "on" : ""}" data-action="wish" data-pid="${esc(p.pid)}" aria-label="wishlist">${ShowbizCore.icon("heart")}</button>
           <div class="hov">
             <button class="ghost" data-action="open" data-pid="${esc(p.pid)}">${t("details")}</button>
             <button data-action="quickAdd" data-pid="${esc(p.pid)}">${t("add")}</button>
@@ -936,9 +951,10 @@
     saveSnap();
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
-    document.getElementById("langBtn").textContent = state.lang === "ar" ? "English" : "العربية";
-    document.getElementById("cartBtn").textContent = `${t("cart")} (${cartCount()})`;
-    document.getElementById("acctBtn").textContent = isLoggedIn() ? t("account") : t("login");
+    document.getElementById("cartN").textContent = cartCount();
+    document.getElementById("acctBtn").setAttribute("aria-label", isLoggedIn() ? t("account") : t("login"));
+    document.getElementById("prefBtn").textContent = COUNTRIES[state.country].iso + " · " + (state.lang === "ar" ? "العربية" : "English");
+    renderPrefs();
     document.getElementById("menuWho").textContent = `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim() || me?.email || "";
     document.getElementById("menuInfo").textContent = t("menuInfo");
     document.getElementById("menuOrders").textContent = t("menuOrders");
@@ -982,6 +998,11 @@
       return;
     }
     if (a === "closeModal") { modal = null; renderModal(); return; }
+    if (a === "wish") {
+      const p = products.find(x => String(x.pid) === String(ds.pid));
+      if (p) ShowbizUI.toggleWish(p.pid, ShowbizUI.entryOf(p, p.variants[0]));
+      return;
+    }
     if (a === "mprev" || a === "mnext") {
       const c = curModal(); if (!c) return;
       const g = galleryFor(c.p, c.v);
@@ -1080,15 +1101,38 @@
   }
   document.getElementById("countrySel").addEventListener("change", (e) => changeCountry(e.target.value));
   document.getElementById("gCountry").addEventListener("change", (e) => changeCountry(e.target.value));
-  document.getElementById("langBtn").addEventListener("click", () => {
-    state.lang = state.lang === "ar" ? "en" : "ar"; save(); render();
-  });
   document.querySelectorAll("[data-glang]").forEach(btn => {
     btn.addEventListener("click", () => { state.lang = btn.dataset.glang; save(); render(); });
   });
   document.getElementById("gGo").addEventListener("click", () => { state.seen = true; save(); render(); });
   // زر السلة يفتح اللوحة الجانبية (بدون ما يغادر الصفحة)
   document.getElementById("cartBtn").addEventListener("click", () => { ShowbizUI.open(); });
+  document.getElementById("favBtn").addEventListener("click", () => { ShowbizUI.open("wish"); });
+  // نافذة التفضيلات: اللغة والعملة
+  function openPref(on) { document.getElementById("prefModal").classList.toggle("hidden", !on); }
+  document.getElementById("prefBtn").addEventListener("click", () => openPref(true));
+  document.getElementById("prefX").addEventListener("click", () => openPref(false));
+  document.getElementById("prefModal").addEventListener("click", (e) => { if (e.target.id === "prefModal") openPref(false); });
+  document.getElementById("prefCur").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cur]");
+    if (!b) return;
+    changeCountry(b.dataset.cur);
+    openPref(false);
+  });
+  function renderPrefs() {
+    const L = state.lang === "en"
+      ? { title: "Preferences", lang: "Language", cur: "Currency" }
+      : { title: "التفضيلات", lang: "اللغة", cur: "العملة" };
+    document.getElementById("prefTitle").textContent = L.title;
+    document.getElementById("prefLangLbl").textContent = L.lang;
+    document.getElementById("prefCurLbl").textContent = L.cur;
+    document.getElementById("prefCur").innerHTML = Object.entries(COUNTRIES).map(([code, c]) => `
+      <button class="pref-item ${code === state.country ? "on" : ""}" data-cur="${code}" type="button">
+        <span>${c.flag} ${esc(c.name[state.lang])}</span>
+        <strong>${c.iso} · ${esc(c.sym[state.lang])}</strong>
+      </button>`).join("");
+    document.querySelectorAll("[data-glang]").forEach(b => b.classList.toggle("on", b.dataset.glang === state.lang));
+  }
 
   // ===== المتجر: أقسام، بحث، فلاتر، قائمة الجوال =====
   document.addEventListener("click", (e) => {
