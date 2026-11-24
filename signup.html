@@ -62,10 +62,11 @@
   .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card); color:var(--ok); border:1px solid var(--okline); padding:16px 26px; border-radius:14px; font-size:17px; font-weight:700; box-shadow:0 12px 30px rgba(0,0,0,.4); z-index:50; max-width:90vw; text-align:center; }
   .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:18px; direction:ltr; }
 </style>
+<script src="version.js"></script>
 <script>
 /* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
 (function () {
-  var SITE_VERSION = "v32";
+  var SITE_VERSION = window.SHOWBIZ_BUILD.version;
   try {
     if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
       Object.keys(localStorage).forEach(function (k) {
@@ -491,6 +492,6 @@
 
   render();
 </script>
-<div id="verLine" style="text-align:center;font:12px monospace;color:#6b7a94;padding:10px 12px 18px;direction:ltr">v32 · 2026-11-24 01:50</div>
+<div id="verLine" style="text-align:center;font:12px monospace;color:#6b7a94;padding:10px 12px 18px;direction:ltr"></div>
 </body>
 </html>

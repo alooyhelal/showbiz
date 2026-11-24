@@ -67,10 +67,11 @@
   .notice { padding:10px 12px; border-radius:10px; font-size:14px; margin:8px 0; color:var(--err); background:#3b1620; border:1px solid #7a2b3b; }
   .build { position:fixed; bottom:0; left:0; right:0; background:#070d18; color:#6b7a94; font:12px monospace; text-align:center; padding:6px; direction:ltr; z-index:4; border-top:1px solid var(--line); }
 </style>
+<script src="version.js"></script>
 <script>
 /* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
 (function () {
-  var SITE_VERSION = "v32";
+  var SITE_VERSION = window.SHOWBIZ_BUILD.version;
   try {
     if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
       Object.keys(localStorage).forEach(function (k) {
@@ -124,7 +125,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" onerror="document.write('<script src=\'https://unpkg.com/@supabase/supabase-js@2.50.0/dist/umd/supabase.js\'><\/script>')"></script>
 <script>
   // رقم النسخة: يتشال من هنا بعد اعتماد الموقع
-  const BUILD = { version: "v32", updated: "2026-11-24 01:50" };
+  const BUILD = window.SHOWBIZ_BUILD;
 
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
