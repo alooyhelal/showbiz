@@ -122,6 +122,20 @@
   @keyframes cartbounce { 0% { transform:scale(1); } 40% { transform:scale(1.3); } 100% { transform:scale(1); } }
   .bounce { animation: cartbounce .4s ease; }
   @media (prefers-reduced-motion: reduce) { .jump, .bounce { animation: none; } }
+  /* ===== الأقسام: مربعات ثابتة، صف منتجات يتسحب، أيقونات بيضاء ===== */
+  .tiles { display:flex; gap:10px; overflow-x:auto; padding:4px 0 12px; scrollbar-width:none; }
+  .tiles::-webkit-scrollbar, .hs::-webkit-scrollbar { display:none; }
+  .tile { flex:0 0 92px; width:92px; height:84px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:6px; background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:14px; font-size:12px; font-weight:600; line-height:1.3; text-align:center; cursor:pointer; }
+  .tile.on { border-color:var(--orange); color:var(--orange); }
+  .tile span { overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .hs { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+  .hs > .card { flex:0 0 150px; }
+  .cico { width:24px; height:24px; fill:none; stroke:#fff; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+  .tile .cico { width:26px; height:26px; }
+  .ct-name { display:flex; align-items:center; gap:8px; }
+  .ct-name.sub { font-weight:400; font-size:13px; }
+  .ct-arrow { margin-inline-start:auto; color:var(--muted); }
+  #resetSite { width:100%; margin-top:14px; }
 </style>
 <script src="version.js"></script>
 <script src="shared.js"></script>
@@ -170,6 +184,7 @@
 <nav class="side hidden" id="side">
   <div class="side-head"><strong id="sideTitle"></strong><button class="ghost" id="sideX">✕</button></div>
   <div id="sideCats"></div>
+  <button class="ghost" id="resetSite" type="button"></button>
 </nav>
 
 <main><div id="view"></div></main>
@@ -225,11 +240,11 @@
 
   const COUNTRIES = {
     BH: { iso:"BHD", flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2 },
-    SA: { iso:"SAR", flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"SAR", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
-    AE: { iso:"AED", flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"AED", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
+    SA: { iso:"SAR", flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"ر.س", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
+    AE: { iso:"AED", flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"د.إ", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
     KW: { iso:"KWD", flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3 },
     QA: { iso:"QAR", flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3 },
-    OM: { iso:"OMR", flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
+    OM: { iso:"OMR", flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"ر.ع", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
   };
 
   const T = {
@@ -257,7 +272,7 @@
       cats:"الأقسام", allCats:"كل الأقسام", other:"منتجات أخرى", seeAll:"عرض الكل", clearFilter:"مسح الفلاتر",
       noResults:"ما لقينا نتائج", searchPh:"ابحث عن منتج", recentSearch:"آخر البحوث", 
       sortDef:"الترتيب الافتراضي", sortAsc:"السعر: من الأقل إلى الأعلى", sortDesc:"السعر: من الأعلى إلى الأقل", sortName:"الاسم: من A إلى Z", sortNameDesc:"الاسم: من Z إلى A",
-      isNew:"جديد", isBest:"الأكثر مبيعاً", menu:"القائمة"
+      isNew:"جديد", isBest:"الأكثر مبيعاً", menu:"القائمة", homeLbl:"الصفحة الرئيسية", allProducts:"كل المنتجات", resetSite:"تصفير الموقع"
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
@@ -283,7 +298,7 @@
       cats:"Categories", allCats:"All categories", other:"Other products", seeAll:"See all", clearFilter:"Clear filters",
       noResults:"No results", searchPh:"Search products", recentSearch:"Recent searches", 
       sortDef:"Default order", sortAsc:"Price: low to high", sortDesc:"Price: high to low", sortName:"Name: A to Z", sortNameDesc:"Name: Z to A",
-      isNew:"New", isBest:"Best seller", menu:"Menu"
+      isNew:"New", isBest:"Best seller", menu:"Menu", homeLbl:"Home", allProducts:"All products", resetSite:"Reset site"
     }
   };
 
@@ -760,7 +775,7 @@
   function filteredProducts() {
     const q = filt.q.trim().toLowerCase();
     let list = products.filter(p => {
-      if (filt.cat && !inCat(p, filt.cat)) return false;
+      if (filt.cat && filt.cat !== ALL && !inCat(p, filt.cat)) return false;
       if (q && !String(p.nameEn).toLowerCase().includes(q)) return false;
       return true;
     });
@@ -812,6 +827,32 @@
       ? `<button class="linkbtn" data-cat="${esc(cat)}">${t("seeAll")}</button>` : "";
     return `<div class="sec-h"><h3>${esc(title)}</h3>${more}</div><div class="grid">${list.map(cardHTML).join("")}</div>`;
   }
+  const ALL = "__all__";
+  const ICON_PATHS = {
+    cars: '<path d="M3 13l2-5a2 2 0 0 1 2-1h10a2 2 0 0 1 2 1l2 5v4h-2v-2H5v2H3z"/><circle cx="7.5" cy="15.5" r="1.5"/><circle cx="16.5" cy="15.5" r="1.5"/>',
+    electronics: '<rect x="5" y="3" width="14" height="10" rx="2"/><path d="M9 13v8M15 13v8M5 8h14"/>',
+    clothing: '<path d="M8 3l-5 3 2 4 2-1v12h10V9l2 1 2-4-5-3a4 4 0 0 1-8 0z"/>',
+    shoes: '<path d="M2 16h20v3H2zM2 16V11l5-1 3 3 4 1 8 2"/>',
+    watches: '<rect x="7" y="7" width="10" height="10" rx="2"/><path d="M9 7l1-4h4l1 4M9 17l1 4h4l1-4M12 10v2l1.5 1"/>',
+    bags: '<rect x="4" y="8" width="16" height="12" rx="2"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    perfumes: '<path d="M12 3l-4 6a5 5 0 1 0 8 0z"/>',
+    toys: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 12h16M12 4v16"/>',
+    home: '<path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z"/>',
+    sports: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    tag: '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>'
+  };
+  function catIcon(id) {
+    return `<svg class="cico" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[id] || ICON_PATHS.tag}</svg>`;
+  }
+  function tileHTML(key, id, label, active) {
+    return `<button class="tile ${active ? "on" : ""}" data-cat="${esc(key)}">${catIcon(id)}<span>${esc(label)}</span></button>`;
+  }
+  // شريط الفرعيات: يظهر فقط في صفحة "كل المنتجات" للقسم الرئيسي
+  function subStripHTML(node) {
+    return `<div class="tiles">${tileHTML(node.key, node.id, t("allProducts"), filt.cat === node.key)}` +
+      node.kids.map(k => tileHTML(k.key, "tag", catLabel(k.id), false)).join("") + `</div>`;
+  }
+
   function shopBodyHTML() {
     if (!loaded) return `<p>${t("loading")}</p>`;
     if (loadError) return `<p>${t("loadErr")}</p>`;
@@ -819,21 +860,21 @@
     const filtered = filt.cat || filt.q.trim() || filt.sort !== "default";
     if (filtered) {
       const list = filteredProducts();
-      const head = `<div class="sec-h"><h3>${esc(filt.cat ? crumbs(filt.cat) : t("allCats"))}</h3><button class="linkbtn" data-clear="1">${t("clearFilter")}</button></div>`;
-      return head + (list.length ? `<div class="grid">${list.map(cardHTML).join("")}</div>` : `<p class="muted">${t("noResults")}</p>`);
+      const node = filt.cat && filt.cat !== ALL ? nodeByKey(filt.cat) : null;
+      const topWithKids = !!(node && !String(node.key).includes("/") && node.kids.length);
+      const title = topWithKids ? catLabel(node.id) : (filt.cat && filt.cat !== ALL ? crumbs(filt.cat) : t("allCats"));
+      const head = `<div class="sec-h"><h3>${esc(title)}</h3><button class="linkbtn" data-clear="1">${t("clearFilter")}</button></div>`;
+      return (topWithKids ? subStripHTML(node) : "") + head + (list.length ? `<div class="grid">${list.map(cardHTML).join("")}</div>` : `<p class="muted">${t("noResults")}</p>`);
     }
     const tops = catRoot.kids;
     if (!tops.length) return ShowbizUI.trustHTML() + `<div class="grid">${products.map(cardHTML).join("")}</div>`;
-    let html = `<div class="cat-grid">${tops.map(n => `<button class="cat-tile" data-cat="${esc(n.key)}">${esc(catLabel(n.id))}<small>${allItems(n).length}</small></button>`).join("")}</div>`;
+    // شريط التصنيفات الرئيسية (يتسحب)، وتحت كل قسم صف منتجات يتسحب يمين ويسار
+    let html = `<div class="tiles">${tops.map(n => tileHTML(n.key, n.id, catLabel(n.id), false)).join("")}</div>`;
     html += ShowbizUI.trustHTML();
-    // كل قسم رئيسي بترتيبه، وتحته أقسامه الفرعية كأزرار، ثم أول 4 منتجات
     tops.forEach(n => {
-      const chips = n.kids.length
-        ? `<div class="chips">${n.kids.map(k => `<button class="chip" data-cat="${esc(k.key)}">${esc(catLabel(k.id))}</button>`).join("")}</div>`
-        : "";
-      html += `<div class="sec-h"><h3>${esc(catLabel(n.id))}</h3><button class="linkbtn" data-cat="${esc(n.key)}">${t("seeAll")}</button></div>${chips}<div class="grid">${allItems(n).slice(0, 4).map(cardHTML).join("")}</div>`;
+      html += `<div class="sec-h"><h3>${esc(catLabel(n.id))}</h3><button class="linkbtn" data-cat="${esc(n.key)}">${t("seeAll")}</button></div><div class="hs">${allItems(n).map(cardHTML).join("")}</div>`;
     });
-    if (catRoot.uncat.length) html += sectionHTML(t("other"), catRoot.uncat.slice(0, 4), catRoot.uncat.length, null);
+    if (catRoot.uncat.length) html += `<div class="sec-h"><h3>${esc(t("other"))}</h3></div><div class="hs">${catRoot.uncat.map(cardHTML).join("")}</div>`;
     return html;
   }
   function viewShop() {
@@ -879,18 +920,24 @@
       : `<div class="sugg-h">${t("noResults")}</div>`;
     box.classList.remove("hidden");
   }
+  // القائمة: الصفحة الرئيسية، كل الأقسام، ثم الأقسام. القسم اللي عنده فرعيات يفتح قائمته فقط، وأول خيار فيها كل المنتجات
   function catTreeHTML(list, depth) {
     return list.map(n => {
       const has = n.kids.length > 0;
       const open = openCats.has(n.key);
-      return `<div class="ct-row" style="padding-inline-start:${depth * 14}px">` +
-        `<button class="ct-tog" data-tog="${esc(n.key)}" aria-expanded="${open}" ${has ? "" : "disabled"}>${has ? (open ? "▾" : "▸") : ""}</button>` +
-        `<button class="ct-name ${filt.cat === n.key ? "on" : ""}" data-cat="${esc(n.key)}">${esc(catLabel(n.id))} <small>${allItems(n).length}</small></button></div>` +
-        (has && open ? catTreeHTML(n.kids, depth + 1) : "");
+      const pad = `padding-inline-start:${depth * 14}px`;
+      const ico = catIcon(depth === 0 ? n.id : "tag");
+      if (!has) {
+        return `<div class="ct-row" style="${pad}"><button class="ct-name ${filt.cat === n.key ? "on" : ""}" data-cat="${esc(n.key)}">${ico}<span>${esc(catLabel(n.id))}</span></button></div>`;
+      }
+      return `<div class="ct-row" style="${pad}"><button class="ct-name ${open ? "on" : ""}" data-tog="${esc(n.key)}">${ico}<span>${esc(catLabel(n.id))}</span><span class="ct-arrow">${open ? "▾" : "▸"}</span></button></div>` +
+        (open ? `<div class="ct-row" style="padding-inline-start:${(depth + 1) * 14}px"><button class="ct-name sub ${filt.cat === n.key ? "on" : ""}" data-cat="${esc(n.key)}">${t("allProducts")}</button></div>` + catTreeHTML(n.kids, depth + 1) : "");
     }).join("");
   }
   function catLinksHTML() {
-    return `<button class="ct-name ${!filt.cat ? "on" : ""}" data-cat="">${t("allCats")}</button>` + catTreeHTML(catRoot.kids, 0);
+    return `<button class="ct-name ${!filt.cat ? "on" : ""}" data-cat="">${catIcon("home")}<span>${t("homeLbl")}</span></button>` +
+      `<button class="ct-name ${filt.cat === ALL ? "on" : ""}" data-cat="${ALL}">${catIcon("tag")}<span>${t("allCats")}</span></button>` +
+      catTreeHTML(catRoot.kids, 0);
   }
   function fillFilters() {
     const s = document.getElementById("sortSel");
@@ -1039,6 +1086,7 @@
     document.getElementById("sideCats").innerHTML = catLinksHTML();
     document.getElementById("sideTitle").textContent = t("cats");
     document.getElementById("sideX").textContent = "✕";
+    document.getElementById("resetSite").textContent = t("resetSite");
     document.getElementById("menuBtn").setAttribute("aria-label", t("menu"));
     document.getElementById("q").placeholder = t("searchPh");
     fillFilters();
@@ -1272,7 +1320,7 @@
     document.getElementById("prefCur").innerHTML = Object.entries(COUNTRIES).map(([code, c]) => `
       <button class="pref-item ${code === state.country ? "on" : ""}" data-cur="${code}" type="button">
         <span>${c.flag} ${esc(c.name[state.lang])}</span>
-        <strong>${c.iso} · ${esc(c.sym[state.lang])}</strong>
+        <strong>${esc(c.sym.ar)} · ${c.iso}</strong>
       </button>`).join("");
     document.querySelectorAll("[data-glang]").forEach(b => b.classList.toggle("on", b.dataset.glang === state.lang));
   }
@@ -1316,6 +1364,12 @@
     document.getElementById("sideOv").classList.remove("hidden");
   });
   document.getElementById("sideX").addEventListener("click", closeMenus);
+  // تصفير الموقع: يرجع يطلب اللغة والدولة والعملة من جديد. السلة ما تنمسح.
+  document.getElementById("resetSite").addEventListener("click", () => {
+    state.seen = false; save();
+    try { sessionStorage.removeItem("showbiz_gate_ok"); } catch (e) {}
+    closeMenus(); render();
+  });
   document.getElementById("sideOv").addEventListener("click", closeMenus);
   const qEl = document.getElementById("q");
   qEl.addEventListener("input", () => { filt.q = qEl.value; refreshShop(); renderSugg(); });

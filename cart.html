@@ -197,11 +197,11 @@
   const COUPONS = { TEST10: 0.10 };
   const COUNTRIES = {
     BH: { iso:"BHD", flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2 },
-    SA: { iso:"SAR", flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"SAR", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
-    AE: { iso:"AED", flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"AED", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
+    SA: { iso:"SAR", flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"ر.س", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
+    AE: { iso:"AED", flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"د.إ", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
     KW: { iso:"KWD", flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3 },
     QA: { iso:"QAR", flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3 },
-    OM: { iso:"OMR", flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"OMR", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
+    OM: { iso:"OMR", flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"ر.ع", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
   };
 
   const T = {
@@ -684,7 +684,7 @@
     document.getElementById("prefCur").innerHTML = Object.entries(COUNTRIES).map(([code, c]) => `
       <button class="pref-item ${code === state.country ? "on" : ""}" data-cur="${code}" type="button">
         <span>${c.flag} ${esc(c.name[state.lang])}</span>
-        <strong>${c.iso} · ${esc(c.sym[state.lang])}</strong>
+        <strong>${esc(c.sym.ar)} · ${c.iso}</strong>
       </button>`).join("");
     document.querySelectorAll("[data-glang]").forEach(b => b.classList.toggle("on", b.dataset.glang === state.lang));
   }
