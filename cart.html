@@ -6,6 +6,7 @@
 <title>Showbiz — السلة والدفع</title>
 <script src="version.js"></script>
 <script src="shared.js"></script>
+<script src="ui.js"></script>
 <style>
   :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; color-scheme:dark; }
   body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; }
@@ -128,6 +129,23 @@
   .manage { text-align:center; margin: 12px 0 0; font-size:13px; }
   .manage a { color: var(--orange, #f59e4b); text-decoration:none; font-weight:700; }
   .verline { text-align:center; color: var(--muted, #9aa8bf); font:12px monospace; padding:18px 12px; direction:ltr; }
+  .selall { display:flex; gap:8px; align-items:center; font-weight:700; margin-bottom:2px; }
+  .selall input, .line > input[type="checkbox"] { accent-color: var(--orange, #f59e4b); margin: 0; }
+  .selhint { color: var(--muted, #9aa8bf); font-size:12px; margin: 2px 0 6px; }
+  .line.off { opacity:.55; }
+  .line .days { color: var(--muted, #9aa8bf); font-size:12px; margin-top:2px; }
+  .line .acts { display:flex; flex-direction:column; gap:6px; align-items:center; }
+  .line .acts button { background:none; border:1px solid var(--line, #2c4168); color: var(--fg, #f2f5fa); border-radius:10px; padding:4px 8px; cursor:pointer; font-size:12px; font-family:inherit; }
+  .line .acts .heart { font-size:16px; line-height:1; color: var(--orange, #f59e4b); }
+  .foldbtn { display:block; width:100%; text-align:start; background:none; border:1px solid var(--line, #2c4168); color: var(--fg, #f2f5fa); border-radius:12px; padding:11px 12px; font-family:inherit; font-size:14px; cursor:pointer; margin-bottom:8px; }
+  .notebox textarea { width:100%; box-sizing:border-box; min-height:70px; background: var(--card2, #1a2b4a); color: var(--fg, #f2f5fa); border:1px solid var(--line, #2c4168); border-radius:12px; padding:10px; font-family:inherit; font-size:14px; }
+  .shipnote { color: var(--muted, #9aa8bf); font-size:12px; line-height:1.7; margin-top:8px; }
+  .stickyfoot { position:sticky; bottom:0; background: var(--bg, #0b1220); border-top:1px solid var(--line, #2c4168); margin-top:14px; padding:12px 0 calc(12px + env(safe-area-inset-bottom, 0px)); display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:3; }
+  .stickyfoot .tot { display:flex; flex-direction:column; }
+  .stickyfoot .primary { width:auto; padding:13px 22px; }
+  .look { margin: 14px 0; }
+  .look .primary-s { white-space:nowrap; }
+  .dim { color: var(--muted, #9aa8bf); font-size:13px; }
 </style>
 </head>
 <body>
@@ -149,6 +167,7 @@
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
     const RATE_BHD = 0.377;
   const COUPONS = { TEST10: 0.10 };
   const COUNTRIES = {
@@ -179,7 +198,9 @@
       snapMissing:"افتح الصفحة الرئيسية مرة وحدة عشان تتحدث السلة", pickAddrErr:"اختر عنوان أولاً",
       loading:"جاري التحميل...", needLogin:"سجّل دخولك عشان تكمل الطلب",
       defaultVariant:"افتراضي", buildLabel:"النسخة", updatedLabel:"آخر تحديث", qty:"الكمية",
-      saveErr:"تعذر إرسال الطلب، حاول مرة ثانية"
+      saveErr:"تعذر إرسال الطلب، حاول مرة ثانية",
+      selAll:"تحديد الكل", selHint:"المنتجات غير المحددة تبقى في السلة ولا تنحذف", note:"أضف ملاحظة",
+      notePh:"مثال: اتصل قبل التوصيل", shipInfo:"رسوم التوصيل تُحسب حسب الوزن والدولة"
     },
     en: {
       goLogin:"Sign in", back:"Store", cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty",
@@ -199,14 +220,18 @@
       snapMissing:"Open the home page once so the cart can refresh", pickAddrErr:"Choose an address first",
       loading:"Loading...", needLogin:"Sign in to complete your order",
       defaultVariant:"Default", buildLabel:"Version", updatedLabel:"Last update", qty:"Quantity",
-      saveErr:"Could not send the order, please try again"
+      saveErr:"Could not send the order, please try again",
+      selAll:"Select all", selHint:"Unselected items stay in your cart", note:"Add a note",
+      notePh:"e.g. call before delivery", shipInfo:"Delivery fee depends on weight and country"
     }
   };
 
   // ===== الحالة (نفس المفاتيح اللي تستخدمها الصفحة الرئيسية) =====
-  let state = { country:"BH", lang:"ar", cart:[], addrId:null, coupon:null };
+  let state = { country:"BH", lang:"ar", cart:[], addrId:null, coupon:null, unsel:[], note:"" };
   try { Object.assign(state, JSON.parse(localStorage.getItem("showbiz_state") || "{}")); } catch (e) {}
   if (!Array.isArray(state.cart)) state.cart = [];
+  if (!Array.isArray(state.unsel)) state.unsel = [];
+  if (typeof state.note !== "string") state.note = "";
   if (!COUNTRIES[state.country]) state.country = "BH";
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
 
@@ -234,20 +259,25 @@
       .map(i => { const s = snap.find(x => x.vid === i.vid); return s ? { vid: i.vid, qty: i.qty, p: s.p, v: s.v } : null; })
       .filter(Boolean);
   }
-  const subtotalUSD = () => cartLines().reduce((s, l) => s + l.v.price * l.qty, 0);
+  // المنتجات غير المحددة تبقى في السلة لكن ما تدخل في الحساب والطلب
+  const isSelected = (l) => !(state.unsel || []).includes(l.vid);
+  const selLines = () => cartLines().filter(isSelected);
+  const subtotalUSD = () => selLines().reduce((s, l) => s + l.v.price * l.qty, 0);
   const discountUSD = () => subtotalUSD() * (COUPONS[state.coupon] || 0);
 
   function shippingCalc() {
     let actualKg = 0, volKg = 0;
-    cartLines().forEach(l => {
+    selLines().forEach(l => {
       const w = (l.v.weightG || l.p.weightG || 500) / 1000;
       const d = l.v.dimsCm || l.p.dimsCm || [10, 10, 10];
       actualKg += w * l.qty;
       volKg += (d[0] * d[1] * d[2] / 5000) * l.qty;
     });
     const chargeable = Math.max(actualKg, volKg);
-    const shipBHD = COUNTRIES[state.country].base + Math.max(0, chargeable - 1) * 0.5;
     const orderBHD = (subtotalUSD() - discountUSD()) * RATE_BHD;
+    // التوصيل مجاني فوق الحد المحدد في ui.js
+    const shipBHD = orderBHD >= ShowbizUI.freeShipBHD() ? 0
+      : COUNTRIES[state.country].base + Math.max(0, chargeable - 1) * 0.5;
     const riskBHD = Math.max(orderBHD * 0.15, 0.3);
     return { shipBHD, riskBHD };
   }
@@ -308,7 +338,8 @@
     busy = true;
     const btn = document.getElementById("sendBtn");
     if (btn) { btn.disabled = true; btn.textContent = t("sending"); }
-    const lines = cartLines();
+    const lines = selLines();
+    if (!lines.length) { busy = false; setStep("cart"); return; }
     const s = shippingCalc();
     const subtotal = localPrice(subtotalUSD());
     const discount = localPrice(discountUSD());
@@ -323,7 +354,8 @@
       contact: {
         name: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim(),
         phone: profile?.phone || null,
-        payment: { method: payMethod }
+        payment: { method: payMethod },
+        note: state.note || ""
       },
       coupon: state.coupon, subtotal, discount, shipping: ship,
       total: subtotal - discount + ship, internal_risk_bhd: s.riskBHD
@@ -341,7 +373,10 @@
       } catch (e) {}
     }
     doneLocal = !saved;
-    state.cart = []; state.addrId = null; state.coupon = null; save();
+    // نحذف المنتجات اللي انطلبت بس، وغير المحددة تبقى في السلة
+    const doneVids = lines.map(l => l.vid);
+    state.cart = state.cart.filter(i => !doneVids.includes(i.vid));
+    state.addrId = null; state.coupon = null; state.note = ""; save();
     busy = false; payMethod = null; termsOk = false;
     setStep("done");
   }
@@ -385,42 +420,78 @@
     return `<div class="totals">${rows}</div>`;
   }
 
-  function cartHTML() {
-    const lines = cartLines();
-    if (!lines.length) {
-      if (state.cart.length) return stepsHTML() + emptyHTML(t("snapMissing"));
-      return stepsHTML() + emptyHTML(`${t("empty")}<br><span style="font-size:13px">${t("emptyHint")}</span>`);
-    }
-    const rows = lines.map(l => `
-      <div class="line">
+  // حالة الطيّ للكوبون والملاحظة (تبقى بين التحديثات)
+  let folds = { cpn: false, note: false };
+  let catalogList = [];
+  const pool = () => catalogList.filter(e => !state.cart.some(i => i.vid === e.vid));
+
+  function lineHTML(l) {
+    const on = isSelected(l);
+    const wished = ShowbizUI.wishList().includes(String(l.p.pid));
+    return `
+      <div class="line ${on ? "" : "off"}">
+        <input type="checkbox" data-ui="sel" data-vid="${esc(l.vid)}" ${on ? "checked" : ""} aria-label="${esc(l.p.nameEn)}">
         <img src="${esc(l.v.image || l.p.image)}" alt="">
         <div class="info">
           <div class="name">${esc(l.p.nameEn)}</div>
           ${l.v.key ? `<div class="var">${esc(variantLabel(l.v))}</div>` : ""}
           <div class="unit">${fmt(localPrice(l.v.price))}</div>
+          <div class="days">${ShowbizUI.cfg.days[state.lang] || ""}</div>
           <div class="qty">
             <button data-a="dec" data-vid="${esc(l.vid)}" aria-label="−">−</button>
             <span>${l.qty}</span>
             <button data-a="inc" data-vid="${esc(l.vid)}" aria-label="+">+</button>
           </div>
         </div>
-        <button class="rm" data-a="rm" data-vid="${esc(l.vid)}" aria-label="remove">✕</button>
-      </div>`).join("");
-    const couponLine = state.coupon
-      ? `<div class="row" style="display:flex;justify-content:space-between;align-items:center;font-size:14px"><span class="muted">${esc(state.coupon)}</span><button class="rm" style="font-size:13px" data-a="removeCoupon">${t("removeCoupon")}</button></div>`
-      : `<div class="couponrow"><input id="cpn" placeholder="${t("coupon")}"><button class="ghostbtn" data-a="applyCoupon">${t("apply")}</button></div><p id="cpnMsg" class="errmsg"></p>`;
-    return stepsHTML() + `
-      <div class="panel">${rows}</div>
-      <div class="panel">${couponLine}${summaryRows(false)}</div>
-      <div class="btnrow">
-        <a class="ghostbtn" href="index.html">${t("keep")}</a>
-        <button class="primary" data-a="toAddr">${t("toAddr")}</button>
+        <div class="acts">
+          <button class="heart" data-ui="wish" data-pid="${esc(l.p.pid)}" aria-label="wish">${wished ? "♥" : "♡"}</button>
+          <button data-a="rm" data-vid="${esc(l.vid)}" aria-label="remove">✕</button>
+        </div>
       </div>`;
+  }
+
+  function cartHTML() {
+    const lines = cartLines();
+    if (!lines.length) {
+      if (state.cart.length) return stepsHTML() + emptyHTML(t("snapMissing"));
+      return stepsHTML() + emptyHTML(`${t("empty")}<br><span style="font-size:13px">${t("emptyHint")}</span>`)
+        + ShowbizUI.recentBlock() + ShowbizUI.suggestBlock(catalogList);
+    }
+    const selCount = lines.filter(isSelected).length;
+    const allOn = selCount === lines.length;
+    const cpnBox = state.coupon
+      ? `<div class="row" style="display:flex;justify-content:space-between;align-items:center;font-size:14px"><span class="muted">${esc(state.coupon)}</span><button class="rm" style="font-size:13px" data-a="removeCoupon">${t("removeCoupon")}</button></div>`
+      : `<button class="foldbtn" data-a="foldCpn">${t("coupon")} ${folds.cpn ? "▴" : "▾"}</button>` +
+        (folds.cpn ? `<div class="couponrow"><input id="cpn" placeholder="${t("coupon")}"><button class="ghostbtn" data-a="applyCoupon">${t("apply")}</button></div><p id="cpnMsg" class="errmsg"></p>` : "");
+    const noteBox = `<button class="foldbtn" data-a="foldNote">${t("note")} ${folds.note ? "▴" : "▾"}</button>` +
+      (folds.note ? `<div class="notebox"><textarea id="noteTa" placeholder="${t("notePh")}">${esc(state.note || "")}</textarea></div>` : "");
+    const grandNow = localPrice(subtotalUSD() - discountUSD());
+    return stepsHTML() + `
+      ${ShowbizUI.progressHTML()}
+      <div class="panel">
+        <label class="selall"><input type="checkbox" data-ui="selAll" ${allOn ? "checked" : ""}> ${t("selAll")} (${lines.length})</label>
+        <p class="selhint">${t("selHint")}</p>
+        ${lines.map(lineHTML).join("")}
+      </div>
+      ${ShowbizUI.lookHTML(catalogList)}
+      ${ShowbizUI.trustHTML()}
+      <div class="panel">
+        ${cpnBox}
+        ${noteBox}
+        ${summaryRows(false)}
+        <p class="shipnote">${t("shipInfo")}</p>
+      </div>
+      ${ShowbizUI.suggestBlock(pool().slice(1))}
+      <div class="stickyfoot">
+        <div class="tot"><span class="dim">${t("grand")}</span><strong>${fmt(grandNow)}</strong></div>
+        <button class="primary" data-a="toAddr" ${selCount ? "" : "disabled"}>${t("toAddr")}</button>
+      </div>
+      <p class="manage"><a href="index.html">${t("keep")}</a></p>`;
   }
 
   function addressHTML() {
     if (!ready) return stepsHTML() + `<p class="muted">${t("loading")}</p>`;
-    if (!cartLines().length) return cartHTML();
+    if (!selLines().length) return cartHTML();
     if (!me) return stepsHTML() + `<div class="panel empty"><p>${t("needLogin")}</p>
       <button class="primary" data-a="login">${t("goLogin")}</button></div>`;
 
@@ -526,7 +597,16 @@
     if (a === "toPay") { if (selectedAddr()) setStep("payment"); return; }
     if (a === "backAddr") { setStep("address"); return; }
     if (a === "send") { sendOrder(); return; }
+    if (a === "foldCpn") { folds.cpn = !folds.cpn; render(); return; }
+    if (a === "foldNote") { folds.note = !folds.note; render(); return; }
   });
+
+  // الملاحظة تُحفظ أثناء الكتابة بدون إعادة رسم (عشان ما يطيح التركيز)
+  document.addEventListener("input", (e) => {
+    if (e.target.id === "noteTa") { state.note = e.target.value; save(); }
+  });
+  // أي تغيير من اللوحة الجانبية أو من الصفحة يعيد رسم السلة
+  document.addEventListener("cartchange", () => { if (step === "cart") render(); });
 
   document.addEventListener("change", (e) => {
     const tgt = e.target;
@@ -576,6 +656,8 @@
     if (!me && step === "address") { goLogin(); return; }
     ready = true;
     render();
+    // قائمة المنتجات المقترحة (تظهر في إكمال الطلب والسلة الفارغة)
+    ShowbizUI.catalog(WORKER_URL).then(list => { catalogList = list; render(); });
   })();
 
   function userFromStoredToken() {
