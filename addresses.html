@@ -55,20 +55,7 @@
   .hidden { display:none !important; }
 </style>
 <script src="version.js"></script>
-<script>
-/* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
-(function () {
-  var SITE_VERSION = window.SHOWBIZ_BUILD.version;
-  try {
-    if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
-      Object.keys(localStorage).forEach(function (k) {
-        if (k.indexOf("showbiz") === 0 || (k.indexOf("sb-") === 0 && k.slice(-11) === "-auth-token")) localStorage.removeItem(k);
-      });
-      localStorage.setItem("showbiz_ver", SITE_VERSION);
-    }
-  } catch (e) {}
-})();
-</script>
+<script src="shared.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -245,8 +232,7 @@
 
   // ===== التخزين (لكل مستخدم، في هذا المتصفح) =====
   function storeKey() { return "showbiz_addr2_" + user.id; }
-  function loadList() { try { return JSON.parse(localStorage.getItem(storeKey()) || "[]"); } catch (e) { return []; } }
-  function saveList(arr) { try { localStorage.setItem(storeKey(), JSON.stringify(arr)); return true; } catch (e) { return false; } }
+  function loadList() { return list || []; }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
   // ===== أسماء =====
@@ -390,7 +376,7 @@
   }
 
   // ===== الحفظ =====
-  function save() {
+  async function save() {
     hideMsg();
     const wasEdit = editId;
     const label = $("aLabel").value.trim();
@@ -421,18 +407,17 @@
       recipient: $("aRecip").value.trim()
     };
 
-    const arr = loadList();
-    const i = arr.findIndex(x => x.id === entry.id);
-    if (i >= 0) arr[i] = entry; else arr.push(entry);
+    // نحفظ في Supabase، وإذا فشل ما نعرض أنه انحفظ
+    try { await ShowbizCore.upsertAddress(sb, user.id, entry); }
+    catch (e) { return showMsg("err", L().storeErr); }
+    list = await ShowbizCore.fetchAddresses(sb, user.id);
 
-    if (!saveList(arr)) return showMsg("err", L().storeErr);
-
-    list = arr;
-    // جاي من الإتمام أو السلة: نرجع له ومعه العنوان الجديد مختار
+    // جاي من السلة: نرجع لها ومعها العنوان الجديد مختار
     const back = localStorage.getItem("showbiz_next");
     if (back === "checkout" || back === "cart") {
+      localStorage.removeItem("showbiz_next");
       localStorage.setItem("showbiz_pick_addr", entry.id);
-      location.href = back === "checkout" ? "cart.html#checkout" : "cart.html";
+      location.href = "cart.html#address";
       return;
     }
     resetForm();
@@ -514,10 +499,12 @@
           del.textContent = L().confirmDel;
           return;
         }
-        saveList(loadList().filter(x => x.id !== a.id));
-        if (editId === a.id) resetForm();
-        showMsg("ok", L().deleted);
-        renderList();
+        ShowbizCore.deleteAddress(sb, user.id, a.id).then(async () => {
+          list = await ShowbizCore.fetchAddresses(sb, user.id);
+          if (editId === a.id) resetForm();
+          showMsg("ok", L().deleted);
+          renderList();
+        }).catch(() => showMsg("err", L().storeErr));
       });
 
       acts.append(edit, del);
@@ -542,15 +529,18 @@
   }
 
   async function logout() {
+    ShowbizCore.clearLogin();
     try { await sb.auth.signOut(); } catch (e) {}
     location.replace("index.html");
   }
 
   async function init() {
+    const ok = await ShowbizCore.enforceLogin(sb);
     let session = null;
     try { const { data } = await sb.auth.getSession(); session = data && data.session; } catch (e) {}
-    if (!session) { location.replace("login.html"); return; }
+    if (!ok || !session) { location.replace("login.html"); return; }
     user = session.user;
+    list = await ShowbizCore.fetchAddresses(sb, user.id);
 
     fillPhoneCodes("+973");
     resetForm();

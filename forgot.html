@@ -40,20 +40,7 @@
   .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:18px; direction:ltr; }
 </style>
 <script src="version.js"></script>
-<script>
-/* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
-(function () {
-  var SITE_VERSION = window.SHOWBIZ_BUILD.version;
-  try {
-    if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
-      Object.keys(localStorage).forEach(function (k) {
-        if (k.indexOf("showbiz") === 0 || (k.indexOf("sb-") === 0 && k.slice(-11) === "-auth-token")) localStorage.removeItem(k);
-      });
-      localStorage.setItem("showbiz_ver", SITE_VERSION);
-    }
-  } catch (e) {}
-})();
-</script>
+<script src="shared.js"></script>
 </head>
 <body>
 <div class="wrap">

@@ -49,20 +49,7 @@
   .hidden { display:none !important; }
 </style>
 <script src="version.js"></script>
-<script>
-/* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
-(function () {
-  var SITE_VERSION = window.SHOWBIZ_BUILD.version;
-  try {
-    if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
-      Object.keys(localStorage).forEach(function (k) {
-        if (k.indexOf("showbiz") === 0 || (k.indexOf("sb-") === 0 && k.slice(-11) === "-auth-token")) localStorage.removeItem(k);
-      });
-      localStorage.setItem("showbiz_ver", SITE_VERSION);
-    }
-  } catch (e) {}
-})();
-</script>
+<script src="shared.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -75,6 +62,7 @@
         <div class="menu hidden" id="navMenu">
           <a href="index.html" data-k="navStore"></a>
           <a href="account.html" class="cur" data-k="navAccount"></a>
+          <a href="orders.html" data-k="navOrders"></a>
           <a href="addresses.html" data-k="navAddr"></a>
           <a href="delete-account.html" data-k="navDel"></a>
           <button class="btn btn-line btn-sm" id="navLogout" type="button" data-k="logout"></button>
@@ -156,7 +144,7 @@
       samePhone: "هذا نفس رقمك الحالي، ما يحتاج تغيير", phLen: "رقم الجوال لازم يكون {n} أرقام",
       codeSent: "أرسلنا رمز التحقق إلى الرقم الجديد", codeBad: "اكتب الرمز المكوّن من 6 أرقام",
       phVerified: "تم التحقق من الرقم. اضغط حفظ التعديلات لتثبيته", saved: "تم حفظ معلوماتك", err: "حدث خطأ",
-      navStore: "المتجر", navAccount: "معلومات الحساب", navAddr: "عناويني", navDel: "حذف الحساب", logout: "تسجيل الخروج", switchLabel: "English"
+      navStore: "المتجر", navAccount: "معلومات الحساب", navOrders: "طلباتي", navAddr: "عناويني", navDel: "حذف الحساب", logout: "تسجيل الخروج", switchLabel: "English"
     },
     en: {
       title: "Account details", intro: "Edit your details here. Changes are saved only when something actually changed.", loading: "Loading your account...",
@@ -167,7 +155,7 @@
       samePhone: "This is already your current number", phLen: "Phone number must be {n} digits",
       codeSent: "We sent a verification code to the new number", codeBad: "Enter the 6-digit code",
       phVerified: "Number verified. Press Save changes to apply it", saved: "Your details were saved", err: "Something went wrong",
-      navStore: "Store", navAccount: "Account details", navAddr: "My addresses", navDel: "Delete account", logout: "Log out", switchLabel: "العربية"
+      navStore: "Store", navAccount: "Account details", navOrders: "My orders", navAddr: "My addresses", navDel: "Delete account", logout: "Log out", switchLabel: "العربية"
     }
   };
 
@@ -321,14 +309,16 @@
   }
 
   async function logout() {
+    ShowbizCore.clearLogin();
     try { await sb.auth.signOut(); } catch (e) {}
     location.replace("index.html");
   }
 
   async function init() {
+    const ok = await ShowbizCore.enforceLogin(sb);
     let session = null;
     try { const { data } = await sb.auth.getSession(); session = data && data.session; } catch (e) {}
-    if (!session) { location.replace("login.html"); return; }
+    if (!ok || !session) { location.replace("login.html"); return; }
     user = session.user;
 
     const meta = user.user_metadata || {};
