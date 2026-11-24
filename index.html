@@ -441,6 +441,18 @@
 
   async function loadProducts() {
     loadError = false; loadMsg = "";
+    // مرحلة التجربة: منتجات وهمية دائماً، ولا يتم جلب أي منتجات من الـ API أو CJ.
+    // لرجوع الجلب الحقيقي: احذف هذا البلوك فقط.
+    if (window.SHOWBIZ_DEMO) {
+      products = window.SHOWBIZ_DEMO.products.map(normalizeProduct);
+      usingDemo = true;
+      rawCount = products.length;
+      loadMsg = "وضع تجريبي (منتجات وهمية)";
+      buildCatRoot();
+      loaded = true;
+      render();
+      return;
+    }
     try {
       const res = await fetch(WORKER_URL + "?action=list", { cache: "no-store" });
       if (!res.ok) loadMsg = "HTTP " + res.status;
