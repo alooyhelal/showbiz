@@ -54,10 +54,11 @@
   .loading { text-align:center; color:var(--muted); padding:60px 0; }
   .hidden { display:none !important; }
 </style>
+<script src="version.js"></script>
 <script>
 /* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
 (function () {
-  var SITE_VERSION = "v32";
+  var SITE_VERSION = window.SHOWBIZ_BUILD.version;
   try {
     if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
       Object.keys(localStorage).forEach(function (k) {
@@ -129,7 +130,6 @@
 <script src="locations.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" onerror="document.write('<script src=\'https://unpkg.com/@supabase/supabase-js@2.50.0/dist/umd/supabase.js\'><\/script>')"></script>
 <script>
-  const BUILD = { version: "v3", updated: "2026-11-23 22:10" };
 
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
@@ -534,7 +534,6 @@
     document.title = "Showbiz " + L().title;
     document.querySelectorAll("[data-k]").forEach(el => { el.textContent = L()[el.dataset.k]; });
     $("langBtn").textContent = L().switchLabel;
-    $("ver").textContent = "build " + BUILD.version + " · " + BUILD.updated;
     $("formTitle").textContent = editId ? L().editAddr : L().newAddr;
     fillCountries();
     renderChain();
@@ -587,6 +586,6 @@
 
   init();
 </script>
-<div id="verLine" style="text-align:center;font:12px monospace;color:#6b7a94;padding:10px 12px 18px;direction:ltr">v32 · 2026-11-24 01:50</div>
+<div id="verLine" style="text-align:center;font:12px monospace;color:#6b7a94;padding:10px 12px 18px;direction:ltr"></div>
 </body>
 </html>
