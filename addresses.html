@@ -432,7 +432,7 @@
     const back = localStorage.getItem("showbiz_next");
     if (back === "checkout" || back === "cart") {
       localStorage.setItem("showbiz_pick_addr", entry.id);
-      location.href = "index.html";
+      location.href = back === "checkout" ? "cart.html#checkout" : "cart.html";
       return;
     }
     resetForm();
