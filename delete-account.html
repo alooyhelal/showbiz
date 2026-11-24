@@ -42,20 +42,7 @@
   .hidden { display:none !important; }
 </style>
 <script src="version.js"></script>
-<script>
-/* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
-(function () {
-  var SITE_VERSION = window.SHOWBIZ_BUILD.version;
-  try {
-    if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
-      Object.keys(localStorage).forEach(function (k) {
-        if (k.indexOf("showbiz") === 0 || (k.indexOf("sb-") === 0 && k.slice(-11) === "-auth-token")) localStorage.removeItem(k);
-      });
-      localStorage.setItem("showbiz_ver", SITE_VERSION);
-    }
-  } catch (e) {}
-})();
-</script>
+<script src="shared.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -68,6 +55,7 @@
         <div class="menu hidden" id="navMenu">
           <a href="index.html" data-k="navStore"></a>
           <a href="account.html" data-k="navAccount"></a>
+          <a href="orders.html" data-k="navOrders"></a>
           <a href="addresses.html" data-k="navAddr"></a>
           <a href="delete-account.html" class="cur" data-k="navDel"></a>
           <button class="btn btn-line btn-sm" id="navLogout" type="button" data-k="logout"></button>
@@ -116,14 +104,14 @@
       dangerText: "حذف الحساب نهائي ولا يمكن التراجع عنه، وتُحذف معه بياناتك المحفوظة.", delBtn: "حذف حسابي",
       delTitle: "هل تود حذف الحساب؟", delAsk: "سيتم حذف حسابك وبياناتك نهائيًا. هل أنت متأكد؟",
       cancel: "إلغاء", delConfirm: "نعم، احذف الحساب", delFail: "تعذّر حذف الحساب",
-      navStore: "المتجر", navAccount: "معلومات الحساب", navAddr: "عناويني", navDel: "حذف الحساب", logout: "تسجيل الخروج", switchLabel: "English"
+      navStore: "المتجر", navAccount: "معلومات الحساب", navOrders: "طلباتي", navAddr: "عناويني", navDel: "حذف الحساب", logout: "تسجيل الخروج", switchLabel: "English"
     },
     en: {
       title: "Delete account", intro: "This page deletes your account permanently.", loading: "Loading...",
       dangerText: "Deleting your account is permanent and cannot be undone. Your saved data will be removed too.", delBtn: "Delete my account",
       delTitle: "Do you want to delete your account?", delAsk: "Your account and data will be permanently deleted. Are you sure?",
       cancel: "Cancel", delConfirm: "Yes, delete account", delFail: "Could not delete the account",
-      navStore: "Store", navAccount: "Account details", navAddr: "My addresses", navDel: "Delete account", logout: "Log out", switchLabel: "العربية"
+      navStore: "Store", navAccount: "Account details", navOrders: "My orders", navAddr: "My addresses", navDel: "Delete account", logout: "Log out", switchLabel: "العربية"
     }
   };
 
@@ -175,14 +163,16 @@
   }
 
   async function logout() {
+    ShowbizCore.clearLogin();
     try { await sb.auth.signOut(); } catch (e) {}
     location.replace("index.html");
   }
 
   async function init() {
+    const ok = await ShowbizCore.enforceLogin(sb);
     let session = null;
     try { const { data } = await sb.auth.getSession(); session = data && data.session; } catch (e) {}
-    if (!session) { location.replace("login.html"); return; }
+    if (!ok || !session) { location.replace("login.html"); return; }
     user = session.user;
     $("loading").classList.add("hidden");
     $("page").classList.remove("hidden");

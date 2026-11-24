@@ -2,23 +2,10 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Showbiz — السلة والدفع</title>
 <script src="version.js"></script>
-<script>
-/* تصفير بيانات المتصفح عند كل نسخة جديدة (يخلي الزائر كأنه أول مرة) */
-(function () {
-  var SITE_VERSION = window.SHOWBIZ_BUILD.version;
-  try {
-    if (localStorage.getItem("showbiz_ver") !== SITE_VERSION) {
-      Object.keys(localStorage).forEach(function (k) {
-        if (k.indexOf("showbiz") === 0 || (k.indexOf("sb-") === 0 && k.slice(-11) === "-auth-token")) localStorage.removeItem(k);
-      });
-      localStorage.setItem("showbiz_ver", SITE_VERSION);
-    }
-  } catch (e) {}
-})();
-</script>
+<script src="shared.js"></script>
 <style>
   :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; color-scheme:dark; }
   body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; }
@@ -83,25 +70,78 @@
   .build { position:fixed; bottom:0; left:0; right:0; background:#070d18; color:#6b7a94; font:12px monospace; text-align:center; padding:6px; direction:ltr; z-index:4; border-top:1px solid var(--line); }
 </style>
 <style>
-  .stepbar { display:flex; gap:8px; margin:6px 0 14px; }
-  .stepbar a { flex:1; text-align:center; padding:8px; border-radius:10px; border:1px solid var(--line, #2a3850); text-decoration:none; color:var(--muted, #6b7a94); font-size:14px; }
-  .stepbar a.on { color:inherit; border-color:var(--accent, #3b82f6); }
-  .btnlink { display:inline-block; padding:10px 14px; border-radius:10px; text-decoration:none; }
-  .stack { display:flex; flex-direction:column; gap:8px; }
+  .cwrap { max-width: 640px; margin: 0 auto; padding-block: 8px 40px; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin: 6px 0 16px; }
+  .back { display:inline-flex; align-items:center; gap:8px; color: var(--fg, #f2f5fa); text-decoration:none; font-weight:700; font-size:15px; }
+  .back .ico { display:inline-block; font-size:20px; line-height:1; }
+  html[dir="rtl"] .back .ico { transform: scaleX(-1); }
+  .cartcount { font-size:13px; color: var(--muted, #9aa8bf); }
+  .steps { display:flex; gap:6px; margin: 4px 0 18px; }
+  .steps span { flex:1; text-align:center; padding:9px 6px; border-radius:12px; font-size:13px; color: var(--muted, #9aa8bf); background: rgba(255,255,255,.04); border:1px solid var(--line, #2c4168); }
+  .steps span.on { color: var(--fg, #f2f5fa); border-color: var(--orange, #f59e4b); background: rgba(245,158,75,.10); }
+  .steps span.done { color: var(--fg, #f2f5fa); }
+  .panel { background: var(--card, #14213a); border:1px solid var(--line, #2c4168); border-radius:18px; padding:16px; margin-bottom:14px; }
+  .sect-title { font-size:16px; font-weight:800; margin: 18px 0 10px; }
+  .empty { text-align:center; padding: 44px 16px; }
+  .empty .big { font-size: 40px; margin-bottom: 10px; }
+  .empty p { color: var(--muted, #9aa8bf); margin: 6px 0 18px; line-height:1.7; }
+  .line { display:flex; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line, #2c4168); }
+  .line:last-child { border-bottom:0; }
+  .line img { width:64px; height:64px; object-fit:cover; border-radius:12px; background: var(--card2, #1a2b4a); flex-shrink:0; }
+  .line .info { flex:1; min-width:0; }
+  .line .name { font-weight:700; font-size:14px; line-height:1.5; }
+  .line .var { color: var(--muted, #9aa8bf); font-size:12px; }
+  .line .unit { color: var(--orange, #f59e4b); font-weight:700; font-size:14px; margin-top:4px; }
+  .qty { display:inline-flex; align-items:center; gap:8px; margin-top:8px; }
+  .qty button { width:30px; height:30px; border-radius:10px; border:1px solid var(--line, #2c4168); background: transparent; color: var(--fg, #f2f5fa); font-size:16px; cursor:pointer; }
+  .rm { background:none; border:0; color: var(--muted, #9aa8bf); font-size:18px; cursor:pointer; padding:6px; }
+  .totals .row { display:flex; justify-content:space-between; gap:10px; padding:6px 0; font-size:14px; }
+  .totals .grand { border-top:1px solid var(--line, #2c4168); margin-top:8px; padding-top:12px; font-size:16px; font-weight:800; }
+  .muted { color: var(--muted, #9aa8bf); }
+  .couponrow { display:flex; gap:8px; margin-bottom:10px; }
+  .couponrow input { flex:1; }
+  .addr { display:flex; gap:12px; align-items:flex-start; padding:14px; border:1px solid var(--line, #2c4168); border-radius:16px; margin-bottom:10px; cursor:pointer; background: var(--card2, #1a2b4a); }
+  .addr.pref { border-color: var(--orange, #f59e4b); background: rgba(245,158,75,.08); }
+  .addr input { margin-top:4px; accent-color: var(--orange, #f59e4b); }
+  .addr .lbl { font-weight:800; font-size:15px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .addr .tag { font-size:11px; font-weight:700; color:#111; background: var(--orange, #f59e4b); border-radius:999px; padding:2px 8px; }
+  .addr .txt { font-size:13px; color: var(--muted, #9aa8bf); line-height:1.7; margin-top:4px; }
+  .pay { display:flex; gap:10px; align-items:center; padding:14px; border:1px solid var(--line, #2c4168); border-radius:14px; margin-bottom:10px; cursor:pointer; background: var(--card2, #1a2b4a); font-weight:700; }
+  .pay input { accent-color: var(--orange, #f59e4b); }
+  .pay small { display:block; font-weight:400; color: var(--muted, #9aa8bf); font-size:12px; }
+  .terms { display:flex; gap:10px; align-items:flex-start; font-size:14px; line-height:1.7; margin: 14px 0; }
+  .terms input { margin-top:5px; accent-color: var(--orange, #f59e4b); }
+  .terms a { color: var(--orange, #f59e4b); }
+  .btnrow { display:flex; gap:10px; margin-top:16px; }
+  .btnrow > * { flex:1; }
+  .primary { width:100%; padding:14px; border-radius:14px; border:0; background: var(--orange, #f59e4b); color:#111; font-weight:800; font-size:15px; cursor:pointer; font-family:inherit; }
+  .primary:disabled { opacity:.45; cursor:not-allowed; }
+  .ghostbtn { padding:12px 14px; border-radius:14px; border:1px solid var(--line, #2c4168); background:transparent; color: var(--fg, #f2f5fa); font-weight:700; font-size:14px; cursor:pointer; font-family:inherit; text-decoration:none; text-align:center; display:inline-block; }
+  .notice { font-size:13px; line-height:1.7; color: var(--muted, #9aa8bf); margin-top:10px; }
+  .errmsg { color: #ff8593; font-size:13px; margin-top:8px; min-height:1em; }
+  .done { text-align:center; padding: 40px 14px; }
+  .done .big { font-size: 46px; }
+  .done h2 { margin: 10px 0 6px; }
+  .done p { color: var(--muted, #9aa8bf); line-height:1.7; }
+  input[type="radio"], input[type="checkbox"] { width:auto; padding:0; flex:0 0 auto; }
+  .addr .tag { white-space:nowrap; }
+  .manage { text-align:center; margin: 12px 0 0; font-size:13px; }
+  .manage a { color: var(--orange, #f59e4b); text-decoration:none; font-weight:700; }
+  .verline { text-align:center; color: var(--muted, #9aa8bf); font:12px monospace; padding:18px 12px; direction:ltr; }
 </style>
 </head>
 <body>
 
-<header>
-  <a href="index.html" style="text-decoration:none;color:inherit"><strong id="siteName">Showbiz</strong></a>
-  <div>
-    <button class="ghost" id="langBtn" data-a="lang"></button>
-    <button class="ghost" id="cartBtn" data-a="toCart"></button>
+<div class="cwrap">
+  <div class="topbar">
+    <a class="back" href="index.html"><span class="ico">›</span><span id="backTxt"></span></a>
+    <span class="cartcount" id="cartCount"></span>
   </div>
-</header>
 
-<main><div id="view"></div></main>
-<div id="verLine" style="text-align:center;font:12px monospace;color:#6b7a94;padding:10px 12px 18px;direction:ltr"></div>
+  <div class="steps" id="steps"></div>
+  <div id="view"></div>
+  <div class="verline" id="verLine"></div>
+</div>
 
 <script src="locations.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" onerror="document.write('<script src=\'https://unpkg.com/@supabase/supabase-js@2.50.0/dist/umd/supabase.js\'><\/script>')"></script>
@@ -122,34 +162,44 @@
 
   const T = {
     ar: {
-      cart:"السلة", cartTitle:"سلة المشتريات", empty:"السلة فارغة", back:"رجوع", keepShopping:"متابعة التسوق",
-      checkout:"إتمام الطلب", goCheckout:"متابعة للدفع", productsVal:"قيمة المنتجات", discount:"الخصم",
-      shipping:"الشحن", shipLater:"يُحسب عند اختيار العنوان", shippingNote:"يُحسب الشحن بعد اختيار العنوان",
+      goLogin:"تسجيل الدخول", back:"الموقع", cart:"السلة", cartTitle:"سلة المشتريات", empty:"سلتك فارغة حالياً",
+      emptyHint:"أضف منتجات من الموقع وترجع لها هنا", goStore:"تصفح المنتجات",
+      s1:"السلة", s2:"العنوان", s3:"الدفع",
+      productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"الشحن", shipLater:"يُحسب بعد اختيار العنوان",
       grand:"الإجمالي", coupon:"كود الخصم", apply:"تطبيق", removeCoupon:"إزالة", badCoupon:"الكود غير صحيح",
-      pickAddr:"اختر عنوان التوصيل", addAddrBtn:"إضافة عنوان جديد",
-      noAddrAny:"ما عندك عناوين محفوظة بعد. أضف عنوان أولًا", confirm:"تأكيد الطلب",
-      confirmAddrNext:"اختر عنوان أولًا", pickAddrErr:"اختر عنوان أولًا",
-      needLogin:"سجّل دخولك عشان تكمل الطلب", goLogin:"تسجيل الدخول", loading:"جاري التحميل...",
-      doneTitle:"تم استلام طلبك", doneMsg:"شكرًا لك. رح نتواصل معك قريبًا.",
-      savedLocal:"تم حفظ الطلب على هذا الجهاز مؤقتًا لأن الحفظ على السيرفر تعذر.",
-      snapMissing:"افتح الصفحة الرئيسية مرة وحدة عشان تتحدث السلة", home:"الصفحة الرئيسية",
-      qty:"الكمية", defaultVariant:"افتراضي", stepCart:"١ السلة", stepCheckout:"٢ الدفع",
-      buildLabel:"النسخة", updatedLabel:"آخر تحديث", saving:"جاري الإرسال..."
+      toAddr:"متابعة للعنوان", toPay:"متابعة للدفع", keep:"متابعة التسوق", back2:"رجوع",
+      addrTitle:"عنوان التوصيل", addrSelected:"عنوان الدولة المختارة", addrOther:"عناوين دول أخرى",
+      noAddr:"ما عندك عناوين محفوظة بعد", addAddr:"إضافة عنوان جديد", manageAddr:"إدارة العناوين",
+      payTitle:"طريقة الدفع", pay_apple:"Apple Pay", pay_cash:"الكاش عند الاستلام", pay_benefit:"Benefit",
+      pay_card:"بطاقة ائتمان", pay_soon:"قريباً",
+      termsA:"أوافق على", termsLink:"الشروط والأحكام", send:"إرسال الطلب", sending:"جاري الإرسال...",
+      needTerms:"وافق على الشروط والأحكام عشان نكمل", needPay:"اختر طريقة الدفع",
+      doneTitle:"تم استلام طلبك", doneMsg:"شكراً لك. تقدر تتابع حالة طلبك من صفحة طلباتي.",
+      myOrders:"طلباتي", home:"الصفحة الرئيسية", savedLocal:"تم حفظ الطلب على هذا الجهاز مؤقتاً لأن الحفظ على السيرفر تعذر.",
+      snapMissing:"افتح الصفحة الرئيسية مرة وحدة عشان تتحدث السلة", pickAddrErr:"اختر عنوان أولاً",
+      loading:"جاري التحميل...", needLogin:"سجّل دخولك عشان تكمل الطلب",
+      defaultVariant:"افتراضي", buildLabel:"النسخة", updatedLabel:"آخر تحديث", qty:"الكمية",
+      saveErr:"تعذر إرسال الطلب، حاول مرة ثانية"
     },
     en: {
-      cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty", back:"Back", keepShopping:"Keep shopping",
-      checkout:"Checkout", goCheckout:"Continue to checkout", productsVal:"Products", discount:"Discount",
-      shipping:"Shipping", shipLater:"Calculated after choosing an address", shippingNote:"Shipping is calculated after you pick an address",
+      goLogin:"Sign in", back:"Store", cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty",
+      emptyHint:"Add products from the store and come back here", goStore:"Browse products",
+      s1:"Cart", s2:"Address", s3:"Payment",
+      productsVal:"Products", discount:"Discount", shipping:"Shipping", shipLater:"Calculated after choosing an address",
       grand:"Total", coupon:"Coupon code", apply:"Apply", removeCoupon:"Remove", badCoupon:"Invalid code",
-      pickAddr:"Choose a delivery address", addAddrBtn:"Add new address",
-      noAddrAny:"You have no saved addresses yet. Add one first", confirm:"Place order",
-      confirmAddrNext:"Choose an address first", pickAddrErr:"Choose an address first",
-      needLogin:"Sign in to complete your order", goLogin:"Sign in", loading:"Loading...",
-      doneTitle:"Order received", doneMsg:"Thank you. We will contact you soon.",
-      savedLocal:"The order was saved on this device for now because the server could not be reached.",
-      snapMissing:"Open the home page once so the cart can refresh", home:"Home page",
-      qty:"Quantity", defaultVariant:"Default", stepCart:"1 Cart", stepCheckout:"2 Checkout",
-      buildLabel:"Version", updatedLabel:"Last update", saving:"Sending..."
+      toAddr:"Continue to address", toPay:"Continue to payment", keep:"Keep shopping", back2:"Back",
+      addrTitle:"Delivery address", addrSelected:"Address in selected country", addrOther:"Other countries",
+      noAddr:"You have no saved addresses yet", addAddr:"Add new address", manageAddr:"Manage addresses",
+      payTitle:"Payment method", pay_apple:"Apple Pay", pay_cash:"Cash on delivery", pay_benefit:"Benefit",
+      pay_card:"Credit card", pay_soon:"Soon",
+      termsA:"I agree to the", termsLink:"Terms and conditions", send:"Send order", sending:"Sending...",
+      needTerms:"Accept the terms to continue", needPay:"Choose a payment method",
+      doneTitle:"Order received", doneMsg:"Thank you. You can follow your order from My orders.",
+      myOrders:"My orders", home:"Home page", savedLocal:"The order was saved on this device for now because the server could not be reached.",
+      snapMissing:"Open the home page once so the cart can refresh", pickAddrErr:"Choose an address first",
+      loading:"Loading...", needLogin:"Sign in to complete your order",
+      defaultVariant:"Default", buildLabel:"Version", updatedLabel:"Last update", qty:"Quantity",
+      saveErr:"Could not send the order, please try again"
     }
   };
 
@@ -160,7 +210,8 @@
   if (!COUNTRIES[state.country]) state.country = "BH";
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
 
-  let me = null, profile = null, ready = false, step = "cart", busy = false, doneLocal = false;
+  let me = null, profile = null, ready = false, step = "cart", busy = false, doneLocal = false, addrs = [];
+  let payMethod = null, termsOk = false;
 
   const t = (k) => T[state.lang][k];
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -175,7 +226,7 @@
   const fmt = (amount) => fmtFor(state.country, amount);
   const variantLabel = (v) => v.key ? String(v.key).replace(/-/g, " · ") : t("defaultVariant");
 
-  // ===== السلة: تفاصيل المنتجات تُقرأ من اللقطة اللي تكتبها الصفحة الرئيسية =====
+  // ===== السلة: تفاصيل المنتجات من اللقطة اللي تكتبها الصفحة الرئيسية =====
   function readSnap() { try { return JSON.parse(localStorage.getItem("showbiz_cart_snap") || "[]"); } catch (e) { return []; } }
   function cartLines() {
     const snap = readSnap();
@@ -201,13 +252,8 @@
     return { shipBHD, riskBHD };
   }
 
-  // ===== العناوين المحفوظة من صفحة عناويني =====
-  function allAddresses() {
-    if (!me) return [];
-    try { return JSON.parse(localStorage.getItem("showbiz_addr2_" + me.id) || "[]"); } catch (e) { return []; }
-  }
-  function savedAddresses() { return allAddresses().filter(a => COUNTRIES[a.country]); }
-  function selectedAddr() { return savedAddresses().find(a => a.id === state.addrId) || null; }
+  // ===== العناوين =====
+  const selectedAddr = () => addrs.find(a => a.id === state.addrId) || null;
   function addrText(a) {
     const names = (a.path || []).map(id => {
       const n = typeof findNode === "function" ? findNode(id) : null;
@@ -222,28 +268,6 @@
     if (f.makani) parts.push("Makani " + f.makani);
     if (f.pobox) parts.push("PO " + f.pobox);
     return parts.join(" · ");
-  }
-
-  // ===== الجلسة والبروفايل =====
-  function userFromStoredToken() {
-    try {
-      const key = Object.keys(localStorage).find(k => k.startsWith("sb-") && k.endsWith("-auth-token"));
-      const o = key ? JSON.parse(localStorage.getItem(key)) : null;
-      return (o && o.user && o.user.id) ? o.user : null;
-    } catch (e) { return null; }
-  }
-  async function readUser() {
-    try {
-      const { data } = await sb.auth.getSession();
-      if (data && data.session && data.session.user) return data.session.user;
-    } catch (e) {}
-    return userFromStoredToken();
-  }
-  async function loadProfile() {
-    try {
-      const { data } = await sb.from("customers").select("*").eq("id", me.id).maybeSingle();
-      profile = data || null;
-    } catch (e) {}
   }
 
   // ===== تغيير السلة =====
@@ -261,14 +285,29 @@
     else document.getElementById("cpnMsg").textContent = t("badCoupon");
   }
 
-  // ===== الطلب (نفس الصف اللي تكتبه الصفحة الرئيسية) =====
-  async function confirmOrder() {
+  // الدخول مطلوب قبل خطوة العنوان. بعد الدخول يرجعنا هنا مباشرة على خطوة العنوان
+  function goLogin() {
+    try { localStorage.setItem("showbiz_next", "cart"); } catch (e) {}
+    location.href = "login.html";
+  }
+  function goAddAddr() {
+    try {
+      localStorage.setItem("showbiz_next", "cart");
+      localStorage.setItem("showbiz_open_add", "1");
+    } catch (e) {}
+    location.href = "addresses.html";
+  }
+
+  // ===== الطلب =====
+  async function sendOrder() {
     if (busy) return;
-    const msgEl = document.getElementById("formMsg");
     const addr = selectedAddr();
-    if (!addr) { msgEl.textContent = t("pickAddrErr"); return; }
-    if (!me) { msgEl.textContent = t("needLogin"); return; }
-    busy = true; msgEl.textContent = t("saving");
+    if (!addr) { setStep("address"); return; }
+    if (!payMethod) { document.getElementById("payMsg").textContent = t("needPay"); return; }
+    if (!termsOk) { document.getElementById("payMsg").textContent = t("needTerms"); return; }
+    busy = true;
+    const btn = document.getElementById("sendBtn");
+    if (btn) { btn.disabled = true; btn.textContent = t("sending"); }
     const lines = cartLines();
     const s = shippingCalc();
     const subtotal = localPrice(subtotalUSD());
@@ -279,9 +318,13 @@
       items: lines.map(l => ({ pid: l.p.pid, vid: l.vid, sku: l.v.sku, name: l.p.nameEn, variant: l.v.key, qty: l.qty, unitUSD: l.v.price })),
       shipping_address: {
         id: addr.id, label: addr.label, text: addrText(addr), fields: addr.fields || {},
-        phone: addr.phone, recipient: addr.recipient || "", path: addr.path || []
+        phone: addr.phone, recipient: addr.recipient || "", path: addr.path || [], country: addr.country
       },
-      contact: { name: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim(), phone: profile?.phone || null },
+      contact: {
+        name: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim(),
+        phone: profile?.phone || null,
+        payment: { method: payMethod }
+      },
       coupon: state.coupon, subtotal, discount, shipping: ship,
       total: subtotal - discount + ship, internal_risk_bhd: s.riskBHD
     };
@@ -299,130 +342,169 @@
     }
     doneLocal = !saved;
     state.cart = []; state.addrId = null; state.coupon = null; save();
-    busy = false;
+    busy = false; payMethod = null; termsOk = false;
     setStep("done");
   }
 
-  // ===== العرض =====
+  // ===== الخطوات =====
   function setStep(s) {
+    if (s === "address" && !me) { goLogin(); return; }
     step = s;
-    if (s === "checkout") history.replaceState(null, "", "#checkout");
-    else if (s === "cart") history.replaceState(null, "", location.pathname);
+    const h = s === "cart" ? "" : "#" + s;
+    history.replaceState(null, "", location.pathname + h);
     render();
+    window.scrollTo(0, 0);
+  }
+
+  function stepsHTML() {
+    if (step === "done") return "";
+    const order = ["cart", "address", "payment"];
+    const idx = order.indexOf(step);
+    return `<div class="steps">${[["cart", t("s1")], ["address", t("s2")], ["payment", t("s3")]]
+      .map(([k, label], i) => `<span class="${i === idx ? "on" : i < idx ? "done" : ""}">${label}</span>`).join("")}</div>`;
+  }
+
+  function emptyHTML(msg) {
+    return `<div class="panel empty"><div class="big">🛒</div><p>${msg}</p>
+      <a class="ghostbtn" href="index.html">${t("goStore")}</a></div>`;
+  }
+
+  function summaryRows(withShip) {
+    const sub = localPrice(subtotalUSD());
+    const disc = localPrice(discountUSD());
+    let rows = `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>`;
+    if (disc > 0) rows += `<div class="row"><span>${t("discount")}</span><span>- ${fmt(disc)}</span></div>`;
+    if (withShip) {
+      const ship = shipLocal(shippingCalc().shipBHD);
+      rows += `<div class="row"><span>${t("shipping")}</span><span>${fmt(ship)}</span></div>`;
+      rows += `<div class="row grand"><span>${t("grand")}</span><span>${fmt(sub - disc + ship)}</span></div>`;
+    } else {
+      rows += `<div class="row"><span>${t("shipping")}</span><span class="muted">${t("shipLater")}</span></div>`;
+      rows += `<div class="row grand"><span>${t("grand")}</span><span>${fmt(sub - disc)}</span></div>`;
+    }
+    return `<div class="totals">${rows}</div>`;
   }
 
   function cartHTML() {
     const lines = cartLines();
     if (!lines.length) {
-      const msg = state.cart.length ? t("snapMissing") : t("empty");
-      return `<h3>${t("cartTitle")}</h3><p>${msg}</p><a class="ghost btnlink" href="index.html">${state.cart.length ? t("home") : t("keepShopping")}</a>`;
+      if (state.cart.length) return stepsHTML() + emptyHTML(t("snapMissing"));
+      return stepsHTML() + emptyHTML(`${t("empty")}<br><span style="font-size:13px">${t("emptyHint")}</span>`);
     }
     const rows = lines.map(l => `
-      <div class="crow">
+      <div class="line">
         <img src="${esc(l.v.image || l.p.image)}" alt="">
-        <div class="cinfo">
-          <div class="pname">${esc(l.p.nameEn)}</div>
-          ${l.v.key ? `<div class="muted">${esc(variantLabel(l.v))}</div>` : ""}
-          <div class="price">${fmt(localPrice(l.v.price))}</div>
-          <div class="qtyctl">
-            <button class="ghost" data-a="dec" data-vid="${esc(l.vid)}">−</button>
-            ${l.qty}
-            <button class="ghost" data-a="inc" data-vid="${esc(l.vid)}">+</button>
+        <div class="info">
+          <div class="name">${esc(l.p.nameEn)}</div>
+          ${l.v.key ? `<div class="var">${esc(variantLabel(l.v))}</div>` : ""}
+          <div class="unit">${fmt(localPrice(l.v.price))}</div>
+          <div class="qty">
+            <button data-a="dec" data-vid="${esc(l.vid)}" aria-label="−">−</button>
+            <span>${l.qty}</span>
+            <button data-a="inc" data-vid="${esc(l.vid)}" aria-label="+">+</button>
           </div>
         </div>
-        <button class="ghost" data-a="rm" data-vid="${esc(l.vid)}">✕</button>
+        <button class="rm" data-a="rm" data-vid="${esc(l.vid)}" aria-label="remove">✕</button>
       </div>`).join("");
-    const disc = discountUSD();
     const couponLine = state.coupon
-      ? `<div class="row"><span class="muted">${esc(state.coupon)}</span><button class="linkbtn" data-a="removeCoupon">${t("removeCoupon")}</button></div>`
-      : `<div class="couponrow"><input id="cpn" placeholder="${t("coupon")}"><button class="ghost" data-a="applyCoupon">${t("apply")}</button></div>
-         <p id="cpnMsg" class="muted"></p>`;
-    return `
-      <div class="stepbar"><a class="on" href="#">${t("stepCart")}</a><a href="#checkout" data-a="goCheckout">${t("stepCheckout")}</a></div>
-      <h3>${t("cartTitle")}</h3>
-      <div class="card pad">${rows}</div>
-      <div class="card pad">
-        ${couponLine}
-        <div class="row"><span>${t("productsVal")}</span><span>${fmt(localPrice(subtotalUSD()))}</span></div>
-        ${disc > 0 ? `<div class="row"><span>${t("discount")}</span><span>- ${fmt(localPrice(disc))}</span></div>` : ""}
-        <div class="row"><span>${t("shipping")}</span><span class="muted">${t("shipLater")}</span></div>
-        <div class="row total"><strong>${t("grand")}</strong><strong class="price">${fmt(localPrice(subtotalUSD() - disc))}</strong></div>
-      </div>
-      <div style="display:flex;gap:8px">
-        <a class="ghost btnlink" href="index.html" style="flex:1;text-align:center">${t("keepShopping")}</a>
-        <button data-a="goCheckout" style="flex:1">${t("goCheckout")}</button>
+      ? `<div class="row" style="display:flex;justify-content:space-between;align-items:center;font-size:14px"><span class="muted">${esc(state.coupon)}</span><button class="rm" style="font-size:13px" data-a="removeCoupon">${t("removeCoupon")}</button></div>`
+      : `<div class="couponrow"><input id="cpn" placeholder="${t("coupon")}"><button class="ghostbtn" data-a="applyCoupon">${t("apply")}</button></div><p id="cpnMsg" class="errmsg"></p>`;
+    return stepsHTML() + `
+      <div class="panel">${rows}</div>
+      <div class="panel">${couponLine}${summaryRows(false)}</div>
+      <div class="btnrow">
+        <a class="ghostbtn" href="index.html">${t("keep")}</a>
+        <button class="primary" data-a="toAddr">${t("toAddr")}</button>
       </div>`;
   }
 
-  function summaryHTML() {
-    const sub = localPrice(subtotalUSD());
-    const disc = localPrice(discountUSD());
-    const discRow = disc > 0 ? `<div class="row"><span>${t("discount")}</span><span>- ${fmt(disc)}</span></div>` : "";
-    if (!selectedAddr()) {
-      return `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>${discRow}<p class="muted">${t("shippingNote")}</p>`;
+  function addressHTML() {
+    if (!ready) return stepsHTML() + `<p class="muted">${t("loading")}</p>`;
+    if (!cartLines().length) return cartHTML();
+    if (!me) return stepsHTML() + `<div class="panel empty"><p>${t("needLogin")}</p>
+      <button class="primary" data-a="login">${t("goLogin")}</button></div>`;
+
+    const sel = selectedAddr();
+    const pref = addrs.filter(a => a.country === state.country);
+    const other = addrs.filter(a => a.country !== state.country);
+    const card = (a, isPref) => `
+      <label class="addr ${isPref ? "pref" : ""}">
+        <input type="radio" name="addr" data-pick="${esc(a.id)}" ${state.addrId === a.id ? "checked" : ""}>
+        <div style="flex:1;min-width:0">
+          <div class="lbl">${flagImg(a.country)} ${esc(a.label)} ${isPref ? `<span class="tag">${t("addrSelected")}</span>` : ""}</div>
+          <div class="txt">${esc(addrText(a))}</div>
+          <div class="txt" dir="ltr">${esc(a.phone || "")}</div>
+        </div>
+      </label>`;
+    let list = "";
+    if (!addrs.length) list = `<p class="muted">${t("noAddr")}</p>`;
+    else {
+      if (pref.length) list += pref.map(a => card(a, true)).join("");
+      if (other.length) {
+        list += `<div class="sect-title" style="font-size:13px;color:var(--muted,#9aa8bf);margin:14px 0 8px">${t("addrOther")}</div>`;
+        list += other.map(a => card(a, false)).join("");
+      }
     }
-    const ship = shipLocal(shippingCalc().shipBHD);
-    return `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>
-            ${discRow}
-            <div class="row"><span>${t("shipping")}</span><span>${fmt(ship)}</span></div>
-            <div class="row total"><strong>${t("grand")}</strong><strong class="price">${fmt(sub - disc + ship)}</strong></div>`;
+    return stepsHTML() + `
+      <div class="panel">
+        <div class="sect-title" style="margin-top:0">${t("addrTitle")}</div>
+        ${list}
+        <button class="ghostbtn" style="width:100%" data-a="addAddr">${t("addAddr")}</button>
+        <p class="manage"><a href="addresses.html">${t("manageAddr")}</a></p>
+      </div>
+      <div class="panel">${summaryRows(!!sel)}</div>
+      <div class="btnrow">
+        <button class="ghostbtn" data-a="backCart">${t("back2")}</button>
+        <button class="primary" data-a="toPay" ${sel ? "" : "disabled"}>${t("toPay")}</button>
+      </div>
+      ${sel ? "" : `<p class="errmsg" style="margin-top:8px">${t("pickAddrErr")}</p>`}`;
   }
 
-  function checkoutHTML() {
-    const stepbar = `<div class="stepbar"><a href="#" data-a="backCart">${t("stepCart")}</a><a class="on" href="#checkout">${t("stepCheckout")}</a></div>`;
-    if (!ready) return `${stepbar}<p class="muted">${t("loading")}</p>`;
-    if (!cartLines().length) return cartHTML();
-    if (!me) {
-      return `${stepbar}<div class="card pad"><p>${t("needLogin")}</p>
-        <a class="ghost btnlink" href="#" data-a="login">${t("goLogin")}</a></div>
-        <p><button class="ghost" data-a="backCart">${t("back")}</button></p>`;
-    }
-    const list = savedAddresses();
-    const picks = list.length
-      ? list.map(a => `
-          <label class="card pad addrpick">
-            <div class="pickrow">
-              <input type="radio" name="addr" data-pick="${esc(a.id)}" ${state.addrId === a.id ? "checked" : ""}>
-              <div>
-                <span class="flagc">${flagImg(a.country)}</span><strong>${esc(a.label)}</strong>
-                <div class="muted">${esc(addrText(a))}</div>
-                <div class="muted" dir="ltr">${esc(a.phone || "")}</div>
-              </div>
-            </div>
-          </label>`).join("")
-      : `<p class="muted">${t("noAddrAny")}</p>`;
-    const name = `${profile?.first_name || me.user_metadata?.first_name || ""} ${profile?.last_name || me.user_metadata?.last_name || ""}`.trim();
+  function payHTML() {
+    if (!me || !selectedAddr()) return addressHTML();
+    const methods = [
+      { k: "apple_pay", label: t("pay_apple"), on: true },
+      { k: "cash", label: t("pay_cash"), on: true },
+      { k: "benefit", label: t("pay_benefit"), on: true },
+      { k: "card", label: t("pay_card"), on: true }
+    ];
+    const opts = methods.map(m => `
+      <label class="pay"><input type="radio" name="pay" data-paym="${m.k}" ${payMethod === m.k ? "checked" : ""}>${esc(m.label)}</label>`).join("");
     const sel = selectedAddr();
-    return `
-      ${stepbar}
-      <h3>${t("checkout")}</h3>
-      <div class="card pad">
-        <div>${esc(name || me.email || "")}</div>
-        <div class="muted" dir="ltr">${esc(profile?.phone || me.phone || "")}</div>
+    return stepsHTML() + `
+      <div class="panel">
+        <div class="sect-title" style="margin-top:0">${t("addrTitle")}</div>
+        <div class="addr" style="cursor:default"><div style="flex:1"><div class="lbl">${flagImg(sel.country)} ${esc(sel.label)}</div>
+          <div class="txt">${esc(addrText(sel))}</div></div></div>
+        <button class="ghostbtn" style="margin-top:6px" data-a="backAddr">${t("back2")}</button>
       </div>
-      <h4>${t("pickAddr")}</h4>
-      ${picks}
-      <button class="ghost btnfull" data-a="addAddr">${t("addAddrBtn")}</button>
-      <div class="card pad" style="margin-top:12px">${summaryHTML()}</div>
-      <p id="formMsg" class="muted"></p>
-      <button data-a="confirm" style="width:100%" ${sel ? "" : "disabled"}>${sel ? t("confirm") : t("confirmAddrNext")}</button>
-      <p><button class="ghost" data-a="backCart">${t("back")}</button></p>`;
+      <div class="panel">
+        <div class="sect-title" style="margin-top:0">${t("payTitle")}</div>
+        ${opts}
+        <label class="terms"><input type="checkbox" id="termsCb" ${termsOk ? "checked" : ""}>
+          <span>${t("termsA")} <a href="terms.html" target="_blank" rel="noopener">${t("termsLink")}</a></span></label>
+        <div class="totals">${summaryRows(true)}</div>
+        <p id="payMsg" class="errmsg"></p>
+        <button class="primary" id="sendBtn" data-a="send" style="width:100%">${t("send")}</button>
+      </div>`;
   }
 
   function doneHTML() {
-    return `<h3>${t("doneTitle")}</h3><p>${t("doneMsg")}</p>${doneLocal ? `<p class="muted">${t("savedLocal")}</p>` : ""}
-      <a class="ghost btnlink" href="index.html">${t("home")}</a>`;
+    return `<div class="panel done"><div class="big">✅</div><h2>${t("doneTitle")}</h2><p>${t("doneMsg")}</p>
+      ${doneLocal ? `<p class="muted">${t("savedLocal")}</p>` : ""}
+      <div class="btnrow" style="margin-top:14px"><a class="ghostbtn" href="orders.html">${t("myOrders")}</a><a class="primary" href="index.html" style="text-align:center;text-decoration:none;display:block;padding:14px">${t("home")}</a></div></div>`;
   }
 
   function render() {
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
-    document.getElementById("langBtn").textContent = state.lang === "ar" ? "English" : "العربية";
+    document.getElementById("backTxt").textContent = t("back");
     const n = state.cart.reduce((s, i) => s + i.qty, 0);
-    document.getElementById("cartBtn").textContent = `${t("cart")} (${n})`;
+    document.getElementById("cartCount").textContent = `${t("cart")} (${n})`;
     const v = document.getElementById("view");
     if (step === "done") v.innerHTML = doneHTML();
-    else if (step === "checkout") v.innerHTML = checkoutHTML();
+    else if (step === "address") v.innerHTML = addressHTML();
+    else if (step === "payment") v.innerHTML = payHTML();
     else v.innerHTML = cartHTML();
     document.getElementById("verLine").textContent = `${t("buildLabel")}: ${window.SHOWBIZ_BUILD.version} · ${t("updatedLabel")}: ${window.SHOWBIZ_BUILD.updated}`;
   }
@@ -432,66 +514,77 @@
     const el = e.target.closest("[data-a]");
     if (!el) return;
     const a = el.dataset.a;
-    if (a === "lang") { state.lang = state.lang === "ar" ? "en" : "ar"; save(); render(); return; }
-    if (a === "toCart") { setStep("cart"); return; }
     if (a === "inc") { changeQty(el.dataset.vid, 1); return; }
     if (a === "dec") { changeQty(el.dataset.vid, -1); return; }
     if (a === "rm") { removeLine(el.dataset.vid); return; }
     if (a === "applyCoupon") { applyCoupon(); return; }
     if (a === "removeCoupon") { state.coupon = null; save(); render(); return; }
-    if (a === "goCheckout") { e.preventDefault(); if (cartLines().length) setStep("checkout"); return; }
-    if (a === "backCart") { e.preventDefault(); setStep("cart"); return; }
-    if (a === "login") {
-      e.preventDefault();
-      try { localStorage.setItem("showbiz_next", "checkout"); } catch (err) {}
-      location.href = "login.html";
-      return;
-    }
-    if (a === "addAddr") {
-      try {
-        localStorage.setItem("showbiz_next", "checkout");
-        localStorage.setItem("showbiz_open_add", "1");
-      } catch (err) {}
-      location.href = "addresses.html";
-      return;
-    }
-    if (a === "confirm") { confirmOrder(); return; }
+    if (a === "toAddr") { setStep("address"); return; }
+    if (a === "login") { goLogin(); return; }
+    if (a === "addAddr") { goAddAddr(); return; }
+    if (a === "backCart") { setStep("cart"); return; }
+    if (a === "toPay") { if (selectedAddr()) setStep("payment"); return; }
+    if (a === "backAddr") { setStep("address"); return; }
+    if (a === "send") { sendOrder(); return; }
   });
 
   document.addEventListener("change", (e) => {
-    const pid = e.target.dataset && e.target.dataset.pick;
-    if (!pid) return;
-    const a = savedAddresses().find(x => x.id === pid);
-    if (!a) return;
-    state.addrId = a.id; state.country = a.country; save(); render();
+    const tgt = e.target;
+    if (tgt.dataset && tgt.dataset.pick) {
+      const a = addrs.find(x => x.id === tgt.dataset.pick);
+      if (!a) return;
+      state.addrId = a.id; save(); render();
+      return;
+    }
+    if (tgt.dataset && tgt.dataset.paym) { payMethod = tgt.dataset.paym; document.getElementById("payMsg").textContent = ""; return; }
+    if (tgt.id === "termsCb") { termsOk = tgt.checked; document.getElementById("payMsg").textContent = ""; }
   });
 
   window.addEventListener("hashchange", () => {
     if (step === "done") return;
-    step = location.hash === "#checkout" ? "checkout" : "cart";
-    render();
+    const h = location.hash.replace("#", "");
+    if (h === "address" || h === "payment") {
+      if (h === "address" && !me && ready) { goLogin(); return; }
+      step = h; render();
+    } else { step = "cart"; render(); }
   });
 
   // ===== البدء =====
   (async () => {
-    // الصفحة الرئيسية كانت تستخدم هذا المفتاح للرجوع هنا، ونحن الحين الصفحة اللي ترجع له
     try { localStorage.removeItem("showbiz_next"); } catch (e) {}
-    if (location.hash === "#checkout") step = "checkout";
+    const hashStep = location.hash.replace("#", "");
+    if (hashStep === "address" || hashStep === "payment") step = hashStep;
     render();
-    me = await readUser();
-    if (me) await loadProfile();
-    // جاي من صفحة العناوين بعد الحفظ: نختار العنوان الجديد تلقائياً
+    const ok = await ShowbizCore.enforceLogin(sb);
+    if (ok) {
+      try {
+        const r = await sb.auth.getSession();
+        me = (r.data && r.data.session && r.data.session.user) || userFromStoredToken();
+      } catch (e) { me = userFromStoredToken(); }
+    }
+    if (me) {
+      try { const r = await sb.from("customers").select("*").eq("id", me.id).maybeSingle(); profile = r.data || null; } catch (e) {}
+      addrs = await ShowbizCore.fetchAddresses(sb, me.id);
+    }
     try {
       const pick = localStorage.getItem("showbiz_pick_addr");
       if (pick) {
         localStorage.removeItem("showbiz_pick_addr");
-        const pa = allAddresses().find(x => x.id === pick);
-        if (pa) { state.addrId = pa.id; state.country = pa.country; save(); }
+        if (addrs.find(x => x.id === pick)) { state.addrId = pick; save(); }
       }
     } catch (e) {}
+    if (!me && step === "address") { goLogin(); return; }
     ready = true;
     render();
   })();
+
+  function userFromStoredToken() {
+    try {
+      const key = Object.keys(localStorage).find(k => k.startsWith("sb-") && k.endsWith("-auth-token"));
+      const o = key ? JSON.parse(localStorage.getItem(key)) : null;
+      return (o && o.user && o.user.id) ? o.user : null;
+    } catch (e) { return null; }
+  }
 </script>
 </body>
 </html>
