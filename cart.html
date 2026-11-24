@@ -595,7 +595,9 @@
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
     document.getElementById("backTxt").textContent = t("back");
-    document.getElementById("cartN").textContent = state.cart.reduce((s, i) => s + i.qty, 0);
+    const snapIds = new Set(readSnap().map(x => x.vid));
+    const cn = document.getElementById("cartN"), nItems = state.cart.filter(i => snapIds.has(i.vid)).reduce((s, i) => s + i.qty, 0);
+    cn.textContent = nItems; cn.hidden = nItems === 0;
     document.getElementById("prefBtn").textContent = COUNTRIES[state.country].iso + " · " + (state.lang === "ar" ? "العربية" : "English");
     document.getElementById("announce").textContent = ShowbizUI.announceText();
     renderPrefs();
