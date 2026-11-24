@@ -7,7 +7,42 @@
 <style>
   :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; color-scheme:dark; }
   body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; }
-  header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px 16px; background:#0d1728; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  header { display:block; padding:10px 16px; background:#0d1728; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  .announce { background:var(--orange); color:#111; text-align:center; font-size:13px; font-weight:700; padding:8px 12px; }
+  .hrow { display:flex; align-items:center; gap:8px; justify-content:space-between; flex-wrap:wrap; }
+  .hctl { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .hrow2 { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+  .menubtn { display:none; padding:6px 10px; background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:400; }
+  .catdd { position:relative; }
+  .catpanel { display:none; position:absolute; top:100%; inset-inline-start:0; min-width:220px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px; z-index:30; box-shadow:0 12px 30px rgba(0,0,0,.5); }
+  .catdd:hover .catpanel, .catdd.open .catpanel { display:block; }
+  .catpanel button, .side .catlink { display:block; width:100%; text-align:start; background:transparent; color:var(--fg); font-weight:400; padding:9px 10px; border-radius:8px; }
+  .catpanel button:hover { background:var(--card2); }
+  .searchbox { position:relative; flex:1; min-width:160px; }
+  .searchbox input { margin:0; }
+  .sugg { position:absolute; top:calc(100% + 4px); inset-inline:0; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px; z-index:30; box-shadow:0 12px 30px rgba(0,0,0,.5); }
+  .sugg button { display:flex; gap:8px; align-items:center; width:100%; background:transparent; color:var(--fg); font-weight:400; padding:6px 8px; text-align:start; }
+  .sugg img { width:36px; height:36px; object-fit:cover; border-radius:8px; background:#f3f4f6; }
+  .sugg-h { color:var(--muted); font-size:12px; padding:4px 8px; }
+  #rangeSel, #sortSel { margin:0; width:auto; }
+  .sideov { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:44; }
+  .side { position:fixed; top:0; bottom:0; inset-inline-start:0; width:min(300px,86vw); background:#0f1a2e; z-index:45; padding:14px; overflow:auto; box-shadow:0 12px 40px rgba(0,0,0,.6); }
+  .side-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  @media (max-width:700px) { .menubtn { display:inline-block; } .catdd { display:none; } }
+  .pimg { position:relative; }
+  .badge { position:absolute; top:10px; inset-inline-start:10px; background:var(--orange); color:#111; font-size:12px; font-weight:800; padding:3px 9px; border-radius:999px; z-index:1; }
+  .badge.alt { top:auto; bottom:10px; background:var(--card2); color:var(--fg); }
+  .hov { position:absolute; inset-inline:10px; bottom:10px; display:flex; gap:8px; opacity:0; transition:opacity .2s; }
+  .hov button { flex:1; padding:8px; font-size:13px; }
+  .pimg:hover .hov { opacity:1; }
+  @media (hover:hover) { .row2 { display:none; } }
+  @media (hover:none) { .hov { display:none; } }
+  .old { color:var(--muted); font-size:12px; margin-inline-end:6px; font-weight:400; }
+  .cat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin:14px 0; }
+  .cat-tile { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 10px; color:var(--fg); font-weight:700; text-align:center; font-size:14px; }
+  .sec-h { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:22px 0 10px; }
+  .sec-h h3 { margin:0; font-size:17px; }
+  .linkbtn { background:none; color:var(--orange); padding:4px 6px; text-decoration:underline; font-weight:400; }
   main { padding:16px 16px 56px; max-width:1000px; margin:auto; }
   select, input { padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card2); color:var(--fg); width:100%; box-sizing:border-box; margin-bottom:8px; font-size:15px; font-family:inherit; }
   select option { background:var(--card2); color:var(--fg); }
@@ -69,28 +104,53 @@
 </style>
 <script src="version.js"></script>
 <script src="shared.js"></script>
+<script src="ui.js"></script>
 </head>
 <body>
 
+<div class="announce" id="announce"></div>
 <header>
-  <strong id="siteName">Showbiz</strong>
-  <div>
-    <select id="countrySel"></select>
-    <button class="ghost" id="langBtn"></button>
-    <button class="ghost" id="cartBtn"></button>
-    <div class="acctwrap">
-      <button class="ghost" id="acctBtn"></button>
-      <div class="menu hidden" id="acctMenu">
-        <div class="menu-who" id="menuWho"></div>
-        <a href="account.html" id="menuInfo"></a>
-        <a href="orders.html" id="menuOrders"></a>
-        <a href="addresses.html" id="menuAddr"></a>
-        <a href="delete-account.html" id="menuDel"></a>
-        <button class="ghost menu-out" id="menuLogout"></button>
+  <div class="hrow">
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="menubtn" id="menuBtn" aria-label="menu">☰</button>
+      <strong id="siteName">Showbiz</strong>
+    </div>
+    <div class="hctl">
+      <select id="countrySel"></select>
+      <button class="ghost" id="langBtn"></button>
+      <button class="ghost" id="cartBtn"></button>
+      <div class="acctwrap">
+        <button class="ghost" id="acctBtn"></button>
+        <div class="menu hidden" id="acctMenu">
+          <div class="menu-who" id="menuWho"></div>
+          <a href="account.html" id="menuInfo"></a>
+          <a href="orders.html" id="menuOrders"></a>
+          <a href="addresses.html" id="menuAddr"></a>
+          <a href="delete-account.html" id="menuDel"></a>
+          <button class="ghost menu-out" id="menuLogout"></button>
+        </div>
       </div>
     </div>
   </div>
+  <div class="hrow2">
+    <div class="catdd" id="catDd">
+      <button class="ghost" id="catBtn"></button>
+      <div class="catpanel" id="catPanel"></div>
+    </div>
+    <div class="searchbox">
+      <input id="q" type="search" autocomplete="off">
+      <div class="sugg hidden" id="sugg"></div>
+    </div>
+    <select id="rangeSel"></select>
+    <select id="sortSel"></select>
+  </div>
 </header>
+
+<div class="sideov hidden" id="sideOv"></div>
+<nav class="side hidden" id="side">
+  <div class="side-head"><strong id="sideTitle"></strong><button class="ghost" id="sideX">✕</button></div>
+  <div id="sideCats"></div>
+</nav>
 
 <main><div id="view"></div></main>
 <div id="buildInfo" class="build"></div>
@@ -158,7 +218,11 @@
       namesReq:"الاسم الأول والأخير مطلوبين", firstName:"الاسم الأول", lastName:"الاسم الأخير",
       needLogin:"سجّل دخولك لإتمام الطلب", goLogin:"تسجيل الدخول",
       buildLabel:"النسخة", updatedLabel:"آخر تحديث",
-      menuInfo:"معلومات حسابي", menuOrders:"طلباتي", menuAddr:"عناويني", menuDel:"حذف الحساب"
+      menuInfo:"معلومات حسابي", menuOrders:"طلباتي", menuAddr:"عناويني", menuDel:"حذف الحساب",
+      cats:"الأقسام", allCats:"كل الأقسام", other:"منتجات أخرى", seeAll:"عرض الكل", clearFilter:"مسح الفلاتر",
+      noResults:"ما لقينا نتائج", searchPh:"ابحث عن منتج", recentSearch:"آخر البحوث", priceAll:"كل الأسعار",
+      upTo:"حتى", sortDef:"الترتيب الافتراضي", sortAsc:"السعر: من الأقل", sortDesc:"السعر: من الأعلى", sortName:"الاسم",
+      isNew:"جديد", isBest:"الأكثر مبيعاً", menu:"القائمة"
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
@@ -180,14 +244,19 @@
       namesReq:"First and last name are required", firstName:"First name", lastName:"Last name",
       needLogin:"Log in to complete your order", goLogin:"Log in",
       buildLabel:"Build", updatedLabel:"Last update",
-      menuInfo:"My details", menuOrders:"My orders", menuAddr:"My addresses", menuDel:"Delete account"
+      menuInfo:"My details", menuOrders:"My orders", menuAddr:"My addresses", menuDel:"Delete account",
+      cats:"Categories", allCats:"All categories", other:"Other products", seeAll:"See all", clearFilter:"Clear filters",
+      noResults:"No results", searchPh:"Search products", recentSearch:"Recent searches", priceAll:"All prices",
+      upTo:"Up to", sortDef:"Default order", sortAsc:"Price: low to high", sortDesc:"Price: high to low", sortName:"Name",
+      isNew:"New", isBest:"Best seller", menu:"Menu"
     }
   };
 
   // ===== الحالة =====
-  let state = { country:"BH", lang:"ar", cart:[], addrId:null, seen:false, coupon:null };
+  let state = { country:"BH", lang:"ar", cart:[], addrId:null, seen:false, coupon:null, unsel:[] };
   try { Object.assign(state, JSON.parse(localStorage.getItem("showbiz_state") || "{}")); } catch (e) {}
   if (!Array.isArray(state.cart)) state.cart = [];
+  if (!Array.isArray(state.unsel)) state.unsel = [];
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
 
   let products = [], loaded = false, loadError = false, rawCount = 0, loadMsg = "";
@@ -246,7 +315,10 @@
       .filter(Boolean);
   }
   const cartCount = () => state.cart.reduce((s, i) => s + i.qty, 0);
-  const subtotalUSD = () => cartLines().reduce((s, l) => s + l.v.price * l.qty, 0);
+  // المنتجات غير المحددة في السلة تبقى فيها لكن ما تدخل في الحساب
+  const isSelected = (l) => !(state.unsel || []).includes(l.vid);
+  const selLines = () => cartLines().filter(isSelected);
+  const subtotalUSD = () => selLines().reduce((s, l) => s + l.v.price * l.qty, 0);
   const discountUSD = () => subtotalUSD() * (COUPONS[state.coupon] || 0);
 
   // ===== العناوين المحفوظة (من صفحة عناويني) =====
@@ -280,15 +352,17 @@
   // ===== الحاسبة =====
   function shippingCalc() {
     let actualKg = 0, volKg = 0;
-    cartLines().forEach(l => {
+    selLines().forEach(l => {
       const w = (l.v.weightG || l.p.weightG || 500) / 1000;
       const d = l.v.dimsCm || l.p.dimsCm || [10, 10, 10];
       actualKg += w * l.qty;
       volKg += (d[0] * d[1] * d[2] / 5000) * l.qty;
     });
     const chargeable = Math.max(actualKg, volKg);
-    const shipBHD = COUNTRIES[state.country].base + Math.max(0, chargeable - 1) * 0.5;
     const orderBHD = (subtotalUSD() - discountUSD()) * RATE_BHD;
+    // التوصيل مجاني فوق الحد المحدد في ui.js
+    const shipBHD = orderBHD >= ShowbizUI.freeShipBHD() ? 0
+      : COUNTRIES[state.country].base + Math.max(0, chargeable - 1) * 0.5;
     const riskBHD = Math.max(orderBHD * 0.15, 0.3);
     return { actualKg, volKg, chargeable, shipBHD, riskBHD };
   }
@@ -486,6 +560,7 @@
   function openProduct(pid) {
     const p = products.find(x => x.pid === pid);
     if (!p) return;
+    ShowbizUI.pushRecent(ShowbizUI.entryOf(p, p.variants[0]));
     modal = { pid: p.pid, vid: p.variants[0].vid, qty: 1, idx: 0, paused: false, details: false };
     renderModal();
   }
@@ -588,30 +663,155 @@
     document.getElementById("buildInfo").textContent =
       `${t("buildLabel")}: ${BUILD.version} · ${t("updatedLabel")}: ${BUILD.updated} · products: ${products.length}/${rawCount} · addr: ${allAddresses().length} · user: ${me ? me.id.slice(0, 6) : "none"}${why}`;
   }
-  function viewShop() {
+  // ===== المتجر: الأقسام والفلاتر والبحث =====
+  const RANGES = { all: [0, Infinity], "0-5": [0, 5], "5-10": [5, 10], "10-20": [10, 20], "20+": [20, Infinity] };
+  let filt = { cat: null, q: "", range: "all", sort: "default" };
+  const catOf = (p) => (typeof p.categoryName === "string" && p.categoryName) || (typeof p.category === "string" && p.category) || null;
+  const minUSD = (p) => Math.min(...p.variants.map(v => v.price));
+  function catList() {
+    const seen = [];
+    products.forEach(p => { const c = catOf(p); if (c && !seen.includes(c)) seen.push(c); });
+    return seen;
+  }
+  function filteredProducts() {
+    const q = filt.q.trim().toLowerCase();
+    const [lo, hi] = RANGES[filt.range] || RANGES.all;
+    let list = products.filter(p => {
+      if (filt.cat && catOf(p) !== filt.cat) return false;
+      if (q && !String(p.nameEn).toLowerCase().includes(q)) return false;
+      const m = minUSD(p);
+      return m >= lo && m < hi;
+    });
+    if (filt.sort === "asc") list = list.slice().sort((a, b) => minUSD(a) - minUSD(b));
+    if (filt.sort === "desc") list = list.slice().sort((a, b) => minUSD(b) - minUSD(a));
+    if (filt.sort === "name") list = list.slice().sort((a, b) => String(a.nameEn).localeCompare(String(b.nameEn)));
+    return list;
+  }
+  // سعر قبل الخصم (إذا المنتج فيه compareAt أعلى من السعر الحالي)
+  function cmpUSD(p) {
+    const min = minUSD(p);
+    const c = Math.max(0, ...p.variants.map(v => Number(v.compareAt ?? p.compareAt) || 0));
+    return c > min ? c : 0;
+  }
+  function cardHTML(p) {
+    const idx = cardIdx[p.pid] || 0;
+    const img = p.images[idx] || p.image || "";
+    const dots = p.images.length > 1
+      ? `<div class="dots">${p.images.map((_, i) => `<span class="dot ${i === idx ? "on" : ""}" data-cd="${esc(p.pid)}"></span>`).join("")}</div>`
+      : "";
+    const min = minUSD(p), cmp = cmpUSD(p);
+    const pct = cmp ? Math.round((1 - min / cmp) * 100) : 0;
+    const badges = (pct ? `<span class="badge">-${pct}%</span>` : "")
+      + (p.isNew ? `<span class="badge alt">${t("isNew")}</span>` : "")
+      + (p.bestseller ? `<span class="badge alt">${t("isBest")}</span>` : "");
+    return `
+      <div class="card">
+        <div class="pimg">${img ? `<img id="c-${esc(p.pid)}" src="${esc(img)}" alt="">` : ""}${badges}
+          <div class="hov">
+            <button class="ghost" data-action="open" data-pid="${esc(p.pid)}">${t("details")}</button>
+            <button data-action="quickAdd" data-pid="${esc(p.pid)}">${t("add")}</button>
+          </div>
+        </div>
+        ${dots}
+        <div class="pbody">
+          <div class="pname">${esc(p.nameEn)}</div>
+          <div class="price">${cmp ? `<s class="old">${fmt(localPrice(cmp))}</s>` : ""}${priceRange(p)}</div>
+          <div class="row2">
+            <button class="ghost" data-action="open" data-pid="${esc(p.pid)}">${t("details")}</button>
+            <button data-action="quickAdd" data-pid="${esc(p.pid)}">${t("add")}</button>
+          </div>
+        </div>
+      </div>`;
+  }
+  function sectionHTML(title, list, total, cat) {
+    const more = cat && total > list.length
+      ? `<button class="linkbtn" data-cat="${esc(cat)}">${t("seeAll")}</button>` : "";
+    return `<div class="sec-h"><h3>${esc(title)}</h3>${more}</div><div class="grid">${list.map(cardHTML).join("")}</div>`;
+  }
+  function shopBodyHTML() {
     if (!loaded) return `<p>${t("loading")}</p>`;
     if (loadError) return `<p>${t("loadErr")}</p>`;
     if (!products.length) return `<p>${t("noProducts")}</p>${loadMsg ? `<p class="muted">${esc(loadMsg)}</p>` : ""}`;
-    return `<div class="grid">` + products.map(p => {
-      const idx = cardIdx[p.pid] || 0;
-      const img = p.images[idx] || p.image || "";
-      const dots = p.images.length > 1
-        ? `<div class="dots">${p.images.map((_, i) => `<span class="dot ${i === idx ? "on" : ""}" data-cd="${esc(p.pid)}"></span>`).join("")}</div>`
+    const cats = catList();
+    const filtered = filt.cat || filt.q.trim() || filt.range !== "all" || filt.sort !== "default";
+    if (filtered) {
+      const list = filteredProducts();
+      const head = `<div class="sec-h"><h3>${esc(filt.cat || "")}</h3><button class="linkbtn" data-clear="1">${t("clearFilter")}</button></div>`;
+      return head + (list.length ? `<div class="grid">${list.map(cardHTML).join("")}</div>` : `<p class="muted">${t("noResults")}</p>`);
+    }
+    if (!cats.length) return ShowbizUI.trustHTML() + `<div class="grid">${products.map(cardHTML).join("")}</div>`;
+    let html = `<div class="cat-grid">${cats.map(c => `<button class="cat-tile" data-cat="${esc(c)}">${esc(c)}</button>`).join("")}</div>`;
+    html += ShowbizUI.trustHTML();
+    cats.forEach(c => {
+      const items = products.filter(p => catOf(p) === c);
+      html += sectionHTML(c, items.slice(0, 4), items.length, c);
+    });
+    const rest = products.filter(p => !catOf(p));
+    if (rest.length) html += sectionHTML(t("other"), rest.slice(0, 4), rest.length, null);
+    return html;
+  }
+  function viewShop() {
+    return `<div id="shopBody">${shopBodyHTML()}</div>`;
+  }
+  function refreshShop() {
+    const b = document.getElementById("shopBody");
+    if (b) b.innerHTML = shopBodyHTML();
+  }
+  function setCat(c) {
+    filt.cat = c || null;
+    closeMenus();
+    refreshShop();
+    window.scrollTo(0, 0);
+  }
+  function clearFilters() {
+    filt = { cat: null, q: "", range: "all", sort: "default" };
+    document.getElementById("q").value = "";
+    document.getElementById("rangeSel").value = "all";
+    document.getElementById("sortSel").value = "default";
+    closeMenus();
+    refreshShop();
+    renderSugg();
+  }
+  function closeMenus() {
+    document.getElementById("catDd").classList.remove("open");
+    document.getElementById("side").classList.add("hidden");
+    document.getElementById("sideOv").classList.add("hidden");
+  }
+  function renderSugg() {
+    const box = document.getElementById("sugg");
+    const q = filt.q.trim().toLowerCase();
+    if (!q) {
+      const rec = ShowbizUI.searches();
+      box.innerHTML = rec.length
+        ? `<div class="sugg-h">${t("recentSearch")}</div>` + rec.map(s => `<button data-q="${esc(s)}">${esc(s)}</button>`).join("")
         : "";
-      return `
-        <div class="card">
-          <div class="pimg">${img ? `<img id="c-${esc(p.pid)}" src="${esc(img)}" alt="">` : ""}</div>
-          ${dots}
-          <div class="pbody">
-            <div class="pname">${esc(p.nameEn)}</div>
-            <div class="price">${priceRange(p)}</div>
-            <div class="row2">
-              <button class="ghost" data-action="open" data-pid="${esc(p.pid)}">${t("details")}</button>
-              <button data-action="quickAdd" data-pid="${esc(p.pid)}">${t("add")}</button>
-            </div>
-          </div>
-        </div>`;
-    }).join("") + `</div>`;
+      box.classList.toggle("hidden", !rec.length);
+      return;
+    }
+    const m = products.filter(p => String(p.nameEn).toLowerCase().includes(q)).slice(0, 6);
+    box.innerHTML = m.length
+      ? m.map(p => `<button data-openp="${esc(p.pid)}"><img src="${esc(p.image || "")}" alt="">${esc(p.nameEn)}</button>`).join("")
+      : `<div class="sugg-h">${t("noResults")}</div>`;
+    box.classList.remove("hidden");
+  }
+  function catLinksHTML() {
+    return `<button data-cat="">${t("allCats")}</button>` + catList().map(c => `<button data-cat="${esc(c)}">${esc(c)}</button>`).join("");
+  }
+  function fillFilters() {
+    const r = document.getElementById("rangeSel");
+    const labels = {
+      all: t("priceAll"),
+      "0-5": `${t("upTo")} ${fmt(localPrice(5))}`,
+      "5-10": `${fmt(localPrice(5))} – ${fmt(localPrice(10))}`,
+      "10-20": `${fmt(localPrice(10))} – ${fmt(localPrice(20))}`,
+      "20+": `${fmt(localPrice(20))}+`
+    };
+    r.innerHTML = Object.keys(labels).map(k => `<option value="${k}">${esc(labels[k])}</option>`).join("");
+    r.value = filt.range;
+    const s = document.getElementById("sortSel");
+    const sorts = { default: t("sortDef"), asc: t("sortAsc"), desc: t("sortDesc"), name: t("sortName") };
+    s.innerHTML = Object.keys(sorts).map(k => `<option value="${k}">${esc(sorts[k])}</option>`).join("");
+    s.value = filt.sort;
   }
   function viewCart() {
     const lines = cartLines();
@@ -746,6 +946,15 @@
     document.getElementById("menuDel").textContent = t("menuDel");
     document.getElementById("menuLogout").textContent = t("logout");
     document.getElementById("siteName").textContent = t("siteName");
+    document.getElementById("announce").textContent = ShowbizUI.announceText();
+    document.getElementById("catBtn").textContent = t("cats");
+    document.getElementById("catPanel").innerHTML = catLinksHTML();
+    document.getElementById("sideCats").innerHTML = catLinksHTML();
+    document.getElementById("sideTitle").textContent = t("cats");
+    document.getElementById("sideX").textContent = "✕";
+    document.getElementById("menuBtn").setAttribute("aria-label", t("menu"));
+    document.getElementById("q").placeholder = t("searchPh");
+    fillFilters();
 
     let html = notice ? `<div class="notice">${esc(notice)}</div>` : "";
     if (view === "cart") html += viewCart();
@@ -878,7 +1087,47 @@
     btn.addEventListener("click", () => { state.lang = btn.dataset.glang; save(); render(); });
   });
   document.getElementById("gGo").addEventListener("click", () => { state.seen = true; save(); render(); });
-  document.getElementById("cartBtn").addEventListener("click", () => { location.href = "cart.html"; });
+  // زر السلة يفتح اللوحة الجانبية (بدون ما يغادر الصفحة)
+  document.getElementById("cartBtn").addEventListener("click", () => { ShowbizUI.open(); });
+
+  // ===== المتجر: أقسام، بحث، فلاتر، قائمة الجوال =====
+  document.addEventListener("click", (e) => {
+    const c = e.target.closest("[data-cat]");
+    if (c && c.closest("#shopBody, #catPanel, #sideCats")) { setCat(c.dataset.cat || null); return; }
+    const cl = e.target.closest("[data-clear]");
+    if (cl) { clearFilters(); return; }
+    const qb = e.target.closest("[data-q]");
+    if (qb) {
+      filt.q = qb.dataset.q; document.getElementById("q").value = filt.q;
+      refreshShop(); renderSugg(); return;
+    }
+    const op = e.target.closest("[data-openp]");
+    if (op) {
+      ShowbizUI.pushSearch(filt.q);
+      document.getElementById("sugg").classList.add("hidden");
+      openProduct(op.dataset.openp); return;
+    }
+    if (!e.target.closest(".searchbox")) document.getElementById("sugg").classList.add("hidden");
+    if (!e.target.closest("#catDd")) document.getElementById("catDd").classList.remove("open");
+  });
+  document.getElementById("catBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.getElementById("catDd").classList.toggle("open");
+  });
+  document.getElementById("menuBtn").addEventListener("click", () => {
+    document.getElementById("side").classList.remove("hidden");
+    document.getElementById("sideOv").classList.remove("hidden");
+  });
+  document.getElementById("sideX").addEventListener("click", closeMenus);
+  document.getElementById("sideOv").addEventListener("click", closeMenus);
+  const qEl = document.getElementById("q");
+  qEl.addEventListener("input", () => { filt.q = qEl.value; refreshShop(); renderSugg(); });
+  qEl.addEventListener("focus", renderSugg);
+  qEl.addEventListener("keydown", (e) => { if (e.key === "Enter") { ShowbizUI.pushSearch(qEl.value); document.getElementById("sugg").classList.add("hidden"); } });
+  document.getElementById("rangeSel").addEventListener("change", (e) => { filt.range = e.target.value; refreshShop(); });
+  document.getElementById("sortSel").addEventListener("change", (e) => { filt.sort = e.target.value; refreshShop(); });
+  // تحديث السلة الجانبية وعدّاد الهيدر عند أي تغيير
+  document.addEventListener("cartchange", () => render());
   // زر "حسابي" يفتح قائمة منسدلة، وما يرجع لصفحة الدخول إلا إذا ما فيه جلسة
   const acctMenu = document.getElementById("acctMenu");
   document.getElementById("acctBtn").addEventListener("click", (e) => {
