@@ -18,7 +18,7 @@
       remaining: "باقي {x} للتوصيل المجاني", freeDone: "وصلت للتوصيل المجاني",
       freeMsg: "مبروك، شحنك مجاني لهذا الطلب", freeIn: "التوصيل المجاني",
       tierLeft: "باقي {x} لمستوى الخصم", tierDone: "وصلت لمستوى الخصم",
-      wish: "حفظ في المفضلة", remove: "حذف", addCart: "إضافة إلى السلة", coupon: "عندي كود خصم", apply: "تطبيق", couponBad: "الكود غير صحيح",
+      wish: "حفظ في المفضلة", remove: "حذف", addCart: "إضافة للسلة", details: "التفاصيل", coupon: "عندي كود خصم", apply: "تطبيق", couponBad: "الكود غير صحيح",
       productsVal: "قيمة المنتجات", discount: "الخصم", shipping: "الشحن",
       shipLater: "يُحسب بعد اختيار العنوان", grand: "الإجمالي",
       shipInfo: "رسوم التوصيل تُحسب حسب الوزن والدولة",
@@ -31,7 +31,7 @@
       remaining: "{x} more for free delivery", freeDone: "You reached free delivery",
       freeMsg: "Congrats, your shipping is free on this order", freeIn: "Free delivery",
       tierLeft: "{x} more to reach the next tier", tierDone: "You reached the next tier",
-      wish: "Save to wishlist", remove: "Remove", addCart: "Add to cart", coupon: "Have a discount code?", apply: "Apply", couponBad: "Invalid code",
+      wish: "Save to wishlist", remove: "Remove", addCart: "Add to cart", details: "Details", coupon: "Have a discount code?", apply: "Apply", couponBad: "Invalid code",
       productsVal: "Products", discount: "Discount", shipping: "Shipping",
       shipLater: "Calculated after choosing an address", grand: "Total",
       shipInfo: "Delivery fee depends on weight and country",
@@ -277,11 +277,13 @@
   // ===== بطاقات مصغّرة وشرائط أفقية =====
   function miniHTML(e) {
     var low = e.p.stock != null && Number(e.p.stock) === 1;
-    return '<div class="ui-mini"><img src="' + esc(e.v.image || e.p.image) + '" alt="">' +
+    var pid = esc(e.p.pid);
+    return '<div class="ui-mini"><div class="ui-mini-img" data-ui="details" data-pid="' + pid + '"><img src="' + esc(e.v.image || e.p.image) + '" alt=""></div>' +
       '<div class="ui-mini-n">' + esc(pName(e.p)) + '</div>' +
       '<div class="ui-mini-p">' + (e.p.choose ? tr("fromPrice") + " " : "") + fmt(localPrice(e.v.price)) + '</div>' +
       (low ? '<div class="ui-low">' + tr("lowStock") + '</div>' : '') +
-      '<button class="ui-add" data-ui="addSug" data-vid="' + esc(e.vid) + '">+ ' + tr("add") + '</button></div>';
+      '<button class="ui-add-full" data-ui="addSug" data-vid="' + esc(e.vid) + '" data-pid="' + pid + '">' + tr("addCart") + '</button>' +
+      '<button class="ui-det" data-ui="details" data-pid="' + pid + '">' + tr("details") + '</button></div>';
   }
   // المنتجات اللي تحتاج اختيار خيارات ما تنضاف من السلة مباشرة
   function addable(list) { return list.filter(function (e) { return !e.p.choose && !inCart(e.vid); }); }
@@ -298,11 +300,20 @@
   }
   // صف أفقي يتسحب: منتجات قد تعجبك في صفحة السلة
   function suggestRow(entries) {
-    var list = addable(entries).slice(0, 10);
+    var list = entries.filter(function (e) { return !inCart(e.vid); }).slice(0, 10);
     if (!list.length) return "";
     return '<h4 class="ui-h">' + esc(tr("mayLike")) + '</h4><div class="ui-hrow">' + list.map(miniHTML).join("") + '</div>';
   }
   function lookHTML(entries) { return ""; }
+
+  // ===== فتح التفاصيل (نافذة الخيارات) =====
+  var detailsHandler = null;
+  function setDetailsHandler(fn) { detailsHandler = fn; }
+  function openDetails(pid) {
+    if (openState) close();
+    if (detailsHandler) { detailsHandler(String(pid)); return; }
+    location.href = "index.html?open=" + encodeURIComponent(String(pid));
+  }
 
   // ===== السلة الجانبية =====
   var openState = false, folded = {}, mode = "cart";
@@ -381,12 +392,12 @@
     document.getElementById("sdHead").innerHTML = head;
     var body = w.length
       ? w.map(function (e) {
-          var canAdd = e.v.vid && !e.p.choose;
+          var pidE = esc(e.p.pid);
           return '<div class="sd-line"><img src="' + esc(e.v.image || e.p.image) + '" alt="">' +
             '<div class="sd-info"><div class="sd-name">' + esc(pName(e.p)) + '</div>' +
             '<div class="sd-price">' + (e.v.price ? fmt(localPrice(e.v.price)) : "") + '</div>' +
-            '<div class="sd-ctl">' +
-              (canAdd ? '<button class="sd-ic sd-addc" data-ui="addSug" data-vid="' + esc(e.v.vid) + '">' + tr("addCart") + '</button>' : '') +
+            '<div class="sd-ctl sd-ctl-wide">' +
+              '<button class="sd-addc-full" data-ui="addSug" data-vid="' + esc(e.v.vid) + '" data-pid="' + pidE + '">' + tr("addCart") + '</button>' +
               '<button class="sd-ic" data-ui="wish" data-pid="' + esc(e.p.pid) + '" aria-label="' + tr("remove") + '">' + trashSVG() + '</button>' +
             '</div></div></div>';
         }).join("")
@@ -449,7 +460,13 @@
     if (a === "fold") { folded[el.dataset.k] = !folded[el.dataset.k]; drawRender(); return; }
     if (a === "apply") { applyCoupon(); return; }
     if (a === "removeCoupon") { st().coupon = null; save(); emit(); return; }
-    if (a === "addSug") { var en = findEntry(vid); if (en) addEntry(en, 1); return; }
+    if (a === "details") { openDetails(el.dataset.pid); return; }
+    if (a === "addSug") {
+      var en = findEntry(vid);
+      if (en && en.p.choose) { openDetails(en.p.pid); return; }
+      if (en) addEntry(en, 1);
+      return;
+    }
   });
   document.addEventListener("change", function (e) {
     var el = e.target;
@@ -540,6 +557,17 @@
 .ad-s[data-cat]{cursor:pointer}
 .sd-addc{background:var(--orange,#f59e4b);color:#111;border-radius:8px;padding:6px 10px;font-weight:700}
 .sd-line .sd-ctl{align-items:center;gap:8px}
+/* ===== v29: بطاقات المقترحات، زر إضافة بسطر واحد، المفضلة ===== */
+.ui-hrow .ui-mini{flex:0 0 150px}
+.ui-mini{display:flex;flex-direction:column;gap:6px}
+.ui-mini-img{display:block;cursor:pointer;border-radius:10px;overflow:hidden}
+.ui-mini-img img{display:block}
+.ui-mini .ui-add-full,.ui-mini .ui-det{display:block;width:100%;box-sizing:border-box;white-space:nowrap;font-size:13px;padding:8px 10px;border-radius:10px;text-align:center;font-family:inherit;cursor:pointer}
+.ui-mini .ui-add-full{background:var(--orange,#f59e4b);color:#111;font-weight:700;border:0}
+.ui-mini .ui-det{background:transparent;color:var(--fg,#eef2f7);border:1px solid #26334d;font-weight:400}
+.sd-addc-full{flex:1 1 auto;width:100%;height:auto;min-height:36px;white-space:nowrap;padding:8px 12px;border-radius:10px;background:var(--orange,#f59e4b);color:#111;font-weight:700;font-size:14px;border:0;text-align:center;box-sizing:border-box;cursor:pointer;font-family:inherit}
+.sd-ctl-wide{flex-wrap:wrap;width:100%}
+.sd-ctl-wide .sd-ic{flex-shrink:0}
 /* ===== v42 ===== */
 .announce{direction:ltr;text-align:start;overflow:hidden;white-space:nowrap;position:relative;padding:7px 0}
 .mq{display:block;width:max-content;position:relative;left:0;animation-name:mq2;animation-timing-function:linear;animation-iteration-count:infinite;will-change:transform;unicode-bidi:isolate}
@@ -613,6 +641,8 @@ html[dir=rtl] #sortSel{padding:0 12px 0 26px;background-position:left 10px cente
     suggestBlock: suggestBlock,
     suggestRow: suggestRow,
     lookHTML: lookHTML,
+    openDetails: openDetails,
+    setDetailsHandler: setDetailsHandler,
     emit: emit
   };
 })();
