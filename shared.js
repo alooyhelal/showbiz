@@ -211,12 +211,25 @@
   }
   injectFonts();
 
+  // منع الزوم بقدر الإمكان: قرص الإصبعين، وحركة الزوم في iOS، والضغط المزدوج
+  ["gesturestart", "gesturechange", "gestureend"].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
+  });
+  document.addEventListener("touchmove", function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); }, { passive: false });
+  var lastTouchEnd = 0;
+  document.addEventListener("touchend", function (e) {
+    var now = Date.now();
+    if (now - lastTouchEnd <= 300 && !(e.target && e.target.closest && e.target.closest("input,textarea,select"))) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+
   document.addEventListener("DOMContentLoaded", function () { fillIcons(); mountFooter(); mountToTop(); guardContent(); });
 
   // ===== أنماط مشتركة: بدون سكرول يمين ويسار، وتذييل في كل الصفحات =====
   var SHARED_CSS = [
     ":root{--teal:#2ec4b6;--f-head:'Cairo','Tajawal',system-ui,sans-serif;--f-body:'Tajawal','Cairo',system-ui,sans-serif;--f-num:'Inter','Cairo',system-ui,sans-serif}",
     "body{font-family:var(--f-body)}",
+    ".cartn{top:3px !important}",
     "html{overflow-x:hidden}",
     "body{-webkit-user-select:none;user-select:none}",
     "input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:text}",

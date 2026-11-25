@@ -633,6 +633,7 @@ html[dir=rtl] #sortSel{padding:0 12px 0 26px;background-position:left 10px cente
   document.head.appendChild(styleEl);
 
   window.ShowbizUI = {
+    flash: flash,
     cfg: CFG,
     tr: tr,
     pName: pName,
