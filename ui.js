@@ -394,7 +394,7 @@
   }
   function wishHTML() {
     var w = wishList();
-    var head = '<strong>' + (lang() === "en" ? "Wishlist" : "المفضلة") + ' · ' + w.length + '</strong>' +
+    var head = '<strong>' + (lang() === "en" ? "Wishlist" : "المفضلة") + ': ' + w.length + '</strong>' +
       '<button class="sd-x" data-ui="close" aria-label="' + tr("close") + '">✕</button>';
     document.getElementById("sdHead").innerHTML = head;
     var body = w.length
@@ -572,8 +572,8 @@
 .ui-mini .ui-add-full,.ui-mini .ui-det{display:block;width:100%;box-sizing:border-box;white-space:nowrap;font-size:13px;padding:8px 10px;border-radius:10px;text-align:center;font-family:inherit;cursor:pointer}
 .ui-mini .ui-add-full{background:var(--orange,#f59e4b);color:#111;font-weight:700;border:0}
 .ui-mini .ui-det{background:transparent;color:var(--fg,#eef2f7);border:1px solid #26334d;font-weight:400}
-.sd-addc-full{flex:1 1 auto;width:100%;height:auto;min-height:36px;white-space:nowrap;padding:8px 12px;border-radius:10px;background:var(--orange,#f59e4b);color:#111;font-weight:700;font-size:14px;border:0;text-align:center;box-sizing:border-box;cursor:pointer;font-family:inherit}
-.sd-ctl-wide{flex-wrap:wrap;width:100%}
+.sd-addc-full{flex:1 1 auto;width:auto;min-width:0;height:auto;min-height:32px;white-space:nowrap;padding:6px 12px;border-radius:10px;background:var(--orange,#f59e4b);color:#111;font-weight:700;font-size:13px;border:0;text-align:center;box-sizing:border-box;cursor:pointer;font-family:inherit}
+.sd-ctl-wide{flex-wrap:nowrap;width:100%}
 .sd-ctl-wide .sd-ic{flex-shrink:0}
 /* ===== v42 ===== */
 .announce{direction:ltr;text-align:start;overflow:hidden;white-space:nowrap;position:relative;padding:7px 0}

@@ -189,7 +189,38 @@
   .pbanners.n3 .pb-t { font-size:13px; }
   .pbanners.n3 .pb-cta { font-size:11px; padding:3px 8px; }
   .mtitle { transition:font-size .2s, color .2s; }
-  #pmodal .modal { margin:auto; }
+  #pmodal .modal { margin:0; max-width:none; width:100%; min-height:100%; border-radius:0; padding:0 16px 40px; box-sizing:border-box; background:var(--card); }
+  #pmodal { display:block; padding:0; overflow-y:auto; background:var(--card); z-index:40; }
+  #pmodal .xbtn { position:fixed; top:10px; inset-inline-start:10px; z-index:5; width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,.55); color:#fff; border:0; font-size:18px; padding:0; }
+  body.pp-open { overflow:hidden; }
+  #pmodal .gallery { border-radius:0; margin:0 -16px; width:calc(100% + 32px); background:var(--card2,#15203a); }
+  .pp-rate { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px; margin:0 0 8px; }
+  .pp-short { margin:0 0 12px; color:var(--muted); font-size:14px; line-height:1.7; }
+  .pp-sec { border-top:1px solid var(--line); margin-top:18px; padding-top:14px; }
+  .pp-sec h4 { margin:0 0 10px; font-size:16px; }
+  .pp-long { margin:0; line-height:1.9; font-size:14px; color:var(--muted); white-space:pre-line; }
+  .pp-sec .row { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .stars { color:#f5b301; letter-spacing:1px; white-space:nowrap; }
+  .stars .half { background:linear-gradient(90deg,#f5b301 50%,#3a4a68 50%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .rv-head { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .rv-head .ghost { margin-inline-start:auto; }
+  .rv-row { display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:6px; scrollbar-width:none; }
+  .rv-row::-webkit-scrollbar { display:none; }
+  .rv-card { flex:0 0 260px; height:200px; box-sizing:border-box; scroll-snap-align:start; background:var(--card2); border:1px solid var(--line); border-radius:16px; padding:12px; display:flex; flex-direction:column; gap:6px; overflow:hidden; min-width:0; }
+  .rv-top { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:14px; }
+  .rv-txt { flex:1; min-height:0; overflow-y:auto; font-size:13px; line-height:1.7; color:var(--fg); overflow-wrap:anywhere; }
+  .rv-txt.rv-clamp { display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+  .rv-more { align-self:flex-start; padding:0; font-size:12px; }
+  .rv-form { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; width:100%; max-width:420px; box-sizing:border-box; }
+  .rv-form h3 { margin:0 0 12px; }
+  .rv-stars { display:flex; gap:6px; justify-content:center; margin-bottom:12px; }
+  .rv-star { background:transparent; color:#3a4a68; font-size:30px; padding:0 2px; line-height:1; }
+  .rv-star.on { color:#f5b301; }
+  .rv-form textarea { width:100%; box-sizing:border-box; min-height:90px; }
+  .rv-btns { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+  #rvModal { z-index:60; }
+  .rv-msg { color:var(--err,#ffb4bf); font-size:13px; margin:8px 0 0; min-height:1em; }
+  .price .from { display:block; font-size:11px; font-weight:400; color:var(--muted); }
   .mtitle.morph { font-size:16px; color:var(--orange); }
   .card .pimg { cursor:pointer; }
   .opt-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
@@ -314,7 +345,7 @@
   const T = {
     ar: {
       siteName:"Showbiz", welcome:"مرحبًا بك", chooseCountry:"اختر الدولة", chooseLang:"اختر اللغة", go:"متابعة",
-      details:"التفاصيل", detailsTitle:"تفاصيل المنتج", chooseOpt:"اختر اللون / النمط", add:"إضافة للسلة", bannerSub:"تسوّق الآن", shopNow:"تسوّق الآن",
+      details:"التفاصيل", detailsTitle:"تفاصيل المنتج", chooseOpt:"اختر اللون / النمط", add:"إضافة للسلة", bannerSub:"تسوّق الآن", shopNow:"تسوّق الآن", specs:"المواصفات", reviews:"التقييمات", noReviews:"لا يوجد تقييمات لحد الآن", addReview:"إضافة تقييم", readMore:"قراءة المزيد", readLess:"إخفاء", sendReview:"إرسال التقييم", reviewOptional:"اكتب تعليقك (اختياري)", reviewPick:"اختر عدد النجوم أولاً", cancelBtn:"إلغاء", you:"أنت",
       qty:"الكمية", cart:"السلة", cartTitle:"سلة المشتريات", empty:"السلة فارغة", grand:"الإجمالي",
       productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"رسوم التوصيل", shipLater:"تُحدد بعد اختيار العنوان",
       shippingNote:"رسوم التوصيل تُضاف عند تحديد العنوان", coupon:"هل لديك كود خصم؟", apply:"تطبيق",
@@ -342,7 +373,7 @@
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
-      details:"Details", detailsTitle:"Product details", chooseOpt:"Choose color / style", add:"Add to cart", bannerSub:"Shop now", shopNow:"Shop now",
+      details:"Details", detailsTitle:"Product details", chooseOpt:"Choose color / style", add:"Add to cart", bannerSub:"Shop now", shopNow:"Shop now", specs:"Specifications", reviews:"Reviews", noReviews:"No reviews yet", addReview:"Add review", readMore:"Read more", readLess:"Show less", sendReview:"Submit review", reviewOptional:"Write your comment (optional)", reviewPick:"Pick a star rating first", cancelBtn:"Cancel", you:"You",
       qty:"Quantity", cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty", grand:"Total",
       productsVal:"Products", discount:"Discount", shipping:"Delivery fee", shipLater:"Set after choosing address",
       shippingNote:"Delivery fee is added once you choose an address", coupon:"Have a discount code?", apply:"Apply",
@@ -724,9 +755,9 @@
   }
   function detailsHTML(p, vIn) {
     const v = vIn || p.variants[0];
-    const d = v.dimsCm || p.dimsCm;
+    const d = (v && v.dimsCm) || p.dimsCm;
     const dims = d ? d.map(x => Number(x).toFixed(1)).join(" × ") + " cm" : "—";
-    const w = v.weightG || p.weightG;
+    const w = (v && v.weightG) || p.weightG;
     const txt = pDesc(p) || stripHTML(p.description);
     return `
       <h4 style="margin:4px 0 10px">${t("detailsTitle")}</h4>
@@ -735,11 +766,107 @@
       <p style="line-height:1.8;font-size:14px;color:var(--muted)">${esc(txt ? txt.slice(0, 1500) : t("noDesc"))}</p>
       <button class="ghost" data-action="mback" style="width:100%">${t("back")}</button>`;
   }
-  function renderModal() {
+  // ===== التقييمات الوهمية (10 لكل منتج) + تقييمات المستخدم المحفوظة =====
+  const RV_NAMES_AR = ["نورة", "أحمد", "فاطمة", "محمد", "سارة", "علي", "مريم", "يوسف", "هدى", "خالد"];
+  const RV_NAMES_EN = ["Noora", "Ahmed", "Fatima", "Mohammed", "Sara", "Ali", "Maryam", "Yousef", "Huda", "Khalid"];
+  const RV_TXT_AR = ["منتج ممتاز وجودته أحسن من المتوقع، أنصح فيه.", "التوصيل كان سريع والتغليف محترم.", "السعر مناسب مقارنة بالجودة، راضي عن الشراء.", "الاستخدام يومي ومريح، ما فيه أي مشكلة.", "تطابق الوصف والصور، وصلني بحالة ممتازة.", "خامة قوية وتصميم أنيق، بيكون شرائي القادم كمان.", "تجربة شراء سهلة، والمنتج يستاهل.", "كنت متردد بس طلع أفضل من ما توقعت.", "الحجم والوزن مناسبين، وجودة التصنيع واضحة.", "مرتب ومريح، أنصح الكل يجربه."];
+  const RV_TXT_EN = ["Excellent product, better quality than expected. Recommended.", "Fast delivery and nicely packed.", "Good price for the quality, happy with the purchase.", "Comfortable for daily use, no issues at all.", "Matches the description and photos, arrived in great condition.", "Strong material and elegant design, my next purchase too.", "Easy shopping experience, the product is worth it.", "I was unsure, but it turned out better than I expected.", "Size and weight are right, and the build quality is clear.", "Neat and comfortable, I recommend everyone try it."];
+  const RV_RATES = [5, 4.5, 4, 5, 3.5, 4.5, 5, 4, 4.5, 5];
+  function hashStr(s) { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; }
+  function userReviews(pid) {
+    try { const all = JSON.parse(localStorage.getItem("showbiz_reviews") || "{}"); return (all[String(pid)] || []); } catch (e) { return []; }
+  }
+  function reviewsFor(p) {
+    const en = state.lang === "en";
+    const h = hashStr(p.pid);
+    const seeded = Array.from({ length: 10 }, (_, i) => {
+      const k = (h + i * 7) % 10;
+      return { name: (en ? RV_NAMES_EN : RV_NAMES_AR)[(h + i * 3) % 10], r: RV_RATES[(k + i) % 10], c: (en ? RV_TXT_EN : RV_TXT_AR)[k] };
+    });
+    return [...userReviews(p.pid).map(x => ({ ...x, name: t("you") })), ...seeded];
+  }
+  function starsHTML(r) {
+    let s = "";
+    for (let i = 1; i <= 5; i++) s += r >= i ? "★" : (r >= i - 0.5 ? '<span class="half">★</span>' : "☆");
+    return `<span class="stars" aria-label="${r}">${s}</span>`;
+  }
+  function avgOf(list) { return list.length ? list.reduce((a, x) => a + x.r, 0) / list.length : 0; }
+  function reviewsHTML(p) {
+    const list = reviewsFor(p);
+    const avg = avgOf(list);
+    const head = `<div class="rv-head"><strong>${avg.toFixed(1)}</strong>${starsHTML(avg)}<span class="muted">(${list.length})</span><button class="ghost" data-action="rvAdd" type="button">${t("addReview")}</button></div>`;
+    if (!list.length) return head + `<p class="muted">${t("noReviews")}</p>`;
+    const cards = list.map((x, i) => {
+      const long = x.c.length > 140;
+      return `<div class="rv-card"><div class="rv-top"><strong>${esc(x.name)}</strong>${starsHTML(x.r)}</div>
+        <div class="rv-txt${long ? " rv-clamp" : ""}" id="rvt${i}">${esc(x.c)}</div>
+        ${long ? `<button class="linkbtn rv-more" type="button" data-action="rvMore" data-i="${i}">${t("readMore")}</button>` : ""}</div>`;
+    }).join("");
+    return head + `<div class="rv-row">${cards}</div>`;
+  }
+  // تبديل التقييمات كل 5 ثواني
+  let rvIdx = 0;
+  setInterval(() => {
+    const row = document.querySelector("#pmodal .rv-row");
+    if (!row || row.children.length < 2) return;
+    rvIdx = (rvIdx + 1) % row.children.length;
+    const first = row.children[0], second = row.children[1];
+    const step = Math.abs(second.offsetLeft - first.offsetLeft);
+    const rtl = getComputedStyle(row).direction === "rtl";
+    const left = (rtl ? -1 : 1) * rvIdx * step;
+    row.scrollTo({ left, behavior: "smooth" });
+  }, 5000);
+  // نافذة إضافة التقييم: نجوم (إجباري) وتعليق (اختياري)
+  let rvDraft = { n: 0, c: "", msg: "" };
+  function renderReviewForm() {
+    const pid = modal && modal.pid;
+    let box = document.getElementById("rvModal");
+    if (!box) {
+      box = document.createElement("div"); box.id = "rvModal"; box.className = "overlay hidden"; document.body.appendChild(box);
+      box.addEventListener("click", (e) => {
+        if (e.target === box) { closeReviewForm(); return; }
+        const b = e.target.closest("[data-action]");
+        if (b && !b.disabled) handleAction(b.dataset.action, b.dataset);
+      });
+    }
+    box.innerHTML = `<div class="rv-form">
+      <h3>${t("addReview")}</h3>
+      <div class="rv-stars">${[1, 2, 3, 4, 5].map(i => `<button type="button" class="rv-star ${i <= rvDraft.n ? "on" : ""}" data-action="rvStar" data-n="${i}" aria-label="${i}">★</button>`).join("")}</div>
+      <textarea id="rvText" rows="4" placeholder="${esc(t("reviewOptional"))}">${esc(rvDraft.c)}</textarea>
+      <p class="rv-msg">${esc(rvDraft.msg)}</p>
+      <div class="rv-btns"><button class="ghost" type="button" data-action="rvCancel">${t("cancelBtn")}</button><button type="button" data-action="rvSend">${t("sendReview")}</button></div>
+    </div>`;
+    box.classList.remove("hidden");
+    box.dataset.pid = pid || "";
+  }
+  function closeReviewForm() {
+    const box = document.getElementById("rvModal");
+    if (box) { box.classList.add("hidden"); box.innerHTML = ""; }
+    rvDraft = { n: 0, c: "", msg: "" };
+  }
+  function submitReview() {
+    const box = document.getElementById("rvModal");
+    const pid = box && box.dataset.pid;
+    const txt = document.getElementById("rvText");
+    rvDraft.c = txt ? txt.value.trim() : "";
+    if (!rvDraft.n) { rvDraft.msg = t("reviewPick"); renderReviewForm(); return; }
+    try {
+      const all = JSON.parse(localStorage.getItem("showbiz_reviews") || "{}");
+      all[String(pid)] = [{ r: rvDraft.n, c: rvDraft.c }, ...(all[String(pid)] || [])].slice(0, 30);
+      localStorage.setItem("showbiz_reviews", JSON.stringify(all));
+    } catch (e) {}
+    closeReviewForm();
+    renderModal(true);
+  }
+
+  // صفحة المنتج كاملة: الصورة والوصف القصير والشراء، ثم الوصف الطويل والمواصفات والتقييمات
+  function renderModal(keepScroll) {
     const box = document.getElementById("pmodal");
+    const prevTop = box.scrollTop;
     const c = curModal();
-    if (!c) { box.classList.add("hidden"); box.innerHTML = ""; return; }
+    if (!c) { box.classList.add("hidden"); box.innerHTML = ""; document.body.classList.remove("pp-open"); return; }
     const { p, v } = c;
+    document.body.classList.add("pp-open");
     const g = galleryFor(p, v);
     if (modal.idx >= g.length) modal.idx = 0;
     const nav = g.length > 1
@@ -749,14 +876,12 @@
     const enter = modal.fresh ? " enter" : "";
     modal.fresh = false;
 
-    let body;
-    if (modal.details) {
-      body = detailsHTML(p, v);
-    } else if (p.choose) {
+    let buy;
+    if (p.choose) {
       const { colors, sizes } = optionValues(p);
       const en = state.lang === "en";
-      body = `
-        <div class="price">${sizePriceUSD(p) != null ? fmt(localPrice(sizePriceUSD(p))) : `${t("fromPrice")} ${fmt(localPrice(cheapOf(p)))}`}</div>${v ? "" : `<div class="muted">${t("chooseBoth")}</div>`}
+      buy = `
+        <div class="price">${sizePriceUSD(p) != null ? fmt(localPrice(sizePriceUSD(p))) : `<span class="from">${t("fromPrice")}</span> ${fmt(localPrice(cheapOf(p)))}`}</div>${v ? "" : `<div class="muted">${t("chooseBoth")}</div>`}
         <div class="opt-row" style="margin-top:10px">
           <div><label class="muted ui-req">${en ? "Color" : "اللون"}</label>
             <select id="mColor"><option value="">${t("chooseColor")}</option>${colors.map(o =>
@@ -769,8 +894,7 @@
           <span>${t("qty")}</span>
           <span class="qtyctl"><button class="ghost" data-action="mqdec">−</button> <strong>${modal.qty}</strong> <button class="ghost" data-action="mqinc">+</button></span>
         </div>
-        <button id="mAdd" style="width:100%" ${v ? "" : "disabled"}>${t("add")}</button>
-        <button class="ghost" data-action="mdetails" style="width:100%;margin-top:8px">${t("details")}</button>`;
+        <button id="mAdd" style="width:100%" ${v ? "" : "disabled"}>${t("add")}</button>`;
     } else {
       const opts = p.variants.length > 1
         ? `<label class="muted">${t("chooseOpt")}</label>
@@ -778,29 +902,46 @@
               `<option value="${esc(x.vid)}" ${x.vid === v.vid ? "selected" : ""}>${esc(variantLabel(x))}</option>`
             ).join("")}</select>`
         : (v.key ? `<div class="muted">${esc(variantLabel(v))}</div>` : "");
-      body = `
+      buy = `
         <div class="price">${fmt(localPrice(v.price))}</div>
         ${opts}
         <div class="qtyrow">
           <span>${t("qty")}</span>
           <span class="qtyctl"><button class="ghost" data-action="mqdec">−</button> <strong>${modal.qty}</strong> <button class="ghost" data-action="mqinc">+</button></span>
         </div>
-        <button id="mAdd" style="width:100%">${t("add")}</button>
-        <button class="ghost" data-action="mdetails" style="width:100%;margin-top:8px">${t("details")}</button>`;
+        <button id="mAdd" style="width:100%">${t("add")}</button>`;
     }
+
+    const txt = pDesc(p) || stripHTML(p.description) || "";
+    const short = txt.slice(0, 140);
+    const d = (v && v.dimsCm) || p.dimsCm;
+    const dims = d ? d.map(x => Number(x).toFixed(1)).join(" × ") + " cm" : "—";
+    const w = (v && v.weightG) || p.weightG;
+    const avg = avgOf(reviewsFor(p));
 
     box.innerHTML = `
       <div class="modal${enter}">
-        <button class="xbtn" data-action="closeModal">✕</button>
+        <button class="xbtn" data-action="closeModal" aria-label="close">✕</button>
         <div class="gallery">
           ${g.length ? `<img id="mImg" src="${esc(g[modal.idx])}" alt="">` : ""}
           ${nav}
         </div>
         ${dots}
-        <h3 class="mtitle" style="margin:12px 0 6px">${esc(pName(p))}</h3>
-        ${body}
+        <div style="padding:0 2px">
+          <h3 class="mtitle" style="margin:12px 0 6px">${esc(pName(p))}</h3>
+          <div class="pp-rate">${starsHTML(avg)}<span class="muted">${avg.toFixed(1)}</span></div>
+          ${short ? `<p class="pp-short">${esc(short)}${txt.length > 140 ? "…" : ""}</p>` : ""}
+          ${buy}
+          <section class="pp-sec"><h4>${t("detailsTitle")}</h4><p class="pp-long">${esc(txt.slice(0, 1500) || t("noDesc"))}</p></section>
+          <section class="pp-sec"><h4>${t("specs")}</h4>
+            <div class="row"><span class="muted">${t("dims")}</span><span>${dims}</span></div>
+            <div class="row"><span class="muted">${t("weight")}</span><span>${w ? w + " g" : "—"}</span></div>
+          </section>
+          <section class="pp-sec"><h4>${t("reviews")}</h4>${reviewsHTML(p)}</section>
+        </div>
       </div>`;
     box.classList.remove("hidden");
+    if (keepScroll) box.scrollTop = prevTop;
     sliverFx();
   }
   // الصورة تتصغر مع السكرول وتلتصق فوق، والعنوان يتصغر. وإذا سحبت لتحت وانت فوق تتمط
@@ -974,7 +1115,7 @@
         ${dots}
         <div class="pbody">
           <div class="pname">${esc(pName(p))}</div>
-          <div class="price">${cmp ? `<s class="old">${fmt(localPrice(cmp))}</s>` : ""}<span class="now">${priceRange(p)}</span></div>
+          <div class="price">${cmp ? `<s class="old">${fmt(localPrice(cmp))}</s>` : ""}${p.choose ? `<span class="from">${t("fromPrice")}</span><span class="now">${fmt(localPrice(cheapOf(p)))}</span>` : `<span class="now">${priceRange(p)}</span>`}</div>
           <div class="row2">
             <button data-action="quickAdd" data-pid="${esc(p.pid)}">${t("add")}</button>
             <button class="ghost" data-action="open" data-pid="${esc(p.pid)}">${t("details")}</button>
@@ -1447,6 +1588,16 @@
       const g = galleryFor(c.p, c.v);
       modal.idx = (modal.idx + (a === "mnext" ? 1 : -1) + g.length) % g.length;
       modal.paused = true; renderModal(); return;
+    }
+    if (a === "rvAdd") { rvDraft = { n: 0, c: "", msg: "" }; renderReviewForm(); return; }
+    if (a === "rvCancel") { closeReviewForm(); return; }
+    if (a === "rvStar") { const tx = document.getElementById("rvText"); if (tx) rvDraft.c = tx.value; rvDraft.n = Number(ds.n) || 0; rvDraft.msg = ""; renderReviewForm(); return; }
+    if (a === "rvSend") { submitReview(); return; }
+    if (a === "rvMore") {
+      const el = document.getElementById("rvt" + ds.i);
+      const bt = document.querySelector(`[data-action="rvMore"][data-i="${ds.i}"]`);
+      if (el && bt) { const open = el.classList.toggle("rv-clamp") === false; bt.textContent = open ? t("readLess") : t("readMore"); }
+      return;
     }
     if (a === "mqinc") { if (modal.qty < 99) modal.qty++; renderModal(); return; }
     if (a === "mqdec") { if (modal.qty > 1) modal.qty--; renderModal(); return; }
