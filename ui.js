@@ -175,6 +175,7 @@
     i.qty = Math.min(99, Math.max(0, i.qty + d));
     if (i.qty <= 0) s.cart = s.cart.filter(function (x) { return x.vid !== vid; });
     save(); emit();
+    if (openState) maybeCelebrate();
   }
   function removeLine(vid) {
     var s = st();
@@ -216,6 +217,19 @@
   }
   // الإعلان يظهر مرة وحدة ويتحرك بشكل مستمر من اليمين لليسار
   function announceHTML() { return '<span class="mq">' + esc(announceText()) + '</span>'; }
+  // يحسب مسافة الحركة من عرض الشريط وطول النص: يدخل من اليمين، يخرج كامل من اليسار، ثم يعيد البداية بدون فراغ طويل
+  function runAnnounce() {
+    var box = document.getElementById("announce");
+    if (!box) return;
+    var m = box.querySelector(".mq");
+    if (!m) return;
+    var W = box.clientWidth, T = m.offsetWidth;
+    m.setAttribute("dir", lang() === "en" ? "ltr" : "rtl");
+    m.style.setProperty("--mqw", W + "px");
+    m.style.setProperty("--mqt", T + "px");
+    m.style.animationDuration = ((W + T) / 70).toFixed(2) + "s";
+  }
+  window.addEventListener("resize", function () { runAnnounce(); });
 
   // ===== احتفال صغير عند الوصول للتوصيل المجاني =====
   var lastFree = null;
@@ -245,9 +259,18 @@
       try { prev = sessionStorage.getItem("showbiz_free"); } catch (e) {}
       lastFree = prev === "1" ? true : (prev === "0" ? false : f);
     }
-    if (f && !lastFree) celebrate();
+    if (!f) { try { sessionStorage.removeItem("showbiz_celebrated"); } catch (e) {} }
     lastFree = f;
     try { sessionStorage.setItem("showbiz_free", f ? "1" : "0"); } catch (e) {}
+  }
+  // الاحتفال يطلع عند فتح السلة الجانبية (أو تغيير الكمية داخلها) إذا الطلب محقق للتوصيل المجاني
+  function maybeCelebrate() {
+    if (!isFree()) return;
+    var done = null;
+    try { done = sessionStorage.getItem("showbiz_celebrated"); } catch (e) {}
+    if (done === "1") return;
+    celebrate();
+    try { sessionStorage.setItem("showbiz_celebrated", "1"); } catch (e) {}
   }
   function trustHTML() { return ""; }
 
@@ -299,7 +322,7 @@
     document.getElementById("sd").classList.toggle("hidden", !on);
   }
   // المود: "cart" للسلة، أو "wish" للمفضلة
-  function open(m) { ensureDom(); mode = m === "wish" ? "wish" : "cart"; openState = true; drawRender(); show(true); }
+  function open(m) { ensureDom(); mode = m === "wish" ? "wish" : "cart"; openState = true; drawRender(); show(true); if (mode === "cart") maybeCelebrate(); }
   function close() { openState = false; if (document.getElementById("sd")) show(false); }
 
   function heartSVG() { return ShowbizCore.icon("heart"); }
@@ -503,6 +526,38 @@
   CSS += "\n" + "/* ===== v37: هيدر جديد، شبكة بدون سكرول يمين ويسار، أسماء بسطرين ===== */\n.hd { position:sticky; top:0; z-index:5; background:rgba(13,23,40,.97); border-bottom:1px solid var(--line); padding:10px 16px; }\n.hd-row { display:flex; align-items:center; gap:10px; max-width:1200px; margin:0 auto; flex-wrap:wrap; }\n.hd-acts { display:flex; align-items:center; gap:4px; margin-inline-start:auto; }\n.logo { font-weight:800; font-size:20px; color:var(--orange); text-decoration:none; white-space:nowrap; }\n.searchbox { position:relative; flex:1; min-width:0; }\n.searchbox input { margin:0; border-radius:999px; padding:10px 14px 10px 40px; height:42px; }\nhtml[dir=rtl] .searchbox input { padding:10px 40px 10px 14px; }\n.s-ico { position:absolute; top:50%; inset-inline-start:14px; transform:translateY(-50%); color:var(--muted); pointer-events:none; display:inline-flex; z-index:1; }\n.s-ico .ico { width:18px; height:18px; }\n.ic-btn { position:relative; width:42px; height:42px; display:inline-flex; align-items:center; justify-content:center; background:transparent; color:var(--fg); border:0; border-radius:12px; padding:0; flex-shrink:0; }\n.ic-btn:hover { background:var(--card2); }\n.ic-btn .ico { width:22px; height:22px; }\n.cartn { position:absolute; top:-6px; inset-inline-end:-6px; min-width:18px; height:18px; border-radius:999px; background:var(--orange); color:#111; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; padding:0 4px; }\n.cartn[hidden] { display:none !important; }\n.pref-btn { padding:9px 12px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--fg); font-size:13px; font-weight:700; white-space:nowrap; cursor:pointer; font-family:inherit; }\n.hd-row2 { display:flex; gap:8px; align-items:center; margin-top:10px; max-width:1200px; margin-inline:auto; flex-wrap:wrap; }\n.hd-row2 select { width:auto; margin:0; }\n.menubtn { display:none; }\n@media (max-width:700px) {\n  .hd { padding:8px 10px; }\n  .menubtn { display:inline-flex; }\n  .catdd { display:none; }\n  .logo { font-size:18px; }\n  .hd-acts { gap:0; }\n  .ic-btn { width:38px; height:38px; }\n  .pref-btn { padding:7px 9px; font-size:12px; }\n}\n.heartbtn { position:absolute; top:10px; inset-inline-end:10px; z-index:2; width:36px; height:36px; border-radius:50%; border:0; background:rgba(255,255,255,.92); color:#333; display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.15); }\n.heartbtn .ico { width:18px; height:18px; }\n.heartbtn.on { color:#e5484d; }\n.heartbtn.on svg { fill:#e5484d; }\n.pref-lbl { font-size:13px; color:var(--muted); margin:14px 0 8px; }\n.pref-langs { display:flex; gap:8px; }\n.pref-langs button { flex:1; }\n.pref-langs button.on { border-color:var(--orange); color:var(--orange); }\n.pref-list { display:flex; flex-direction:column; gap:6px; max-height:52vh; overflow-y:auto; }\n.pref-item { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; text-align:start; background:transparent; color:var(--fg); border:1px solid var(--line); border-radius:12px; padding:11px 12px; font-weight:400; font-family:inherit; }\n.pref-item strong { font-weight:700; color:var(--muted); font-size:13px; white-space:nowrap; }\n.pref-item.on { border-color:var(--orange); }\n.pimg { height:auto; aspect-ratio:1 / 1; }\n.pimg img { width:100%; height:100%; object-fit:cover; }\n.grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }\n@media (min-width:860px) { .grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; } }\n.card { min-width:0; }\n.pbody { min-width:0; }\n.pname { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; min-height:3em; }\n.price { font-size:15px; }\n.hov button { padding:8px; font-size:12px; }\n";
   // أنماط مشتركة لصفحة السلة والمودالات (v41)
   CSS += "\n" + ".req-star{color:#ff5d6c}\n.ui-req::after{content:' *';color:#ff5d6c;font-weight:800}\n";
+  // أنماط v42: شريط الإعلان، ترتيب الهيدر، بطاقات بأزرار ثابتة، إعلانات متعددة، كود الخصم
+  CSS += "\n" + `/* ===== v42 ===== */
+.announce{direction:ltr;text-align:start;overflow:hidden;white-space:nowrap;position:relative;padding:7px 0}
+.mq{display:block;width:max-content;position:relative;left:0;animation-name:mq2;animation-timing-function:linear;animation-iteration-count:infinite;will-change:transform;unicode-bidi:isolate}
+@keyframes mq2{from{transform:translateX(var(--mqw,100vw))}to{transform:translateX(calc(-1 * var(--mqt,100%)))}}
+#sortSel{flex:0 0 auto;width:118px;min-width:0;height:40px;margin:0;padding:0 26px 0 12px;appearance:none;-webkit-appearance:none;background-color:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:999px;font-size:12px;background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 10 6%22%3E%3Cpath d=%22M1 1l4 4 4-4%22 fill=%22none%22 stroke=%22%239aa7bd%22 stroke-width=%221.6%22/%3E%3C/svg%3E");background-repeat:no-repeat;background-size:10px 6px;background-position:right 10px center}
+html[dir=rtl] #sortSel{padding:0 12px 0 26px;background-position:left 10px center}
+.hd-row2{gap:6px;flex-wrap:nowrap}
+.searchbox{flex:1 1 0;min-width:0}
+.card{display:flex;flex-direction:column}
+.pbody{flex:1;display:flex;flex-direction:column}
+.pbody .row2{margin-top:auto;padding-top:10px}
+.price{min-height:1.5em}
+.ad{background:none;border:0;padding:0;min-height:0;position:relative;margin:10px 0 4px}
+.ad-s{position:relative;border-radius:18px;border:1px solid var(--line);padding:18px 52px 16px;min-height:138px;color:#fff;background:linear-gradient(125deg,#17264a 0%,#25396a 58%,#c96a2a 130%)}
+.ad-s.v1{background:linear-gradient(125deg,#12343a 0%,#1f6b64 60%,#5fb89b 140%)}
+.ad-s.v2{background:linear-gradient(125deg,#3a1a3a 0%,#7a2d5c 60%,#f59e4b 140%)}
+.ad-s[hidden]{display:none}
+.ad .ad-arr{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:30px;height:30px;min-height:0;margin:0;padding:0;border:0;border-radius:50%;background:rgba(0,0,0,.28);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;cursor:pointer}
+.ad .ad-arr:hover{background:rgba(0,0,0,.42)}
+.ad .ad-arr.n{inset-inline-end:8px}
+.ad .ad-arr.p{inset-inline-start:8px}
+.ad .ad-arr[hidden]{display:none}
+.ad-dots{display:flex;justify-content:center;gap:6px;margin:10px 0 2px}
+.ad-dots .ad-dot{width:7px;height:7px;min-height:0;padding:0;margin:0;border:0;border-radius:999px;background:var(--dot);cursor:pointer}
+.ad-dots .ad-dot.on{width:18px;background:var(--blue)}
+.sd-coupon{padding:6px 10px;margin:8px 0}
+.sd-fold{padding:2px 0;font-size:14px}
+.sd-cpn{margin:6px 0 2px;gap:6px}
+.sd-cpn input{padding:0 10px;height:34px;font-size:13px;border-radius:9px}
+.sd-cpn button{height:34px;padding:0 12px;font-size:13px;border-radius:9px}
+`;
   var styleEl = document.createElement("style");
   styleEl.textContent = CSS;
   document.head.appendChild(styleEl);
@@ -539,6 +594,7 @@
     trustHTML: trustHTML,
     announceText: announceText,
     announceHTML: announceHTML,
+    runAnnounce: runAnnounce,
     miniHTML: miniHTML,
     recentBlock: recentBlock,
     suggestBlock: suggestBlock,
