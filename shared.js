@@ -133,7 +133,7 @@
     var s = readJSON("showbiz_state", {});
     var L = FT[s.lang === "en" ? "en" : "ar"];
     // صفحات الشراء (data-lite): سطر نصي بسيط بدل التذييل الكامل
-    if (document.body && document.body.hasAttribute("data-lite")) {
+    if (!document.getElementById("siteName") || (document.body && document.body.hasAttribute("data-lite"))) {
       var line = document.createElement("p");
       line.id = "siteFooter"; line.className = "copyline";
       line.textContent = copyright(s.lang);
@@ -157,11 +157,44 @@
       "</div>";
     document.body.appendChild(f);
   }
-  document.addEventListener("DOMContentLoaded", function () { fillIcons(); mountFooter(); });
+  // زر العودة للأعلى: شفاف في الزاوية، حلقته تمتلئ مع النزول وتكتمل عند النهاية
+  function mountToTop() {
+    if (document.getElementById("toTop")) return;
+    var b = document.createElement("button");
+    b.id = "toTop"; b.type = "button"; b.className = "totop";
+    b.setAttribute("aria-label", "Back to top");
+    b.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true"><circle class="trk" cx="24" cy="24" r="21" fill="none" stroke-width="3"/><circle class="prg" cx="24" cy="24" r="21" fill="none" stroke-width="3" stroke-linecap="round"/></svg><span class="arr">&#8593;</span>';
+    if (document.querySelector(".stickyfoot, .build")) b.classList.add("lift");
+    document.body.appendChild(b);
+    var prg = b.querySelector(".prg"), C = 2 * Math.PI * 21;
+    prg.style.strokeDasharray = C + "";
+    var raf = 0;
+    var upd = function () {
+      raf = 0;
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      var r = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+      prg.style.strokeDashoffset = C * (1 - r) + "";
+      b.classList.toggle("on", window.scrollY > 200);
+    };
+    window.addEventListener("scroll", function () { if (!raf) raf = requestAnimationFrame(upd); }, { passive: true });
+    window.addEventListener("resize", upd);
+    b.addEventListener("click", function () { window.scrollTo({ top: 0, behavior: "smooth" }); });
+    upd();
+  }
+
+  document.addEventListener("DOMContentLoaded", function () { fillIcons(); mountFooter(); mountToTop(); });
 
   // ===== أنماط مشتركة: بدون سكرول يمين ويسار، وتذييل في كل الصفحات =====
   var SHARED_CSS = [
-    "html,body{overflow-x:hidden;max-width:100%}",
+    "html{overflow-x:hidden}",
+    "body{max-width:100%}",
+    ".totop{position:fixed;inset-inline-end:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:19;width:46px;height:46px;border:0;padding:0;background:transparent;color:#f59e4b;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .25s;-webkit-tap-highlight-color:transparent}",
+    ".totop.lift{bottom:calc(92px + env(safe-area-inset-bottom,0px))}",
+    ".totop.on{opacity:1;pointer-events:auto}",
+    ".totop svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}",
+    ".totop .trk{stroke:rgba(128,128,128,.3)}",
+    ".totop .prg{stroke:#f59e4b;transition:stroke-dashoffset .15s linear}",
+    ".totop .arr{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;line-height:1}",
     "img{max-width:100%}",
     ".ico{width:20px;height:20px;display:inline-block;vertical-align:middle;flex-shrink:0}",
     ".sfoot{margin-top:40px;background:#070d18;border-top:1px solid #26334d;color:#9aa7bd;padding:28px 16px calc(40px + env(safe-area-inset-bottom,0px));font-size:13px;line-height:1.8}",
