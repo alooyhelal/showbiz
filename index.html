@@ -710,7 +710,7 @@
       const { colors, sizes } = optionValues(p);
       const en = state.lang === "en";
       body = `
-        <div class="price">${v ? fmt(localPrice(v.price)) : `${t("fromPrice")} ${fmt(localPrice(cheapOf(p)))}`}</div>${v ? "" : `<div class="muted">${t("chooseBoth")}</div>`}
+        <div class="price">${sizePriceUSD(p) != null ? fmt(localPrice(sizePriceUSD(p))) : `${t("fromPrice")} ${fmt(localPrice(cheapOf(p)))}`}</div>${v ? "" : `<div class="muted">${t("chooseBoth")}</div>`}
         <div class="opt-row" style="margin-top:10px">
           <div><label class="muted ui-req">${en ? "Color" : "اللون"}</label>
             <select id="mColor"><option value="">${t("chooseColor")}</option>${colors.map(o =>
@@ -814,10 +814,16 @@
   function minUSD(p) { return Math.min(...p.variants.map(v => v.price)); }
   // أرخص سعر للمنتج (الخيار الأساسي) والفرق لكل لون أو مقاس عنه
   function cheapOf(p) { return Math.min(...p.variants.map(v => v.price)); }
+  // السعر يتبع المقاس فقط: أقل سعر بين الخيارات اللي فيها المقاس المختار (اللون ما يغيّر السعر)
+  function sizePriceUSD(p) {
+    if (!modal || !modal.size) return null;
+    const arr = p.variants.filter(x => x.opt.size.en === modal.size);
+    return arr.length ? Math.min(...arr.map(x => x.price)) : null;
+  }
   function optTag(p, key, o) {
     const d = Math.min(...p.variants.filter(x => x.opt[key].en === o.en).map(x => x.price)) - cheapOf(p);
     if (d <= 0) return "";
-    return " · " + (state.lang === "en" ? "+" : "زائد ") + fmt(localPrice(d));
+    return " · +" + fmt(localPrice(d));
   }
   function allItems(n) { return [...n.direct, ...n.kids.flatMap(allItems)]; }
   function inCat(p, key) { const k = productPath(p).join("/"); return k === key || k.startsWith(key + "/"); }
@@ -854,11 +860,18 @@
       if (q && !(String(p.nameEn) + " " + String(p.nameAr || "")).toLowerCase().includes(q)) return false;
       return true;
     });
-    if (filt.sort === "asc") list = list.slice().sort((a, b) => minUSD(a) - minUSD(b));
-    if (filt.sort === "desc") list = list.slice().sort((a, b) => minUSD(b) - minUSD(a));
-    if (filt.sort === "name") list = list.slice().sort((a, b) => pName(a).localeCompare(pName(b)));
-    if (filt.sort === "nameDesc") list = list.slice().sort((a, b) => pName(b).localeCompare(pName(a)));
-    return list;
+    return sortItems(list);
+  }
+  // الترتيب يطبّق على أي قائمة منتجات ظاهرة (الصفحة الرئيسية والفئات) بدون ما ينقل لصفحة ثانية
+  function sortItems(list) {
+    const s = filt.sort;
+    if (!s || s === "default") return list;
+    const c = list.slice();
+    if (s === "asc") c.sort((a, b) => minUSD(a) - minUSD(b));
+    else if (s === "desc") c.sort((a, b) => minUSD(b) - minUSD(a));
+    else if (s === "name") c.sort((a, b) => pName(a).localeCompare(pName(b)));
+    else if (s === "nameDesc") c.sort((a, b) => pName(b).localeCompare(pName(a)));
+    return c;
   }
   // سعر قبل الخصم (إذا المنتج فيه compareAt أعلى من السعر الحالي)
   function cmpUSD(p) {
@@ -885,7 +898,7 @@
         ${dots}
         <div class="pbody">
           <div class="pname">${esc(pName(p))}</div>
-          <div class="price">${cmp ? `<s class="old">${fmt(localPrice(cmp))}</s>` : ""}${priceRange(p)}</div>
+          <div class="price">${cmp ? `<s class="old">${fmt(localPrice(cmp))}</s>` : ""}<span class="now">${priceRange(p)}</span></div>
           <div class="row2">
             <button data-action="quickAdd" data-pid="${esc(p.pid)}">${t("add")}</button>
             <button class="ghost" data-action="open" data-pid="${esc(p.pid)}">${t("details")}</button>
@@ -933,12 +946,12 @@
   function adHTML() {
     const rtl = document.documentElement.dir === "rtl";
     const slides = [
-      { v: "", h: t("adTitle"), p: t("adSub") },
-      { v: " v1", h: t("adTitle2"), p: t("adSub2") },
-      { v: " v2", h: t("adTitle3"), p: t("adSub3") }
+      { v: "", h: t("adTitle"), p: t("adSub"), cat: SALE },
+      { v: " v1", h: t("adTitle2"), p: t("adSub2"), cat: "electronics" },
+      { v: " v2", h: t("adTitle3"), p: t("adSub3"), cat: "cars" }
     ];
     return `<div class="ad" id="adBox">
-      ${slides.map((s, i) => `<div class="ad-s${s.v}" data-ads="${i}" ${i === adIdx ? "" : "hidden"}><span class="adtag">${t("adTag")}</span><h2>${s.h}</h2><p>${s.p}</p><button data-clear="1">${t("adBtn")}</button></div>`).join("")}
+      ${slides.map((s, i) => `<div class="ad-s${s.v}" data-ads="${i}" data-cat="${s.cat}" ${i === adIdx ? "" : "hidden"}><span class="adtag">${t("adTag")}</span><h2>${s.h}</h2><p>${s.p}</p><button type="button">${t("adBtn")}</button></div>`).join("")}
       <button class="ad-arr n" data-ad="next" aria-label="next" ${adIdx === AD_N - 1 ? "hidden" : ""}>${rtl ? "‹" : "›"}</button>
       <button class="ad-arr p" data-ad="prev" aria-label="prev" ${adIdx === 0 ? "hidden" : ""}>${rtl ? "›" : "‹"}</button>
     </div>
@@ -967,7 +980,7 @@
     if (!loaded) return `<p>${t("loading")}</p>`;
     if (loadError) return `<p>${t("loadErr")}</p>`;
     if (!products.length) return `<p>${t("noProducts")}</p>${loadMsg ? `<p class="muted">${esc(loadMsg)}</p>` : ""}`;
-    const filtered = filt.cat || filt.q.trim() || filt.sort !== "default";
+    const filtered = filt.cat || filt.q.trim();
     if (filtered) {
       const list = filteredProducts();
       const isSale = filt.cat === SALE;
@@ -986,18 +999,18 @@
       return `<div class="sec-h"><h3>${t("catsHead")}</h3><button class="linkbtn" data-cats="back">${t("back")}</button></div>` +
         `<div class="cat-grid2">${saleTile}${tops.map(n => tileHTML(n.key, n.id, catLabel(n.id), false)).join("")}</div>`;
     }
-    if (!tops.length) return adHTML() + `<div class="grid">${products.map(cardHTML).join("")}</div>`;
+    if (!tops.length) return adHTML() + `<div class="grid">${sortItems(products).map(cardHTML).join("")}</div>`;
     // الإعلان، ثم الفئات (شريط يتسحب)، ثم الخصومات أول قسم، وبعدها الأقسام
     let html = adHTML();
     html += `<div class="sec-h"><h3>${t("catsHead")}</h3><button class="linkbtn" data-cats="all">${t("seeAll")}</button></div>`;
     html += `<div class="tiles">${saleTile}${tops.map(n => tileHTML(n.key, n.id, catLabel(n.id), false)).join("")}</div>`;
     if (sale.length) {
-      html += `<div class="sec-h"><h3>${t("saleTitle")}</h3><button class="linkbtn" data-cat="${SALE}">${t("seeAll")}</button></div><div class="hs">${sale.map(cardHTML).join("")}</div>`;
+      html += `<div class="sec-h"><h3>${t("saleTitle")}</h3><button class="linkbtn" data-cat="${SALE}">${t("seeAll")}</button></div><div class="hs">${sortItems(sale).map(cardHTML).join("")}</div>`;
     }
     tops.forEach(n => {
-      html += `<div class="sec-h"><h3>${esc(catLabel(n.id))}</h3><button class="linkbtn" data-cat="${esc(n.key)}">${t("seeAll")}</button></div><div class="hs">${allItems(n).map(cardHTML).join("")}</div>`;
+      html += `<div class="sec-h"><h3>${esc(catLabel(n.id))}</h3><button class="linkbtn" data-cat="${esc(n.key)}">${t("seeAll")}</button></div><div class="hs">${sortItems(allItems(n)).map(cardHTML).join("")}</div>`;
     });
-    if (catRoot.uncat.length) html += `<div class="sec-h"><h3>${esc(t("other"))}</h3></div><div class="hs">${catRoot.uncat.map(cardHTML).join("")}</div>`;
+    if (catRoot.uncat.length) html += `<div class="sec-h"><h3>${esc(t("other"))}</h3></div><div class="hs">${sortItems(catRoot.uncat).map(cardHTML).join("")}</div>`;
     return html;
   }
   function viewShop() {
@@ -1062,7 +1075,7 @@
   function catLinksHTML() {
     const sale = saleList().length
       ? `<button class="ct-name ${filt.cat === SALE ? "on" : ""}" data-cat="${SALE}">${catIcon("tag")}<span>${t("saleTitle")}</span></button>` : "";
-    return `<button class="ct-name ${!filt.cat ? "on" : ""}" data-cat="">${catIcon("home")}<span>${t("homeLbl")}</span></button>` +
+    return `<button class="ct-name ${!filt.cat ? "on" : ""}" data-home="1">${catIcon("home")}<span>${t("homeLbl")}</span></button>` +
       `<button class="ct-name ${filt.cat === ALL ? "on" : ""}" data-cat="${ALL}">${catIcon("tag")}<span>${t("allCats")}</span></button>` +
       sale + catTreeHTML(catRoot.kids, 0);
   }
@@ -1209,7 +1222,7 @@
     document.getElementById("siteName").textContent = t("siteName");
     document.getElementById("announce").innerHTML = ShowbizUI.announceHTML();
     ShowbizUI.runAnnounce();
-    document.getElementById("sideFoot").textContent = state.lang === "en" ? "Showbiz · All rights reserved" : "شوبيز · جميع الحقوق محفوظة";
+    document.getElementById("sideFoot").textContent = ShowbizCore.copyright(state.lang);
     document.getElementById("catBtn").textContent = t("cats");
     document.getElementById("catPanel").innerHTML = catLinksHTML();
     document.getElementById("sideCats").innerHTML = catLinksHTML();
@@ -1479,6 +1492,8 @@
       document.getElementById("sideCats").innerHTML = catLinksHTML();
       return;
     }
+    const hm = e.target.closest("[data-home]");
+    if (hm && hm.closest("#catPanel, #sideCats, #shopBody")) { catsGrid = false; setCat(null); return; }
     const c = e.target.closest("[data-cat]");
     if (c && c.closest("#shopBody, #catPanel, #sideCats")) { setCat(c.dataset.cat || null); return; }
     const cs = e.target.closest("[data-cats]");

@@ -746,7 +746,7 @@
     const a = el.dataset.a;
     if (a === "inc") { changeQty(el.dataset.vid, 1); return; }
     if (a === "dec") { changeQty(el.dataset.vid, -1); return; }
-    if (a === "rm") { removeLine(el.dataset.vid); return; }
+    if (a === "rm") { const vidRm = el.dataset.vid; ShowbizCore.confirmDel("product", function () { removeLine(vidRm); }); return; }
     if (a === "applyCoupon") { applyCoupon(); return; }
     if (a === "removeCoupon") { state.coupon = null; save(); render(); return; }
     if (a === "toAddr") { setStep("address"); return; }

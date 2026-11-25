@@ -243,7 +243,7 @@
       var sizes = ELEC_SIZES[sub] || ELEC_SIZES.phones;
       COLORS.forEach(function (c, ci) {
         sizes.forEach(function (s, si) {
-          var extra = (ci || si) ? SURCHARGE_USD : 0;
+          var extra = si ? SURCHARGE_USD : 0; // اللون ما يغيّر السعر، المقاس فقط
           var v = {
             vid: "demo-" + n + "-" + c.en + "-" + s.en,
             key: c.en + "-" + s.en,

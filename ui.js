@@ -18,7 +18,7 @@
       remaining: "باقي {x} للتوصيل المجاني", freeDone: "وصلت للتوصيل المجاني",
       freeMsg: "مبروك، شحنك مجاني لهذا الطلب", freeIn: "التوصيل المجاني",
       tierLeft: "باقي {x} لمستوى الخصم", tierDone: "وصلت لمستوى الخصم",
-      wish: "حفظ في المفضلة", remove: "حذف", coupon: "عندي كود خصم", apply: "تطبيق", couponBad: "الكود غير صحيح",
+      wish: "حفظ في المفضلة", remove: "حذف", addCart: "إضافة إلى السلة", coupon: "عندي كود خصم", apply: "تطبيق", couponBad: "الكود غير صحيح",
       productsVal: "قيمة المنتجات", discount: "الخصم", shipping: "الشحن",
       shipLater: "يُحسب بعد اختيار العنوان", grand: "الإجمالي",
       shipInfo: "رسوم التوصيل تُحسب حسب الوزن والدولة",
@@ -31,7 +31,7 @@
       remaining: "{x} more for free delivery", freeDone: "You reached free delivery",
       freeMsg: "Congrats, your shipping is free on this order", freeIn: "Free delivery",
       tierLeft: "{x} more to reach the next tier", tierDone: "You reached the next tier",
-      wish: "Save to wishlist", remove: "Remove", coupon: "Have a discount code?", apply: "Apply", couponBad: "Invalid code",
+      wish: "Save to wishlist", remove: "Remove", addCart: "Add to cart", coupon: "Have a discount code?", apply: "Apply", couponBad: "Invalid code",
       productsVal: "Products", discount: "Discount", shipping: "Shipping",
       shipLater: "Calculated after choosing an address", grand: "Total",
       shipInfo: "Delivery fee depends on weight and country",
@@ -347,7 +347,7 @@
   // كود الخصم: صندوق مرتب قابل للطي
   function couponHTML() {
     var s = st();
-    if (s.coupon) return '<div class="sd-coupon sd-coupon-on"><span>' + esc(s.coupon) + '</span><button class="sd-ic" data-ui="removeCoupon">' + tr("remove") + '</button></div>';
+    if (s.coupon) return '<div class="sd-coupon sd-coupon-on"><span>' + esc(s.coupon) + '</span><button class="sd-ic" data-ui="removeCoupon" aria-label="' + tr("remove") + '">' + trashSVG() + '</button></div>';
     var isOpen = !!folded.coupon;
     return '<div class="sd-coupon">' +
       '<button class="sd-fold" data-ui="fold" data-k="coupon"><span>% ' + tr("coupon") + '</span><span>' + (isOpen ? "▴" : "▾") + '</span></button>' +
@@ -386,8 +386,8 @@
             '<div class="sd-info"><div class="sd-name">' + esc(pName(e.p)) + '</div>' +
             '<div class="sd-price">' + (e.v.price ? fmt(localPrice(e.v.price)) : "") + '</div>' +
             '<div class="sd-ctl">' +
-              (canAdd ? '<button class="sd-ic" data-ui="addSug" data-vid="' + esc(e.v.vid) + '">+ ' + tr("add") + '</button>' : '') +
-              '<button class="sd-ic" data-ui="wish" data-pid="' + esc(e.p.pid) + '">' + tr("remove") + '</button>' +
+              (canAdd ? '<button class="sd-ic sd-addc" data-ui="addSug" data-vid="' + esc(e.v.vid) + '">' + tr("addCart") + '</button>' : '') +
+              '<button class="sd-ic" data-ui="wish" data-pid="' + esc(e.p.pid) + '" aria-label="' + tr("remove") + '">' + trashSVG() + '</button>' +
             '</div></div></div>';
         }).join("")
       : '<p class="sd-empty">' + (lang() === "en" ? "No saved products yet" : "ما حفظت منتجات بعد") + '</p>';
@@ -439,8 +439,13 @@
     if (a === "close") { close(); return; }
     if (a === "inc") { setQty(vid, 1); return; }
     if (a === "dec") { setQty(vid, -1); return; }
-    if (a === "rm") { removeLine(vid); return; }
-    if (a === "wish") { toggleWish(el.dataset.pid); return; }
+    if (a === "rm") { ShowbizCore.confirmDel("product", function () { removeLine(vid); }); return; }
+    if (a === "wish") {
+      var pidW = el.dataset.pid;
+      if (wishedPids().indexOf(String(pidW)) >= 0) ShowbizCore.confirmDel("wish", function () { toggleWish(pidW); });
+      else toggleWish(pidW);
+      return;
+    }
     if (a === "fold") { folded[el.dataset.k] = !folded[el.dataset.k]; drawRender(); return; }
     if (a === "apply") { applyCoupon(); return; }
     if (a === "removeCoupon") { st().coupon = null; save(); emit(); return; }
@@ -527,7 +532,15 @@
   // أنماط مشتركة لصفحة السلة والمودالات (v41)
   CSS += "\n" + ".req-star{color:#ff5d6c}\n.ui-req::after{content:' *';color:#ff5d6c;font-weight:800}\n";
   // أنماط v42: شريط الإعلان، ترتيب الهيدر، بطاقات بأزرار ثابتة، إعلانات متعددة، كود الخصم
-  CSS += "\n" + `/* ===== v42 ===== */
+  CSS += "\n" + `/* ===== v43 ===== */
+.card .heartbtn{width:30px;height:30px;top:8px;inset-inline-end:8px}
+.card .heartbtn .ico{width:15px;height:15px}
+.price .old{display:block;white-space:nowrap;font-size:13px;font-weight:400;color:var(--muted)}
+.price .now{display:block;white-space:nowrap}
+.ad-s[data-cat]{cursor:pointer}
+.sd-addc{background:var(--orange,#f59e4b);color:#111;border-radius:8px;padding:6px 10px;font-weight:700}
+.sd-line .sd-ctl{align-items:center;gap:8px}
+/* ===== v42 ===== */
 .announce{direction:ltr;text-align:start;overflow:hidden;white-space:nowrap;position:relative;padding:7px 0}
 .mq{display:block;width:max-content;position:relative;left:0;animation-name:mq2;animation-timing-function:linear;animation-iteration-count:infinite;will-change:transform;unicode-bidi:isolate}
 @keyframes mq2{from{transform:translateX(var(--mqw,100vw))}to{transform:translateX(calc(-1 * var(--mqt,100%)))}}

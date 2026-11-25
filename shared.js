@@ -136,7 +136,7 @@
     if (document.body && document.body.hasAttribute("data-lite")) {
       var line = document.createElement("p");
       line.id = "siteFooter"; line.className = "copyline";
-      line.textContent = (s.lang === "en" ? "Showbiz · " : "شوبيز · ") + L.copy;
+      line.textContent = copyright(s.lang);
       document.body.appendChild(line);
       return;
     }
@@ -180,7 +180,45 @@
   sharedStyle.textContent = SHARED_CSS;
   document.head.appendChild(sharedStyle);
 
+  // سطر حقوق النشر الموحّد في كل الصفحات
+  function copyright(lang) {
+    return lang === "en" ? "© 2026 Showbiz · All rights reserved" : "© 2026 Showbiz · جميع الحقوق محفوظة";
+  }
+  // نافذة تأكيد الحذف: تنفذ الحذف فقط عند الضغط على "نعم"
+  function confirmDel(kind, onYes) {
+    var s = readJSON("showbiz_state", {});
+    var en = s.lang === "en";
+    if (!document.getElementById("sbConfCss")) {
+      var st = document.createElement("style");
+      st.id = "sbConfCss";
+      st.textContent = ".sb-conf{position:fixed;inset:0;z-index:400;background:rgba(5,10,20,.6);display:flex;align-items:center;justify-content:center;padding:16px}" +
+        ".sb-conf-box{background:#162033;color:#eef2f7;border:1px solid #26334d;border-radius:16px;padding:18px;width:min(92vw,360px)}" +
+        ".sb-conf-box p{margin:0 0 16px;font-size:15px;line-height:1.7;text-align:center}" +
+        ".sb-conf-btns{display:flex;gap:8px}" +
+        ".sb-conf-btns button{flex:1;padding:11px;border-radius:10px;border:0;font:inherit;font-weight:700;cursor:pointer}" +
+        ".sb-conf-no{background:transparent;color:#eef2f7;border:1px solid #3a4a68 !important}" +
+        ".sb-conf-yes{background:#f59e4b;color:#111}";
+      document.head.appendChild(st);
+    }
+    var msg = kind === "address" ? (en ? "Are you sure you want to delete this address?" : "هل أنت متأكد من حذف هذا العنوان؟")
+      : kind === "wish" ? (en ? "Remove this from your wishlist?" : "هل أنت متأكد من حذفه من المفضلة؟")
+      : (en ? "Are you sure you want to remove this product?" : "هل أنت متأكد من حذف هذا المنتج؟");
+    var ov = document.createElement("div");
+    ov.className = "sb-conf";
+    ov.innerHTML = '<div class="sb-conf-box" role="dialog" aria-modal="true"><p></p><div class="sb-conf-btns">' +
+      '<button class="sb-conf-no" type="button">' + (en ? "Cancel" : "إلغاء") + '</button>' +
+      '<button class="sb-conf-yes" type="button">' + (en ? "Yes" : "نعم") + '</button></div></div>';
+    ov.querySelector("p").textContent = msg;
+    document.body.appendChild(ov);
+    function close() { ov.remove(); }
+    ov.querySelector(".sb-conf-no").addEventListener("click", close);
+    ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
+    ov.querySelector(".sb-conf-yes").addEventListener("click", function () { close(); onYes(); });
+  }
+
   window.ShowbizCore = {
+    copyright: copyright,
+    confirmDel: confirmDel,
     icon: icon,
     fillIcons: fillIcons,
     mountFooter: mountFooter,
