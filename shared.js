@@ -239,7 +239,9 @@
     st.textContent =
       'html[data-theme="light"]{filter:invert(1) hue-rotate(180deg);background:#0b1220}' +
       'html[data-theme="light"] img,html[data-theme="light"] video{filter:invert(1) hue-rotate(180deg)}' +
-      '::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}';
+      '::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}' +
+      ':root[data-vt="dark"]::view-transition-old(root){z-index:2}:root[data-vt="dark"]::view-transition-new(root){z-index:1}' +
+      ':root[data-vt="light"]::view-transition-new(root){z-index:2}:root[data-vt="light"]::view-transition-old(root){z-index:1}';
     document.head.appendChild(st);
     applyThemeMode(navKind() === "reload" ? "dark" : storedMode());
   })();
@@ -249,24 +251,34 @@
     var apply = function () { applyThemeMode(next); };
     var r = fromEl && fromEl.getBoundingClientRect ? fromEl.getBoundingClientRect() : null;
     if (!document.startViewTransition || !r || reduceMotionT()) { apply(); return; }
+    var root = document.documentElement;
     var W = window.innerWidth, H = window.innerHeight;
     var x = r.left + r.width / 2, y = r.top + r.height / 2;
     var R = Math.hypot(Math.max(x, W - x), Math.max(y, H - y));
+    var rtl = root.dir === "rtl" || document.dir === "rtl" || getComputedStyle(root).direction === "rtl";
+    // الطبقة اللي تتحرك لازم تكون فوق: الانتشار للفاتح = الجديدة فوق، الانكماش للداكن = القديمة فوق
+    root.setAttribute("data-vt", next);
     var vt = document.startViewTransition(apply);
+    var cleanup = function () { root.removeAttribute("data-vt"); };
+    vt.finished.then(cleanup, cleanup);
     vt.ready.then(function () {
-      var root = document.documentElement;
       if (next === "light") {
+        // الفاتح يطلع من داخل الشمس وينتشر على الشاشة
         root.animate(
           { clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + R + "px at " + x + "px " + y + "px)"] },
           { duration: 600, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" });
       } else {
+        // الداكن: الفاتح ينكمش من الجانب (يسار بالعربي، يمين بالإنجليزي) ويدخل داخل القمر
         var by = Math.min(H, y + 18), ty = Math.max(0, y - 18);
         var lf = Math.max(0, x - 18), rt = Math.max(0, W - (x + 18));
+        var ini = "inset(0px 0px 0px 0px round 0px)";
+        var end = "inset(" + ty + "px " + rt + "px " + (H - by) + "px " + lf + "px round 18px)";
+        var midRound = rtl ? "inset(0px 0px 0px " + lf + "px round 0px)" : "inset(0px " + rt + "px 0px 0px round 0px)";
         root.animate([
-          { clipPath: "inset(0px 0px 0px 0px round 0px)", offset: 0 },
-          { clipPath: "inset(0px 0px " + (H - by) + "px 0px round 0px)", offset: 0.5 },
-          { clipPath: "inset(" + ty + "px " + rt + "px " + (H - by) + "px " + lf + "px round 18px)", offset: 1 }
-        ], { duration: 650, easing: "ease-in-out", pseudoElement: "::view-transition-old(root)" });
+          { clipPath: ini, offset: 0 },
+          { clipPath: midRound, offset: 0.55 },
+          { clipPath: end, offset: 1 }
+        ], { duration: 700, easing: "ease-in-out", pseudoElement: "::view-transition-old(root)" });
       }
     }).catch(function () {});
   }
