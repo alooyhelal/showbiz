@@ -306,6 +306,13 @@
   }
   function lookHTML(entries) { return ""; }
 
+  // إزالة من المفضلة: صورة المنتج تطير من أيقونة المفضلة في الهيدر إلى مكان الزر اللي ضغطته
+  function wishRemoveFx(el, cb) {
+    var fav = document.getElementById("favBtn");
+    var line = el && el.closest ? el.closest(".sd-line") : null;
+    var im = line ? line.querySelector("img") : null;
+    if (window.__sbFly && fav && im) window.__sbFly(fav, im.src, el, cb); else cb();
+  }
   // ===== فتح التفاصيل (نافذة الخيارات) =====
   var detailsHandler = null;
   function setDetailsHandler(fn) { detailsHandler = fn; }
@@ -453,7 +460,7 @@
     if (a === "rm") { ShowbizCore.confirmDel("product", function () { removeLine(vid); }); return; }
     if (a === "wish") {
       var pidW = el.dataset.pid;
-      if (wishedPids().indexOf(String(pidW)) >= 0) ShowbizCore.confirmDel("wish", function () { toggleWish(pidW); });
+      if (wishedPids().indexOf(String(pidW)) >= 0) ShowbizCore.confirmDel("wish", function () { wishRemoveFx(el, function () { toggleWish(pidW); }); });
       else toggleWish(pidW);
       return;
     }

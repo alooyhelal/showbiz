@@ -216,7 +216,50 @@
     ov.querySelector(".sb-conf-yes").addEventListener("click", function () { close(); onYes(); });
   }
 
+  // ===== المظهر (داكن/فاتح) لكل صفحات الموقع =====
+  // الداكن هو الأساسي: أول فتح للموقع أو ريفرش يرجع داكن. الاختيار يبقى عند التنقل بين الصفحات داخل نفس التبويب.
+  // الفاتح: قلب الألوان على كامل الصفحة (فلتر)، والصور ترجع لألوانها الأصلية، فكل الصفحات تبقى متناسقة.
+  var THEME_KEY = "showbiz_theme";
+  var reduceMotionT = function () { return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches; };
+  function navKind() {
+    try { var e = performance.getEntriesByType("navigation")[0]; return e ? e.type : "navigate"; } catch (x) { return "navigate"; }
+  }
+  function storedMode() {
+    try { return sessionStorage.getItem(THEME_KEY) === "light" ? "light" : "dark"; } catch (x) { return "dark"; }
+  }
+  function themeNow() { return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark"; }
+  function applyThemeMode(m) {
+    document.documentElement.setAttribute("data-theme", m);
+    try { sessionStorage.setItem(THEME_KEY, m); } catch (x) {}
+  }
+  (function initTheme() {
+    var st = document.createElement("style");
+    st.id = "sbTheme";
+    st.textContent =
+      'html[data-theme="light"]{filter:invert(1) hue-rotate(180deg);background:#0b1220}' +
+      'html[data-theme="light"] img,html[data-theme="light"] video{filter:invert(1) hue-rotate(180deg)}' +
+      '::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}';
+    document.head.appendChild(st);
+    applyThemeMode(navKind() === "reload" ? "dark" : storedMode());
+  })();
+  // الدائرة: تنكمش من الشاشة لداخل الزر (عكس الانتقال السابق)
+  function setTheme(next, fromEl) {
+    var apply = function () { applyThemeMode(next); };
+    var r = fromEl && fromEl.getBoundingClientRect ? fromEl.getBoundingClientRect() : null;
+    if (!document.startViewTransition || !r || reduceMotionT()) { apply(); return; }
+    var x = r.left + r.width / 2, y = r.top + r.height / 2;
+    var R = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    var vt = document.startViewTransition(apply);
+    vt.ready.then(function () {
+      document.documentElement.animate(
+        { clipPath: ["circle(" + R + "px at " + x + "px " + y + "px)", "circle(0px at " + x + "px " + y + "px)"] },
+        { duration: 550, easing: "ease-in-out", pseudoElement: "::view-transition-old(root)" });
+    }).catch(function () {});
+  }
+
   window.ShowbizCore = {
+    theme: themeNow,
+    setTheme: setTheme,
     copyright: copyright,
     confirmDel: confirmDel,
     icon: icon,
