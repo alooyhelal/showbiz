@@ -142,6 +142,15 @@
   @media (min-width:700px) { .sheet { border-radius:22px; align-self:center; } .overlay { align-items:center; } }
   .copyline { text-align:center; color:#6b7a94; font-size:12px; margin:18px 0 0; }
   .sd-hidden { display:none; }
+  .okanim { position:relative; width:120px; height:120px; margin:6px auto 10px; }
+  .okanim svg { width:100%; height:100%; overflow:visible; }
+  .ok-ring { fill:none; stroke:#7ee2a8; stroke-width:6; stroke-linecap:round; stroke-dasharray:1; stroke-dashoffset:1; animation:okRing .6s ease-out forwards; }
+  .ok-tick { fill:none; stroke:#7ee2a8; stroke-width:8; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; stroke-dashoffset:1; animation:okTick .4s ease-out .55s forwards; }
+  .cf { position:absolute; left:50%; top:50%; width:8px; height:8px; border-radius:2px; background:var(--cl); opacity:0; transform:translate(-50%,-50%) rotate(var(--a)); animation:cfBurst .8s ease-out 1s forwards; }
+  @keyframes okRing { to { stroke-dashoffset:0; } }
+  @keyframes okTick { to { stroke-dashoffset:0; } }
+  @keyframes cfBurst { 0% { opacity:1; transform:translate(-50%,-50%) rotate(var(--a)) translateY(0); } 100% { opacity:0; transform:translate(-50%,-50%) rotate(var(--a)) translateY(calc(-1 * var(--d))); } }
+  @media (prefers-reduced-motion: reduce) { .ok-ring, .ok-tick, .cf { animation:none; stroke-dashoffset:0; opacity:0; } .ok-ring, .ok-tick { opacity:1; } }
 </style>
 </head>
 <body data-lite>
@@ -714,8 +723,10 @@
       </div>`;
   }
 
+  // تأكيد الطلب: دائرة ترسم نفسها، وعلامة صح، وكونفيتي يطلع مرة وحدة (مثل Lottie بدون تكرار)
   function doneHTML() {
-    return `<div class="panel done"><div class="big">✅</div><h2>${t("doneTitle")}</h2><p class="muted">${t("doneMsg")}</p>
+    const bits = Array.from({ length: 14 }, (_, i) => `<i class="cf" style="--a:${i * 25.7}deg;--d:${(i % 3) * 6 + 40}px;--cl:${["#f59e4b","#5b9cff","#7ee2a8","#ff6b8a","#ffd166"][i % 5]}"></i>`).join("");
+    return `<div class="panel done"><div class="okanim" aria-hidden="true"><svg viewBox="0 0 120 120"><circle class="ok-ring" cx="60" cy="60" r="52" pathLength="1"/><path class="ok-tick" d="M34 62 L52 80 L87 44" pathLength="1"/></svg>${bits}</div><h2>${t("doneTitle")}</h2><p class="muted">${t("doneMsg")}</p>
       ${doneLocal ? `<p class="muted">${t("savedLocal")}</p>` : ""}
       <div class="btnrow" style="margin-top:14px"><a class="ghostbtn" href="orders.html">${t("myOrders")}</a><a class="primary" href="index.html" style="text-align:center;text-decoration:none;display:block;padding:13px">${t("home")}</a></div></div>`;
   }
