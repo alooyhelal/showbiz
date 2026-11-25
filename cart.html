@@ -30,7 +30,7 @@
   html[dir="rtl"] .back2 .ico { transform:scaleX(-1); }
   .logo2 { text-align:center; font-weight:800; font-size:19px; color:var(--orange); text-decoration:none; }
 
-  .cwrap { max-width:640px; margin:0 auto; padding:0 14px 40px; zoom:.92; }
+  .cwrap { max-width:640px; margin:0 auto; padding:0 14px 40px; zoom:.88; }
   .steps { position:sticky; top:58px; z-index:4; background:var(--bg); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding:10px 0 8px; }
   .step { display:flex; align-items:center; justify-content:center; gap:6px; min-width:0; padding:8px 6px; border-radius:12px; border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--muted); font-size:12px; }
   .step .sn { width:20px; height:20px; border-radius:50%; background:var(--card2); display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0; }
@@ -135,6 +135,10 @@
   label { display:block; font-size:13px; font-weight:600; color:var(--muted); margin:0 0 6px; }
   label.req::after { content:" *"; color:#ff5d6c; font-weight:800; }
   .hidden { display:none !important; }
+  #addrModal { align-items:center; }
+  #addrModal .sheet { width:min(92vw,520px); max-width:520px; height:52vh; min-height:300px; max-height:none; display:flex; flex-direction:column; overflow:hidden; border-radius:22px; align-self:center; }
+  #addrModal #amBody { flex:1; min-height:0; overflow-y:auto; }
+  .sect-title.req::after { content:" *"; color:#ff5d6c; font-weight:800; }
   @media (min-width:700px) { .sheet { border-radius:22px; align-self:center; } .overlay { align-items:center; } }
   .copyline { text-align:center; color:#6b7a94; font-size:12px; margin:18px 0 0; }
   .sd-hidden { display:none; }
@@ -660,7 +664,7 @@
     }
     return stepsHTML() + `
       <div class="panel">
-        <div class="sect-title">${t("addrTitle")}</div>
+        <div class="sect-title req">${t("addrTitle")}</div>
         ${list}
         <button class="ghostbtn addnew" data-a="addAddr">${t("addAddr")}</button>
         <p class="manage"><a href="addresses.html">${t("manageAddr")}</a></p>
@@ -780,6 +784,15 @@
     }
     if (tgt.dataset && tgt.dataset.paym) { payMethod = tgt.dataset.paym; render(); return; }
     if (tgt.id === "termsCb") { termsOk = tgt.checked; const m = $("payMsg"); if (m) m.textContent = ""; }
+  });
+
+  // الضغط على عنوان محدد مرة ثانية يلغي تحديده
+  document.addEventListener("click", (e) => {
+    const tgt = e.target;
+    if (tgt.dataset && tgt.dataset.pick && state.addrId === tgt.dataset.pick) {
+      e.preventDefault();
+      state.addrId = null; save(); render();
+    }
   });
 
   window.addEventListener("hashchange", () => {

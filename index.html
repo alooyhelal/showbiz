@@ -301,7 +301,7 @@
       sortDef:"الترتيب الافتراضي", sortAsc:"السعر: من الأقل إلى الأعلى", sortDesc:"السعر: من الأعلى إلى الأقل", sortName:"الاسم: من A إلى Z", sortNameDesc:"الاسم: من Z إلى A",
       isNew:"جديد", isBest:"الأكثر مبيعاً", menu:"القائمة", homeLbl:"الصفحة الرئيسية", allProducts:"كل المنتجات", resetSite:"تصفير الموقع",
       saleTitle:"الخصومات", catsHead:"الفئات", chooseColor:"اختر اللون", chooseSize:"اختر المقاس / السعة", chooseBoth:"اختر اللون والمقاس أولاً",
-      fromPrice:"يبدأ من", adTag:"عروض مختارة", adTitle:"خصومات مختارة هذا الأسبوع", adSub:"تشكيلة من المنتجات بأسعار مميزة", adBtn:"تسوّق الآن"
+      fromPrice:"يبدأ من", adTag:"عروض مختارة", adTitle2:"وصل جديد في الإلكترونيات", adSub2:"أحدث الأجهزة بخيارات الألوان والمقاسات", adTitle3:"الأكثر مبيعاً", adSub3:"منتجات يختارها زبائننا كثيراً", adTitle:"خصومات مختارة هذا الأسبوع", adSub:"تشكيلة من المنتجات بأسعار مميزة", adBtn:"تسوّق الآن"
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
@@ -329,7 +329,7 @@
       sortDef:"Default order", sortAsc:"Price: low to high", sortDesc:"Price: high to low", sortName:"Name: A to Z", sortNameDesc:"Name: Z to A",
       isNew:"New", isBest:"Best seller", menu:"Menu", homeLbl:"Home", allProducts:"All products", resetSite:"Reset site",
       saleTitle:"Discounts", catsHead:"Categories", chooseColor:"Choose color", chooseSize:"Choose size / capacity", chooseBoth:"Choose color and size first",
-      fromPrice:"From", adTag:"Selected offers", adTitle:"Selected discounts this week", adSub:"A selection of products at special prices", adBtn:"Shop now"
+      fromPrice:"From", adTag:"Selected offers", adTitle2:"New in electronics", adSub2:"Latest devices with color and size options", adTitle3:"Best sellers", adSub3:"Products our customers pick most", adTitle:"Selected discounts this week", adSub:"A selection of products at special prices", adBtn:"Shop now"
     }
   };
 
@@ -710,14 +710,14 @@
       const { colors, sizes } = optionValues(p);
       const en = state.lang === "en";
       body = `
-        ${v ? `<div class="price">${fmt(localPrice(v.price))}</div>` : `<div class="muted">${t("chooseBoth")}</div>`}
+        <div class="price">${v ? fmt(localPrice(v.price)) : `${t("fromPrice")} ${fmt(localPrice(cheapOf(p)))}`}</div>${v ? "" : `<div class="muted">${t("chooseBoth")}</div>`}
         <div class="opt-row" style="margin-top:10px">
           <div><label class="muted ui-req">${en ? "Color" : "اللون"}</label>
             <select id="mColor"><option value="">${t("chooseColor")}</option>${colors.map(o =>
-              `<option value="${esc(o.en)}" ${modal.color === o.en ? "selected" : ""}>${esc(en ? o.en : o.ar)}</option>`).join("")}</select></div>
+              `<option value="${esc(o.en)}" ${modal.color === o.en ? "selected" : ""}>${esc(en ? o.en : o.ar)}${optTag(p, "color", o)}</option>`).join("")}</select></div>
           <div><label class="muted ui-req">${en ? "Size / capacity" : "المقاس / السعة"}</label>
             <select id="mSize"><option value="">${t("chooseSize")}</option>${sizes.map(o =>
-              `<option value="${esc(o.en)}" ${modal.size === o.en ? "selected" : ""}>${esc(en ? o.en : o.ar)}</option>`).join("")}</select></div>
+              `<option value="${esc(o.en)}" ${modal.size === o.en ? "selected" : ""}>${esc(en ? o.en : o.ar)}${optTag(p, "size", o)}</option>`).join("")}</select></div>
         </div>
         <div class="qtyrow">
           <span>${t("qty")}</span>
@@ -812,6 +812,13 @@
   }
   function crumbs(key) { return String(key).split("/").map(catLabel).join(" › "); }
   function minUSD(p) { return Math.min(...p.variants.map(v => v.price)); }
+  // أرخص سعر للمنتج (الخيار الأساسي) والفرق لكل لون أو مقاس عنه
+  function cheapOf(p) { return Math.min(...p.variants.map(v => v.price)); }
+  function optTag(p, key, o) {
+    const d = Math.min(...p.variants.filter(x => x.opt[key].en === o.en).map(x => x.price)) - cheapOf(p);
+    if (d <= 0) return "";
+    return " · " + (state.lang === "en" ? "+" : "زائد ") + fmt(localPrice(d));
+  }
   function allItems(n) { return [...n.direct, ...n.kids.flatMap(allItems)]; }
   function inCat(p, key) { const k = productPath(p).join("/"); return k === key || k.startsWith(key + "/"); }
   function ensureNode(list, parent, id) {
@@ -920,9 +927,42 @@
   const SALE = "__sale__";
   let catsGrid = false;
   const saleList = () => products.filter(p => cmpUSD(p) > 0);
+  // إعلانات متعددة تتنقل تلقائياً كل 7 ثواني، مع أسهم ونقاط
+  let adIdx = 0;
+  const AD_N = 3;
   function adHTML() {
-    return `<div class="ad"><span class="adtag">${t("adTag")}</span><h2>${t("adTitle")}</h2><p>${t("adSub")}</p><button data-clear="1">${t("adBtn")}</button></div>`;
+    const rtl = document.documentElement.dir === "rtl";
+    const slides = [
+      { v: "", h: t("adTitle"), p: t("adSub") },
+      { v: " v1", h: t("adTitle2"), p: t("adSub2") },
+      { v: " v2", h: t("adTitle3"), p: t("adSub3") }
+    ];
+    return `<div class="ad" id="adBox">
+      ${slides.map((s, i) => `<div class="ad-s${s.v}" data-ads="${i}" ${i === adIdx ? "" : "hidden"}><span class="adtag">${t("adTag")}</span><h2>${s.h}</h2><p>${s.p}</p><button data-clear="1">${t("adBtn")}</button></div>`).join("")}
+      <button class="ad-arr n" data-ad="next" aria-label="next" ${adIdx === AD_N - 1 ? "hidden" : ""}>${rtl ? "‹" : "›"}</button>
+      <button class="ad-arr p" data-ad="prev" aria-label="prev" ${adIdx === 0 ? "hidden" : ""}>${rtl ? "›" : "‹"}</button>
+    </div>
+    <div class="ad-dots">${[0, 1, 2].map(i => `<button class="ad-dot ${i === adIdx ? "on" : ""}" data-ad="go" data-i="${i}" aria-label="${i + 1}"></button>`).join("")}</div>`;
   }
+  function syncAd() {
+    const box = document.getElementById("adBox");
+    if (!box) return;
+    box.querySelectorAll("[data-ads]").forEach(el => { el.hidden = Number(el.dataset.ads) !== adIdx; });
+    const nx = box.querySelector('[data-ad="next"]'), pv = box.querySelector('[data-ad="prev"]');
+    if (nx) nx.hidden = adIdx === AD_N - 1;
+    if (pv) pv.hidden = adIdx === 0;
+    document.querySelectorAll(".ad-dot").forEach((d, i) => d.classList.toggle("on", i === adIdx));
+  }
+  function adGo(i) { adIdx = (i + AD_N) % AD_N; syncAd(); }
+  setInterval(() => { if (document.getElementById("adBox")) adGo(adIdx + 1); }, 7000);
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-ad]");
+    if (!b) return;
+    const k = b.dataset.ad;
+    if (k === "next") adGo(adIdx + 1);
+    else if (k === "prev") adGo(adIdx - 1);
+    else if (k === "go") adGo(Number(b.dataset.i));
+  });
   function shopBodyHTML() {
     if (!loaded) return `<p>${t("loading")}</p>`;
     if (loadError) return `<p>${t("loadErr")}</p>`;
@@ -1168,6 +1208,7 @@
     document.getElementById("menuLogout").textContent = t("logout");
     document.getElementById("siteName").textContent = t("siteName");
     document.getElementById("announce").innerHTML = ShowbizUI.announceHTML();
+    ShowbizUI.runAnnounce();
     document.getElementById("sideFoot").textContent = state.lang === "en" ? "Showbiz · All rights reserved" : "شوبيز · جميع الحقوق محفوظة";
     document.getElementById("catBtn").textContent = t("cats");
     document.getElementById("catPanel").innerHTML = catLinksHTML();
