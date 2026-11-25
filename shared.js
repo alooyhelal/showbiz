@@ -201,10 +201,22 @@
     });
   }
 
+  // الخطوط الموحدة: Cairo للعناوين، Tajawal للنصوص، Inter للأرقام والأسعار
+  function injectFonts() {
+    if (document.getElementById("sbFonts")) return;
+    var l = document.createElement("link");
+    l.id = "sbFonts"; l.rel = "stylesheet";
+    l.href = "https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Tajawal:wght@400;500;700&family=Inter:wght@600;800&display=swap";
+    document.head.appendChild(l);
+  }
+  injectFonts();
+
   document.addEventListener("DOMContentLoaded", function () { fillIcons(); mountFooter(); mountToTop(); guardContent(); });
 
   // ===== أنماط مشتركة: بدون سكرول يمين ويسار، وتذييل في كل الصفحات =====
   var SHARED_CSS = [
+    ":root{--teal:#2ec4b6;--f-head:'Cairo','Tajawal',system-ui,sans-serif;--f-body:'Tajawal','Cairo',system-ui,sans-serif;--f-num:'Inter','Cairo',system-ui,sans-serif}",
+    "body{font-family:var(--f-body)}",
     "html{overflow-x:hidden}",
     "body{-webkit-user-select:none;user-select:none}",
     "input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:text}",

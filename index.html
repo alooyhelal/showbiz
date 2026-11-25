@@ -227,6 +227,40 @@
   .opt-row > div { min-width:0; }
   .opt-row select { margin-bottom:0; }
   .gateBox .pref-list { max-height:44vh; }
+  /* ===== v38: نظام التصميم (هوية بصرية موحدة، الداكن أساس والفاتح يتبعه) ===== */
+  :root { --teal:#2ec4b6; --teal-d:#1ea395; --f-head:"Cairo","Tajawal",system-ui,sans-serif; --f-body:"Tajawal","Cairo",system-ui,sans-serif; --f-num:"Inter","Cairo",system-ui,sans-serif; --r-lg:18px; --shadow:0 12px 32px rgba(0,0,0,.32); }
+  body { font-family:var(--f-body); font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,h4,.logo,.cat-tile,.pb-t,.ad-s h2 { font-family:var(--f-head); font-weight:800; letter-spacing:-.01em; }
+  .pname, .mtitle { font-family:var(--f-head); font-weight:700; }
+  .price, .now, .old, .sd-price, .sd-days { font-family:var(--f-num); font-variant-numeric:tabular-nums; }
+  .price { font-weight:800; }
+  .sec-h { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:24px 0 12px; padding-inline-start:12px; border-inline-start:4px solid var(--orange); }
+  .sec-h h3 { margin:0; font-size:18px; }
+  .sec-h .linkbtn { color:var(--teal); font-weight:700; }
+  .card { border-radius:var(--r-lg); transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+  .card:hover { transform:translateY(-3px); box-shadow:var(--shadow); border-color:#34476b; }
+  .pimg { height:auto; aspect-ratio:1/1; background:radial-gradient(circle at 50% 35%, #223356, #111a2e); }
+  .pimg img { object-fit:contain; transition:transform .5s ease, opacity .4s; }
+  .card:hover .pimg img { transform:scale(1.05); }
+  .badge { border-radius:999px; letter-spacing:.02em; box-shadow:0 4px 12px rgba(0,0,0,.28); }
+  .badge.alt { background:var(--teal); color:#06231f; border:0; }
+  .cat-tile { border-radius:var(--r-lg); transition:transform .2s ease, border-color .2s ease; }
+  .cat-tile:hover { transform:translateY(-2px); border-color:var(--teal); }
+  button { transition:transform .15s ease, filter .15s ease; }
+  button:active { transform:scale(.97); }
+  #pmodal .modal.enter { animation:ppIn .38s cubic-bezier(.2,.7,.2,1) both; }
+  @keyframes ppIn { from { opacity:0; transform:translateY(18px) scale(.985); } to { opacity:1; transform:none; } }
+  #pmodal .gallery img { animation:ppImg .5s ease both; }
+  @keyframes ppImg { from { opacity:0; transform:scale(1.03); } to { opacity:1; transform:none; } }
+  #pmodal .pp-sec h4 { font-size:17px; color:var(--fg); position:relative; padding-inline-start:12px; }
+  #pmodal .pp-sec h4::before { content:""; position:absolute; inset-inline-start:0; top:50%; width:4px; height:16px; margin-top:-8px; border-radius:4px; background:var(--teal); }
+  #pmodal .pp-sec .row { border-bottom:1px dashed var(--line); }
+  #pmodal .pp-sec .row span:first-child { color:var(--muted); }
+  #pmodal .pp-long { font-size:14.5px; color:#b9c4d6; }
+  #pmodal .price { font-size:24px; }
+  .rv-card { border-radius:var(--r-lg); }
+  .rv-star.on { color:var(--orange); }
+  .stars { color:var(--orange); }
 </style>
 <script src="version.js"></script>
 <script src="shared.js"></script>
@@ -768,6 +802,21 @@
       <button class="ghost" data-action="mback" style="width:100%">${t("back")}</button>`;
   }
   // ===== تقييمات تجريبية (10 لكل منتج) + تقييمات المستخدم المحفوظة =====
+  // مواصفات تجريبية ثابتة لكل منتج (تتغير حسب المنتج، ولا تتغير مع كل فتح)
+  const SPEC_MAT_AR = ["قطن", "جلد صناعي", "ستانلس ستيل", "بلاستيك عالي الجودة", "خشب طبيعي", "ألومنيوم"];
+  const SPEC_MAT_EN = ["Cotton", "Faux leather", "Stainless steel", "High-grade plastic", "Natural wood", "Aluminum"];
+  const SPEC_ORG_AR = ["الصين", "تركيا", "ألمانيا", "كوريا", "إيطاليا", "اليابان"];
+  const SPEC_ORG_EN = ["China", "Turkey", "Germany", "Korea", "Italy", "Japan"];
+  function specRows(p) {
+    const en = state.lang === "en", h = hashStr(p.pid);
+    return [
+      [en ? "Material" : "الخامة", (en ? SPEC_MAT_EN : SPEC_MAT_AR)[h % 6]],
+      [en ? "Origin" : "بلد المنشأ", (en ? SPEC_ORG_EN : SPEC_ORG_AR)[(h >> 3) % 6]],
+      [en ? "Warranty" : "الضمان", (en ? ["6 months", "1 year", "2 years"] : ["6 أشهر", "سنة", "سنتين"])[h % 3]],
+      [en ? "Delivery" : "التوصيل", (en ? ["2–4 days", "3–5 days"] : ["2–4 أيام", "3–5 أيام"])[h % 2]],
+      [en ? "Returns" : "الاسترجاع", en ? "Within 14 days" : "خلال 14 يوم"],
+    ];
+  }
   const RV_NAMES_AR = ["نورة", "أحمد", "فاطمة", "محمد", "سارة", "علي", "مريم", "يوسف", "هدى", "خالد"];
   const RV_NAMES_EN = ["Noora", "Ahmed", "Fatima", "Mohammed", "Sara", "Ali", "Maryam", "Yousef", "Huda", "Khalid"];
   const RV_TXT_AR = ["منتج ممتاز وجودته أحسن من المتوقع، أنصح فيه.", "التوصيل كان سريع والتغليف محترم.", "السعر مناسب مقارنة بالجودة، راضي عن الشراء.", "الاستخدام يومي ومريح، ما فيه أي مشكلة.", "تطابق الوصف والصور، وصلني بحالة ممتازة.", "خامة قوية وتصميم أنيق، بيكون شرائي القادم كمان.", "تجربة شراء سهلة، والمنتج يستاهل.", "كنت متردد بس طلع أفضل من ما توقعت.", "الحجم والوزن مناسبين، وجودة التصنيع واضحة.", "مرتب ومريح، أنصح الكل يجربه."];
@@ -938,6 +987,7 @@
           <section class="pp-sec"><h4>${t("specs")}</h4>
             <div class="row"><span class="muted">${t("dims")}</span><span>${dims}</span></div>
             <div class="row"><span class="muted">${t("weight")}</span><span>${w ? w + " g" : "—"}</span></div>
+            ${specRows(p).map(([k, val]) => `<div class="row"><span class="muted">${k}</span><span>${esc(val)}</span></div>`).join("")}
           </section>
           <section class="pp-sec"><h4>${t("reviews")}</h4>${reviewsHTML(p)}</section>
         </div>
