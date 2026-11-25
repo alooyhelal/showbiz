@@ -27,7 +27,15 @@
   .sugg button { display:flex; gap:8px; align-items:center; width:100%; background:transparent; color:var(--fg); font-weight:400; padding:6px 8px; text-align:start; }
   .sugg img { width:36px; height:36px; object-fit:cover; border-radius:8px; background:#f3f4f6; }
   .sugg-h { color:var(--muted); font-size:12px; padding:4px 8px; }
-  #sortSel { margin:0; width:auto; min-width:9.5em; max-width:48vw; height:42px; padding:0 12px; font-size:13px; border-radius:999px; }
+  #sortSel { display:none; }
+  .sortwrap { position:relative; display:inline-block; max-width:48vw; flex:0 0 auto; }
+  .sortbox { display:block; max-width:48vw; height:42px; padding:0 14px; border-radius:999px; border:1px solid var(--line); background:var(--card2); color:var(--fg); font-size:13px; font-weight:600; overflow-x:auto; overflow-y:hidden; white-space:nowrap; scrollbar-width:none; cursor:pointer; box-sizing:border-box; -webkit-overflow-scrolling:touch; }
+  .sortbox::-webkit-scrollbar { display:none; }
+  .sortlbl { display:inline-block; line-height:40px; }
+  .sortmenu { position:absolute; top:calc(100% + 6px); inset-inline-end:0; min-width:210px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:6px; z-index:40; box-shadow:var(--shadow); }
+  .sortmenu button { display:block; width:100%; text-align:start; background:transparent; color:var(--fg); font-weight:600; padding:9px 10px; border-radius:8px; white-space:nowrap; }
+  .sortmenu button:hover { background:var(--card2); }
+  .sortmenu button.on { color:var(--orange); }
   .cat-tile small { display:block; color:var(--muted); font-weight:400; font-size:12px; margin-top:4px; }
   .chips { display:flex; flex-wrap:wrap; gap:8px; margin:-2px 0 10px; }
   .chip { background:var(--card2); color:var(--fg); border:1px solid var(--line); border-radius:999px; padding:7px 12px; font-size:13px; font-weight:600; }
@@ -308,7 +316,7 @@
       <input id="q" type="search" autocomplete="off">
       <div class="sugg hidden" id="sugg"></div>
     </div>
-    <select id="sortSel"></select>
+    <div class="sortwrap" id="sortWrap"><div class="sortbox" id="sortBox" role="button" tabindex="0" aria-haspopup="listbox"><span class="sortlbl" id="sortLbl"></span></div><div class="sortmenu hidden" id="sortMenu" role="listbox"></div><select id="sortSel" aria-hidden="true" tabindex="-1"></select></div>
     <select id="countrySel" class="hidden"></select>
   </div>
 </header>
@@ -1318,10 +1326,15 @@
   function syncFooter() {
     if (window.ShowbizCore && ShowbizCore.setFooter) ShowbizCore.setFooter(view === "shop" && !filt.cat && !filt.q);
   }
+  function syncNav() {
+    const cp = document.getElementById("catPanel"); if (cp) cp.innerHTML = catLinksHTML();
+    const sc = document.getElementById("sideCats"); if (sc) sc.innerHTML = catLinksHTML();
+  }
   function refreshShop() {
     const b = document.getElementById("shopBody");
     if (b) b.innerHTML = shopBodyHTML();
     syncFooter();
+    syncNav();
   }
   function setCat(c) {
     filt.cat = c || null;
@@ -1366,6 +1379,7 @@
     catsGrid = false;
     document.getElementById("q").value = "";
     document.getElementById("sortSel").value = "default";
+    syncSortUI();
     closeMenus();
     refreshShop();
     renderSugg();
@@ -1419,6 +1433,7 @@
     const sorts = { default: t("sortDef"), asc: t("sortAsc"), desc: t("sortDesc"), name: t("sortName"), nameDesc: t("sortNameDesc") };
     s.innerHTML = Object.keys(sorts).map(k => `<option value="${k}">${esc(sorts[k])}</option>`).join("");
     s.value = filt.sort;
+    syncSortUI();
   }
   function viewCart() {
     const lines = cartLines();
@@ -1543,6 +1558,7 @@
 
   function render() {
     saveSnap();
+    syncNav();
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
     const cn = document.getElementById("cartN"), nItems = cartCount();
@@ -1887,7 +1903,41 @@
   qEl.addEventListener("input", () => { filt.q = qEl.value; refreshShop(); renderSugg(); });
   qEl.addEventListener("focus", renderSugg);
   qEl.addEventListener("keydown", (e) => { if (e.key === "Enter") { ShowbizUI.pushSearch(qEl.value); document.getElementById("sugg").classList.add("hidden"); } });
-  document.getElementById("sortSel").addEventListener("change", (e) => { filt.sort = e.target.value; refreshShop(); window.scrollTo(0, 0); });
+  document.getElementById("sortSel").addEventListener("change", (e) => { filt.sort = e.target.value; refreshShop(); syncSortUI(); window.scrollTo(0, 0); });
+  // قائمة الترتيب المخصصة: الاسم داخل المربع يتسحب يمين ويسار إذا كان طويل
+  function syncSortUI() {
+    const sel = document.getElementById("sortSel"), lbl = document.getElementById("sortLbl"), menu = document.getElementById("sortMenu");
+    if (!sel) return;
+    const cur = sel.options[sel.selectedIndex];
+    if (lbl) lbl.textContent = cur ? cur.textContent : "";
+    if (menu) menu.innerHTML = [...sel.options].map(o => `<button type="button" class="${o.value === sel.value ? "on" : ""}" data-sort="${esc(o.value)}" role="option">${esc(o.textContent)}</button>`).join("");
+  }
+  function closeSortMenu() {
+    const m = document.getElementById("sortMenu"), b = document.getElementById("sortBox");
+    if (m) m.classList.add("hidden");
+    if (b) b.setAttribute("aria-expanded", "false");
+  }
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("#sortBox")) {
+      const m = document.getElementById("sortMenu");
+      const open = m.classList.contains("hidden");
+      m.classList.toggle("hidden", !open);
+      document.getElementById("sortBox").setAttribute("aria-expanded", open ? "true" : "false");
+      return;
+    }
+    const opt = e.target.closest("[data-sort]");
+    if (opt) {
+      const sel = document.getElementById("sortSel");
+      sel.value = opt.dataset.sort;
+      sel.dispatchEvent(new Event("change"));
+      closeSortMenu();
+      return;
+    }
+    if (!e.target.closest("#sortWrap")) closeSortMenu();
+  });
+  document.getElementById("sortBox").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); document.getElementById("sortBox").click(); }
+  });
   // تحديث السلة الجانبية وعدّاد الهيدر عند أي تغيير
   document.addEventListener("cartchange", () => render());
   // زر "حسابي" يفتح قائمة منسدلة، وما يرجع لصفحة الدخول إلا إذا ما فيه جلسة
