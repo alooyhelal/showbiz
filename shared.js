@@ -269,16 +269,10 @@
           { duration: 600, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" });
       } else {
         // الداكن: الفاتح ينكمش من الجانب (يسار بالعربي، يمين بالإنجليزي) ويدخل داخل القمر
-        var by = Math.min(H, y + 18), ty = Math.max(0, y - 18);
-        var lf = Math.max(0, x - 18), rt = Math.max(0, W - (x + 18));
-        var ini = "inset(0px 0px 0px 0px round 0px)";
-        var end = "inset(" + ty + "px " + rt + "px " + (H - by) + "px " + lf + "px round 18px)";
-        var midRound = rtl ? "inset(0px 0px 0px " + lf + "px round 0px)" : "inset(0px " + rt + "px 0px 0px round 0px)";
-        root.animate([
-          { clipPath: ini, offset: 0 },
-          { clipPath: midRound, offset: 0.55 },
-          { clipPath: end, offset: 1 }
-        ], { duration: 700, easing: "ease-in-out", pseudoElement: "::view-transition-old(root)" });
+        // الانكماش دائري مثل الانتشار: من الشاشة كاملة لنقطة زر القمر
+        root.animate(
+          { clipPath: ["circle(" + R + "px at " + x + "px " + y + "px)", "circle(0px at " + x + "px " + y + "px)"] },
+          { duration: 600, easing: "ease-in-out", pseudoElement: "::view-transition-old(root)" });
       }
     }).catch(function () {});
   }
