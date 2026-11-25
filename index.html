@@ -192,8 +192,8 @@
   #pmodal .modal { margin:0; max-width:none; width:100%; min-height:100%; border-radius:0; padding:0 16px 40px; box-sizing:border-box; background:var(--card); }
   #pmodal { display:block; padding:0; overflow-y:auto; background:var(--card); z-index:40; }
   #pmodal .xbtn { position:fixed; top:10px; inset-inline-start:10px; z-index:5; width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,.55); color:#fff; border:0; font-size:18px; padding:0; }
-  body.pp-open { overflow:hidden; }
-  #pmodal .gallery { border-radius:0; margin:0 -16px; width:calc(100% + 32px); background:var(--card2,#15203a); }
+  html.pp-open { overflow:hidden; }
+  #pmodal .gallery { position:relative; top:auto; height:320px; border-radius:0; margin:0 -16px; width:calc(100% + 32px); background:var(--card2,#15203a); transition:none; }
   .pp-rate { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px; margin:0 0 8px; }
   .pp-short { margin:0 0 12px; color:var(--muted); font-size:14px; line-height:1.7; }
   .pp-sec { border-top:1px solid var(--line); margin-top:18px; padding-top:14px; }
@@ -345,7 +345,7 @@
   const T = {
     ar: {
       siteName:"Showbiz", welcome:"مرحبًا بك", chooseCountry:"اختر الدولة", chooseLang:"اختر اللغة", go:"متابعة",
-      details:"التفاصيل", detailsTitle:"تفاصيل المنتج", chooseOpt:"اختر اللون / النمط", add:"إضافة للسلة", bannerSub:"تسوّق الآن", shopNow:"تسوّق الآن", specs:"المواصفات", reviews:"التقييمات", noReviews:"لا يوجد تقييمات لحد الآن", addReview:"إضافة تقييم", readMore:"قراءة المزيد", readLess:"إخفاء", sendReview:"إرسال التقييم", reviewOptional:"اكتب تعليقك (اختياري)", reviewPick:"اختر عدد النجوم أولاً", cancelBtn:"إلغاء", you:"أنت",
+      details:"التفاصيل", detailsTitle:"تفاصيل المنتج", chooseOpt:"اختر اللون / النمط", add:"إضافة للسلة", bannerSub:"تسوّق الآن", shopNow:"تسوّق الآن", specs:"المواصفات", reviews:"التقييمات", noReviews:"لا يوجد تقييمات لحد الآن", addReview:"إضافة تقييم", readMore:"قراءة المزيد", readLess:"إخفاء", sendReview:"إرسال التقييم", reviewOptional:"اكتب تعليقك (اختياري)", reviewPick:"اختر عدد النجوم أولاً", cancelBtn:"إلغاء", you:"أنت", choosePlaceholder:"يرجى الاختيار", outOfStock:"غير متوفر", scaleHint:"5 هو التقييم الأعلى، و1 هو الأدنى",
       qty:"الكمية", cart:"السلة", cartTitle:"سلة المشتريات", empty:"السلة فارغة", grand:"الإجمالي",
       productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"رسوم التوصيل", shipLater:"تُحدد بعد اختيار العنوان",
       shippingNote:"رسوم التوصيل تُضاف عند تحديد العنوان", coupon:"هل لديك كود خصم؟", apply:"تطبيق",
@@ -373,7 +373,7 @@
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
-      details:"Details", detailsTitle:"Product details", chooseOpt:"Choose color / style", add:"Add to cart", bannerSub:"Shop now", shopNow:"Shop now", specs:"Specifications", reviews:"Reviews", noReviews:"No reviews yet", addReview:"Add review", readMore:"Read more", readLess:"Show less", sendReview:"Submit review", reviewOptional:"Write your comment (optional)", reviewPick:"Pick a star rating first", cancelBtn:"Cancel", you:"You",
+      details:"Details", detailsTitle:"Product details", chooseOpt:"Choose color / style", add:"Add to cart", bannerSub:"Shop now", shopNow:"Shop now", specs:"Specifications", reviews:"Reviews", noReviews:"No reviews yet", addReview:"Add review", readMore:"Read more", readLess:"Show less", sendReview:"Submit review", reviewOptional:"Write your comment (optional)", reviewPick:"Pick a star rating first", cancelBtn:"Cancel", you:"You", choosePlaceholder:"Please choose", outOfStock:"Out of stock", scaleHint:"5 is the highest rating, 1 is the lowest",
       qty:"Quantity", cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty", grand:"Total",
       productsVal:"Products", discount:"Discount", shipping:"Delivery fee", shipLater:"Set after choosing address",
       shippingNote:"Delivery fee is added once you choose an address", coupon:"Have a discount code?", apply:"Apply",
@@ -736,21 +736,21 @@
   }
   function resolveChoice(p) {
     if (!modal || !modal.color || !modal.size) return null;
-    return p.variants.find(v => v.opt.color.en === modal.color && v.opt.size.en === modal.size) || null;
+    return p.variants.find(v => v.opt.color.en === modal.color && v.opt.size.en === modal.size && !v.unavailable) || null;
   }
   function curModal() {
     if (!modal) return null;
     const p = products.find(x => x.pid === modal.pid);
     if (!p) return null;
     if (p.choose) { const cv = resolveChoice(p); modal.vid = cv ? cv.vid : null; return { p, v: cv }; }
-    const v = p.variants.find(x => x.vid === modal.vid) || p.variants[0];
+    const v = p.variants.length === 1 ? p.variants[0] : (p.variants.find(x => x.vid === modal.vid) || null);
     return { p, v };
   }
   function openProduct(pid) {
     const p = products.find(x => x.pid === pid);
     if (!p) return;
     ShowbizUI.pushRecent(ShowbizUI.entryOf(p, p.variants[0]));
-    modal = { pid: p.pid, vid: p.choose ? null : p.variants[0].vid, color: null, size: null, qty: 1, idx: 0, paused: false, details: false, fresh: true };
+    modal = { pid: p.pid, vid: (p.choose || p.variants.length > 1) ? null : p.variants[0].vid, color: null, size: null, qty: 1, idx: 0, paused: false, details: false, fresh: true };
     renderModal();
   }
   function detailsHTML(p, vIn) {
@@ -831,6 +831,7 @@
     }
     box.innerHTML = `<div class="rv-form">
       <h3>${t("addReview")}</h3>
+      <p class="muted" style="margin:0 0 10px;font-size:13px">${t("scaleHint")}</p>
       <div class="rv-stars">${[1, 2, 3, 4, 5].map(i => `<button type="button" class="rv-star ${i <= rvDraft.n ? "on" : ""}" data-action="rvStar" data-n="${i}" aria-label="${i}">★</button>`).join("")}</div>
       <textarea id="rvText" rows="4" placeholder="${esc(t("reviewOptional"))}">${esc(rvDraft.c)}</textarea>
       <p class="rv-msg">${esc(rvDraft.msg)}</p>
@@ -864,9 +865,9 @@
     const box = document.getElementById("pmodal");
     const prevTop = box.scrollTop;
     const c = curModal();
-    if (!c) { box.classList.add("hidden"); box.innerHTML = ""; document.body.classList.remove("pp-open"); return; }
+    if (!c) { box.classList.add("hidden"); box.innerHTML = ""; document.documentElement.classList.remove("pp-open"); return; }
     const { p, v } = c;
-    document.body.classList.add("pp-open");
+    document.documentElement.classList.add("pp-open");
     const g = galleryFor(p, v);
     if (modal.idx >= g.length) modal.idx = 0;
     const nav = g.length > 1
@@ -884,11 +885,11 @@
         <div class="price">${sizePriceUSD(p) != null ? fmt(localPrice(sizePriceUSD(p))) : `<span class="from">${t("fromPrice")}</span> ${fmt(localPrice(cheapOf(p)))}`}</div>${v ? "" : `<div class="muted">${t("chooseBoth")}</div>`}
         <div class="opt-row" style="margin-top:10px">
           <div><label class="muted ui-req">${en ? "Color" : "اللون"}</label>
-            <select id="mColor"><option value="">${t("chooseColor")}</option>${colors.map(o =>
-              `<option value="${esc(o.en)}" ${modal.color === o.en ? "selected" : ""}>${esc(en ? o.en : o.ar)}${optTag(p, "color", o)}</option>`).join("")}</select></div>
+            <select id="mColor"><option value="" ${modal.color ? "" : "selected"}>${t("chooseColor")}</option>${colors.map(o =>
+              `<option value="${esc(o.en)}" ${modal.color === o.en ? "selected" : ""} ${goneOpt(p, "color", o) ? "disabled" : ""}>${esc(en ? o.en : o.ar)}${optTag(p, "color", o)}${goneOpt(p, "color", o) ? " · " + t("outOfStock") : ""}</option>`).join("")}</select></div>
           <div><label class="muted ui-req">${en ? "Size / capacity" : "المقاس / السعة"}</label>
-            <select id="mSize"><option value="">${t("chooseSize")}</option>${sizes.map(o =>
-              `<option value="${esc(o.en)}" ${modal.size === o.en ? "selected" : ""}>${esc(en ? o.en : o.ar)}${optTag(p, "size", o)}</option>`).join("")}</select></div>
+            <select id="mSize"><option value="" ${modal.size ? "" : "selected"}>${t("chooseSize")}</option>${sizes.map(o =>
+              `<option value="${esc(o.en)}" ${modal.size === o.en ? "selected" : ""} ${goneOpt(p, "size", o) ? "disabled" : ""}>${esc(en ? o.en : o.ar)}${optTag(p, "size", o)}${goneOpt(p, "size", o) ? " · " + t("outOfStock") : ""}</option>`).join("")}</select></div>
         </div>
         <div class="qtyrow">
           <span>${t("qty")}</span>
@@ -898,18 +899,18 @@
     } else {
       const opts = p.variants.length > 1
         ? `<label class="muted">${t("chooseOpt")}</label>
-           <select id="mVariant">${p.variants.map(x =>
-              `<option value="${esc(x.vid)}" ${x.vid === v.vid ? "selected" : ""}>${esc(variantLabel(x))}</option>`
+           <select id="mVariant"><option value="" ${v ? "" : "selected"}>${t("choosePlaceholder")}</option>${p.variants.map(x =>
+              `<option value="${esc(x.vid)}" ${v && x.vid === v.vid ? "selected" : ""} ${x.unavailable ? "disabled" : ""}>${esc(variantLabel(x))}${x.unavailable ? " · " + t("outOfStock") : ""}</option>`
             ).join("")}</select>`
-        : (v.key ? `<div class="muted">${esc(variantLabel(v))}</div>` : "");
+        : (v && v.key ? `<div class="muted">${esc(variantLabel(v))}</div>` : "");
       buy = `
-        <div class="price">${fmt(localPrice(v.price))}</div>
+        ${v ? `<div class="price">${fmt(localPrice(v.price))}</div>` : `<div class="price"><span class="from">${t("fromPrice")}</span><span class="now">${fmt(localPrice(cheapOf(p)))}</span></div>`}
         ${opts}
         <div class="qtyrow">
           <span>${t("qty")}</span>
           <span class="qtyctl"><button class="ghost" data-action="mqdec">−</button> <strong>${modal.qty}</strong> <button class="ghost" data-action="mqinc">+</button></span>
         </div>
-        <button id="mAdd" style="width:100%">${t("add")}</button>`;
+        <button id="mAdd" style="width:100%" ${v && !v.unavailable ? "" : "disabled"}>${t("add")}</button>`;
     }
 
     const txt = pDesc(p) || stripHTML(p.description) || "";
@@ -942,7 +943,6 @@
       </div>`;
     box.classList.remove("hidden");
     if (keepScroll) box.scrollTop = prevTop;
-    sliverFx();
   }
   // الصورة تتصغر مع السكرول وتلتصق فوق، والعنوان يتصغر. وإذا سحبت لتحت وانت فوق تتمط
   function sliverFx() {
@@ -1037,6 +1037,7 @@
     const arr = p.variants.filter(x => x.opt.size.en === modal.size);
     return arr.length ? Math.min(...arr.map(x => x.price)) : null;
   }
+  function goneOpt(p, key, o) { return p.variants.filter(x => x.opt[key].en === o.en).every(x => x.unavailable); }
   function optTag(p, key, o) {
     const d = Math.min(...p.variants.filter(x => x.opt[key].en === o.en).map(x => x.price)) - cheapOf(p);
     if (d <= 0) return "";

@@ -286,6 +286,8 @@
     // بعض المنتجات عليها خصم (سعر قبل الخصم أعلى)
     var compareAt = (n % 4 === 0) ? Math.round(price * 1.25) : 0;
     var built = buildVariants(n, root, sub, price, sku, compareAt);
+    // مقاسات غير متوفرة في التيشيرت الأساسي (تظهر باهتة وغير قابلة للاختيار)
+    if (name === "Basic Cotton Tee") built.variants.forEach(function (v) { if (/-(M|XL)$/.test(v.vid)) v.unavailable = true; });
     var ar = AR_NAMES[name] || name;
     var d = DESC[root] || { ar: "", en: "" };
     return {
