@@ -860,7 +860,7 @@
     if (!me && step === "address") { goLogin(); return; }
     ready = true;
     render();
-    // منتجات قد تعجبك من الكتالوج الوهمي (مرحلة التجربة: بدون جلب من الـ API)
+    // منتجات قد تعجبك من المنتجات التجريبية
     ShowbizUI.catalogDemo().then(list => { catalogList = list; render(); });
   })();
 

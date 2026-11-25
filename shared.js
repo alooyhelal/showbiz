@@ -187,11 +187,28 @@
     upd();
   }
 
-  document.addEventListener("DOMContentLoaded", function () { fillIcons(); mountFooter(); mountToTop(); });
+  // حماية المحتوى: منع النسخ والقص والسحب وقائمة الضغط اليمين خارج حقول الإدخال
+  function guardContent() {
+    var isField = function (el) { return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || !!el.isContentEditable); };
+    document.addEventListener("contextmenu", function (e) { if (!isField(e.target)) e.preventDefault(); });
+    ["copy", "cut", "dragstart", "paste"].forEach(function (ev) {
+      document.addEventListener(ev, function (e) { if (!isField(e.target)) e.preventDefault(); });
+    });
+    document.addEventListener("keydown", function (e) {
+      if (isField(e.target)) return;
+      var k = (e.key || "").toLowerCase();
+      if ((e.ctrlKey || e.metaKey) && ["c", "x", "a", "s", "u", "p"].indexOf(k) >= 0) e.preventDefault();
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () { fillIcons(); mountFooter(); mountToTop(); guardContent(); });
 
   // ===== أنماط مشتركة: بدون سكرول يمين ويسار، وتذييل في كل الصفحات =====
   var SHARED_CSS = [
     "html{overflow-x:hidden}",
+    "body{-webkit-user-select:none;user-select:none}",
+    "input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:text}",
+    "img{-webkit-user-drag:none;user-drag:none;-webkit-touch-callout:none}",
     "body{max-width:100%}",
     ".totop{position:fixed;inset-inline-end:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:19;width:46px;height:46px;border:0;padding:0;background:transparent;color:#f59e4b;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .25s;-webkit-tap-highlight-color:transparent}",
     ".totop.lift{bottom:calc(92px + env(safe-area-inset-bottom,0px))}",

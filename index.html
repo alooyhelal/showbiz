@@ -137,7 +137,7 @@
   .ct-name { display:flex; align-items:center; gap:8px; }
   .ct-name.sub { font-weight:400; font-size:13px; }
   .ct-arrow { margin-inline-start:auto; color:var(--muted); }
-  #resetSite { width:100%; margin-top:14px; }
+  .side-build { margin-top:14px; font-size:12px; color:var(--muted); text-align:center; line-height:1.7; }
   /* بطاقات المنتج: زر الإضافة في سطر كامل، والتفاصيل تحته، وبدون فراغ زائد أسفل البطاقة */
   .row2 { flex-direction:column; gap:6px; margin-top:8px; }
   .row2 button { width:100%; flex:none; }
@@ -278,12 +278,11 @@
 <nav class="side hidden" id="side">
   <div class="side-head"><strong id="sideTitle"></strong><button class="ghost" id="sideX">✕</button></div>
   <div id="sideCats"></div>
-  <button class="ghost" id="resetSite" type="button"></button>
+  <div class="build side-build" id="buildInfo"></div>
   <div class="side-foot" id="sideFoot"></div>
 </nav>
 
 <main><div id="view"></div></main>
-<div id="buildInfo" class="build"></div>
 <div class="overlay hidden" id="pmodal"></div>
 <div class="overlay hidden" id="gate">
   <div class="modal gateBox">
@@ -315,6 +314,7 @@
 
 <script src="locations.js"></script>
 <script src="demo-catalog.js"></script>
+<script>try { history.scrollRestoration = "manual"; } catch (e) {}</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" onerror="document.write('<script src=\'https://unpkg.com/@supabase/supabase-js@2.50.0/dist/umd/supabase.js\'><\/script>')"></script>
 <script>
   // رقم النسخة: يتشال من هنا بعد اعتماد الموقع
@@ -354,7 +354,7 @@
       pickAddr:"عنوان التوصيل", addAddrBtn:"إضافة عنوان جديد", noAddrCountry:"ما عندك عنوان محفوظ لهذي الدولة. أضف عنوان أولًا", noAddrAny:"ما عندك عناوين محفوظة بعد. أضف عنوان أولًا",
       pickAddrErr:"اختر عنوان التوصيل أولًا",
       confirm:"تأكيد الطلب", confirmAddrNext:"تأكيد العنوان والانتقال للخطوة التالية", back:"رجوع",
-      done:"تم حفظ الطلب التجريبي (لم يُرسل لـ CJ)", doneLocal:"تعذر الحفظ في السيرفر، تم الحفظ في هذا المتصفح فقط",
+      done:"تم حفظ الطلب بنجاح", doneLocal:"تعذر الحفظ في السيرفر، تم الحفظ في هذا المتصفح فقط",
       loadErr:"تعذر تحميل المنتجات، حاول مرة ثانية", loading:"جاري التحميل...",
       noProducts:"ما فيه منتجات متاحة حاليًا", fillAll:"املأ كل الحقول",
       dims:"الأبعاد", weight:"الوزن", noDesc:"لا توجد تفاصيل إضافية", defaultVariant:"افتراضي",
@@ -382,7 +382,7 @@
       pickAddr:"Delivery address", addAddrBtn:"Add new address", noAddrCountry:"You have no saved address for this country. Add one first", noAddrAny:"You have no saved addresses yet. Add one first",
       pickAddrErr:"Choose a delivery address first",
       confirm:"Confirm order", confirmAddrNext:"Confirm address and continue", back:"Back",
-      done:"Test order saved (not sent to CJ)", doneLocal:"Could not save to server; saved in this browser only",
+      done:"Order saved successfully", doneLocal:"Could not save to server; saved in this browser only",
       loadErr:"Could not load products, please try again", loading:"Loading...",
       noProducts:"No products available right now", fillAll:"Please fill all fields",
       dims:"Dimensions", weight:"Weight", noDesc:"No extra details", defaultVariant:"Default",
@@ -525,7 +525,7 @@
 
   // ===== تحميل المنتجات =====
   // يقبل أي شكل قائمة من السيرفر، ويعرض سبب الفشل أسفل الصفحة للتشخيص
-  // يدعم شكل CJ الخام (productId, bigImage, sellPrice "15.45-16.41") وشكلنا المعدّل
+  // يدعم الشكل الخام للمنتجات (productId, bigImage, sellPrice) وشكلنا المعدّل
   const firstNum = (v) => { const n = parseFloat(String(v ?? "").split("-")[0]); return isNaN(n) ? null : n; };
   function normalizeProduct(p) {
     const pid = p.pid ?? p.productId ?? p.id;
@@ -550,7 +550,7 @@
     return cands.find(Array.isArray) || [];
   }
   // ===== كتالوج وهمي (100 منتج) يظهر فقط إذا القائمة الحقيقية فاضية =====
-  // أول ما تنرفع منتجات حقيقية، الوهمي يختفي تلقائياً.
+  // المنتجات التجريبية تظهر حتى تتوفر منتجات حقيقية.
   let usingDemo = false;
   // حالة الأقسام والفلاتر
   let filt = { cat: null, q: "", sort: "default" };
@@ -559,7 +559,7 @@
 
   async function loadProducts() {
     loadError = false; loadMsg = "";
-    // مرحلة التجربة: منتجات وهمية دائماً، ولا يتم جلب أي منتجات من الـ API أو CJ.
+    // منتجات تجريبية في هذه المرحلة.
     // لرجوع الجلب الحقيقي: احذف هذا البلوك فقط.
     if (window.SHOWBIZ_DEMO) {
       products = window.SHOWBIZ_DEMO.products.map(normalizeProduct);
@@ -568,7 +568,7 @@
       loadMsg = "وضع تجريبي (منتجات وهمية)";
       buildCatRoot();
       loaded = true;
-      render();
+      applyHash(); render(); window.scrollTo(0, 0);
       openFromUrl();
       return;
     }
@@ -606,7 +606,7 @@
     }
     buildCatRoot();
     loaded = true;
-    render();
+    applyHash(); render(); window.scrollTo(0, 0);
     openFromUrl();
   }
   function openFromUrl() {
@@ -767,7 +767,7 @@
       <p style="line-height:1.8;font-size:14px;color:var(--muted)">${esc(txt ? txt.slice(0, 1500) : t("noDesc"))}</p>
       <button class="ghost" data-action="mback" style="width:100%">${t("back")}</button>`;
   }
-  // ===== التقييمات الوهمية (10 لكل منتج) + تقييمات المستخدم المحفوظة =====
+  // ===== تقييمات تجريبية (10 لكل منتج) + تقييمات المستخدم المحفوظة =====
   const RV_NAMES_AR = ["نورة", "أحمد", "فاطمة", "محمد", "سارة", "علي", "مريم", "يوسف", "هدى", "خالد"];
   const RV_NAMES_EN = ["Noora", "Ahmed", "Fatima", "Mohammed", "Sara", "Ali", "Maryam", "Yousef", "Huda", "Khalid"];
   const RV_TXT_AR = ["منتج ممتاز وجودته أحسن من المتوقع، أنصح فيه.", "التوصيل كان سريع والتغليف محترم.", "السعر مناسب مقارنة بالجودة، راضي عن الشراء.", "الاستخدام يومي ومريح، ما فيه أي مشكلة.", "تطابق الوصف والصور، وصلني بحالة ممتازة.", "خامة قوية وتصميم أنيق، بيكون شرائي القادم كمان.", "تجربة شراء سهلة، والمنتج يستاهل.", "كنت متردد بس طلع أفضل من ما توقعت.", "الحجم والوزن مناسبين، وجودة التصنيع واضحة.", "مرتب ومريح، أنصح الكل يجربه."];
@@ -1015,7 +1015,7 @@
     document.getElementById("buildInfo").textContent = `${t("buildLabel")}: ${BUILD.version} · ${t("updatedLabel")}: ${BUILD.updated}`;
   }
   // ===== المتجر: الأقسام (رئيسية وفرعية) والفلاتر والبحث =====
-  // مسار المنتج: من catPath (الوهمي) أو من categoryName (الحقيقي، قسم واحد)
+  // مسار المنتج: من catPath أو من categoryName
   function productPath(p) {
     if (Array.isArray(p.catPath) && p.catPath.length) return p.catPath.map(String);
     if (typeof p.categoryName === "string" && p.categoryName) return [p.categoryName];
@@ -1050,7 +1050,7 @@
     if (!n) { n = { id, key: parent ? parent.key + "/" + id : id, kids: [], direct: [] }; list.push(n); }
     return n;
   }
-  // يبني الشجرة: ترتيب الأقسام من شجرة الوهمي (إذا وضع ?demo=1)، وبعدين أي قسم ثاني من المنتجات
+  // يبني الشجرة: ترتيب الأقسام من البيانات التجريبية، وبعدين أي قسم ثاني من المنتجات
   function buildCatRoot() {
     catRoot = { kids: [], uncat: [] };
     const schema = usingDemo && window.SHOWBIZ_DEMO ? window.SHOWBIZ_DEMO.tree : null;
@@ -1261,10 +1261,38 @@
     filt.cat = c || null;
     catsGrid = false;
     closeMenus();
+    setHash(filt.cat);
     refreshShop();
     window.scrollTo(0, 0);
   }
+  // ===== روابط الأقسام بالهاش: #all، #discounts، #cars، #cars-hyundai، #cars-all-items =====
+  function slugOf(key) {
+    if (key === SALE) return "discounts";
+    return String(key).split("/").join("-");
+  }
+  function keyFromSlug(raw) {
+    const s = String(raw || "").replace(/^#/, "").toLowerCase();
+    if (s === "all") return { cat: null, all: true };
+    if (s === "discounts") return { cat: SALE, all: false };
+    const base = s.replace(/-all-items$/, "");
+    const keys = new Set();
+    products.forEach(p => { const path = productPath(p); for (let i = 1; i <= path.length; i++) keys.add(path.slice(0, i).join("/")); });
+    const hit = [...keys].find(k => slugOf(k) === base);
+    return { cat: hit || null, all: false };
+  }
+  function setHashRaw(h) {
+    try { history.replaceState(null, "", location.pathname + location.search + h); } catch (e) {}
+  }
+  function setHash(cat) { setHashRaw(cat === null || cat === undefined ? "" : "#" + slugOf(cat)); }
+  function applyHash() {
+    if (!location.hash) return;
+    const r = keyFromSlug(location.hash);
+    if (r.all) { filt.cat = null; catsGrid = true; }
+    else { filt.cat = r.cat; catsGrid = false; }
+  }
+  window.addEventListener("hashchange", () => { applyHash(); render(); window.scrollTo(0, 0); });
   function clearFilters() {
+    setHashRaw("");
     filt = { cat: null, q: "", sort: "default" };
     catsGrid = false;
     document.getElementById("q").value = "";
@@ -1467,7 +1495,6 @@
     document.getElementById("sideCats").innerHTML = catLinksHTML();
     document.getElementById("sideTitle").textContent = t("cats");
     document.getElementById("sideX").textContent = "✕";
-    document.getElementById("resetSite").textContent = t("resetSite");
     document.getElementById("menuBtn").setAttribute("aria-label", t("menu"));
     document.getElementById("q").placeholder = t("searchPh");
     fillFilters();
@@ -1758,7 +1785,7 @@
     const c = e.target.closest("[data-cat]");
     if (c && c.closest("#shopBody, #catPanel, #sideCats")) { setCat(c.dataset.cat || null); return; }
     const cs = e.target.closest("[data-cats]");
-    if (cs) { catsGrid = cs.dataset.cats === "all"; refreshShop(); window.scrollTo(0, 0); return; }
+    if (cs) { catsGrid = cs.dataset.cats === "all"; setHashRaw(catsGrid ? "#all" : ""); refreshShop(); window.scrollTo(0, 0); return; }
     const cl = e.target.closest("[data-clear]");
     if (cl) { clearFilters(); return; }
     const qb = e.target.closest("[data-q]");
@@ -1784,12 +1811,6 @@
     document.getElementById("sideOv").classList.remove("hidden");
   });
   document.getElementById("sideX").addEventListener("click", closeMenus);
-  // تصفير الموقع: يرجع يطلب اللغة والدولة والعملة من جديد. السلة ما تنمسح.
-  document.getElementById("resetSite").addEventListener("click", () => {
-    state.seen = false; save();
-    try { sessionStorage.removeItem("showbiz_gate_ok"); } catch (e) {}
-    closeMenus(); render();
-  });
   document.getElementById("sideOv").addEventListener("click", closeMenus);
   const qEl = document.getElementById("q");
   qEl.addEventListener("input", () => { filt.q = qEl.value; refreshShop(); renderSugg(); });

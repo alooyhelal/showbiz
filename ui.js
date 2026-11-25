@@ -88,7 +88,7 @@
     return entryOf({ pid: pid, nameEn: p.nameEn || p.name || "", nameAr: p.nameAr || "", choose: !!p.choose, image: image, weightG: weightG, dimsCm: dimsCm, categoryName: typeof p.categoryName === "string" ? p.categoryName : null, stock: p.stock },
       { vid: vid, key: v0 ? (v0.key || "") : "", keyAr: v0 ? (v0.keyAr || "") : "", sku: v0 ? v0.sku : p.sku, price: price, image: (v0 && v0.image) || image, weightG: v0 ? v0.weightG : weightG, dimsCm: v0 ? v0.dimsCm : dimsCm });
   }
-  // قائمة المقترحات من الكتالوج الوهمي (مرحلة التجربة: بدون أي جلب من الـ API)
+  // قائمة المقترحات من المنتجات التجريبية
   function catalogDemo() {
     if (catCache) return Promise.resolve(catCache);
     var list = (window.SHOWBIZ_DEMO && window.SHOWBIZ_DEMO.products) || [];
