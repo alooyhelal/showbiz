@@ -50,11 +50,23 @@
 </style>
 <script src="version.js"></script>
 <script src="shared.js"></script>
+<style>
+  .acct-hd { position:relative; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0 14px; margin-bottom:14px; border-bottom:1px solid var(--line, #2c4168); }
+  .acct-brand { position:absolute; left:50%; transform:translateX(-50%); font-weight:800; font-size:18px; color:var(--fg, #f2f5fa); text-decoration:none; }
+  .acct-brand b { color:var(--orange, #f59e4b); }
+  .acct-back { width:38px; height:38px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; color:var(--fg, #f2f5fa); border:1px solid var(--line, #2c4168); text-decoration:none; z-index:1; }
+  html[dir=rtl] .acct-back svg { transform:scaleX(-1); }
+  .acct-hd .tools { z-index:1; }
+  .menu { position:fixed !important; top:64px; left:12px !important; right:auto !important; min-width:0 !important; width:min(240px, calc(100vw - 24px)); }
+  .icon-del { padding:8px 10px; }
+  .icon-del svg { width:18px; height:18px; }
+</style>
 </head>
-<body>
+<body data-lite>
 <div class="wrap">
-  <div class="hdr">
-    <a class="brand" href="index.html">Show<b>biz</b></a>
+  <div class="acct-hd">
+    <a class="acct-back" href="index.html" aria-label="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <a class="acct-brand" href="index.html">Show<b>biz</b></a>
     <div class="tools">
       <button class="btn btn-line btn-sm" id="langBtn" type="button"></button>
       <div class="navwrap">
@@ -112,6 +124,17 @@
       <div class="actions">
         <span class="hint" id="saveHint"></span>
         <button class="btn btn-main" id="saveBtn" type="button" disabled></button>
+      </div>
+    </div>
+    <div class="card" id="pwCard">
+      <h2 id="pwTitle" style="font-size:17px;margin:0 0 12px"></h2>
+      <div id="pwMsg" class="msg hidden"></div>
+      <div class="full"><label for="pwCur" id="pwCurL"></label><input id="pwCur" type="password" autocomplete="current-password"></div>
+      <div class="actions"><button class="btn btn-main" id="pwVerify" type="button" disabled></button></div>
+      <div id="pwNewBox" class="hidden">
+        <div class="full"><label for="pwNew" id="pwNewL"></label><input id="pwNew" type="password" autocomplete="new-password"></div>
+        <div class="full" style="margin-top:12px"><label for="pwConfirm" id="pwConfirmL"></label><input id="pwConfirm" type="password" autocomplete="new-password"></div>
+        <div class="actions"><button class="btn btn-main" id="pwSave" type="button" disabled></button></div>
       </div>
     </div>
   </div>
@@ -206,13 +229,56 @@
     const d = dirty();
     $("saveBtn").disabled = busy || !d;
     $("saveBtn").textContent = busy ? L().saving : L().save;
-    $("saveHint").textContent = (!d && !busy) ? L().noChange : "";
+    $("saveHint").textContent = "";
   }
+
+  const PWT = {
+    ar: { pwTitle: "تغيير كلمة المرور", pwCur: "كلمة المرور الحالية", pwVerify: "تحقق", pwNew: "كلمة المرور الجديدة", pwConfirm: "تأكيد كلمة المرور", pwSave: "حفظ كلمة المرور",
+          pwBad: "كلمة المرور الحالية غير صحيحة", pwShort: "كلمة المرور لازم تكون 6 أحرف على الأقل", pwMismatch: "كلمة المرور الجديدة غير متطابقة", pwOk: "تم تغيير كلمة المرور" },
+    en: { pwTitle: "Change password", pwCur: "Current password", pwVerify: "Verify", pwNew: "New password", pwConfirm: "Confirm new password", pwSave: "Save password",
+          pwBad: "Current password is incorrect", pwShort: "Password must be at least 6 characters", pwMismatch: "New passwords do not match", pwOk: "Password changed" }
+  };
+  function pwL() { return PWT[lang] || PWT.ar; }
+  function applyPw() {
+    const p = pwL();
+    $("pwTitle").textContent = p.pwTitle; $("pwCurL").textContent = p.pwCur; $("pwVerify").textContent = p.pwVerify;
+    $("pwNewL").textContent = p.pwNew; $("pwConfirmL").textContent = p.pwConfirm; $("pwSave").textContent = p.pwSave;
+  }
+  function showPwMsg(text, isErr) {
+    const m = $("pwMsg");
+    m.textContent = text || "";
+    m.className = "msg " + (isErr ? "err" : "ok") + (text ? "" : " hidden");
+  }
+  $("pwCur").addEventListener("input", () => { $("pwVerify").disabled = !$("pwCur").value; });
+  $("pwNew").addEventListener("input", () => { $("pwSave").disabled = !($("pwNew").value && $("pwConfirm").value); });
+  $("pwConfirm").addEventListener("input", () => { $("pwSave").disabled = !($("pwNew").value && $("pwConfirm").value); });
+  $("pwVerify").addEventListener("click", async () => {
+    showPwMsg("");
+    try {
+      const { error } = await sb.auth.signInWithPassword({ email: user.email, password: $("pwCur").value });
+      if (error) throw error;
+      $("pwNewBox").classList.remove("hidden");
+      $("pwVerify").disabled = true;
+    } catch (e) { showPwMsg(pwL().pwBad, true); }
+  });
+  $("pwSave").addEventListener("click", async () => {
+    const a = $("pwNew").value, b = $("pwConfirm").value;
+    if (a.length < 6) { showPwMsg(pwL().pwShort, true); return; }
+    if (a !== b) { showPwMsg(pwL().pwMismatch, true); return; }
+    try {
+      const { error } = await sb.auth.updateUser({ password: a });
+      if (error) throw error;
+      showPwMsg(pwL().pwOk, false);
+      $("pwCur").value = ""; $("pwNew").value = ""; $("pwConfirm").value = "";
+      $("pwNewBox").classList.add("hidden"); $("pwVerify").disabled = true; $("pwSave").disabled = true;
+    } catch (e) { showPwMsg(e.message || pwL().pwBad, true); }
+  });
 
   function apply() {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
     document.title = "Showbiz " + L().title;
+    applyPw();
     document.querySelectorAll("[data-k]").forEach(el => { el.textContent = L()[el.dataset.k]; });
     $("langBtn").textContent = L().switchLabel;
     fillSelects();
