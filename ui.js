@@ -1,17 +1,13 @@
-/* ui.js (v36): واجهة مشتركة للصفحة الرئيسية وصفحة السلة.
-   يعتمد على متغيرات الصفحة نفسها: state, save, cartLines, subtotalUSD, discountUSD,
-   shippingCalc, shipLocal, localPrice, fmt, RATE_BHD, COUPONS, selectedAddr, variantLabel. */
+/* ui.js (v41): واجهة مشتركة للصفحة الرئيسية وصفحة السلة.
+   يعتمد على متغيرات الصفحة نفسها: state, save, cartLines, selLines, subtotalUSD, discountUSD,
+   shippingCalc, shipLocal, localPrice, fmt, COUNTRIES, COUPONS, selectedAddr, variantLabel. */
 (function () {
   "use strict";
 
   // ===== إعدادات قابلة للتعديل =====
+  // حد التوصيل المجاني لكل دولة موجود في COUNTRIES[..].free (بالعملة المحلية)
   var CFG = {
-    freeShipBHD: 20,      // التوصيل مجاني إذا قيمة المنتجات بعد الخصم وصلت هذا المبلغ (د.ب). قيمة مبدئية، عدّلها
-    tier: null,           // مستوى خصم بالكمية، مثال: { minBHD: 50 }. معطّل، ولا يطبّق أي خصم تلقائي
-    announce: {
-      ar: "توصيل مجاني فوق 20 د.ب",
-      en: "Free delivery over BD 20"
-    },
+    tier: null,           // مستوى خصم بالكمية. معطّل، ولا يطبّق أي خصم تلقائي
     days: { ar: "التوصيل خلال 2–4 أيام عمل", en: "Delivery in 2–4 working days" }
   };
 
@@ -19,28 +15,28 @@
     ar: {
       cart: "السلة", close: "إغلاق", keep: "متابعة التسوق", checkout: "إتمام الطلب", empty: "سلتك فارغة حالياً",
       all: "الكل", selHint: "المنتجات غير المحددة تبقى في السلة ولا تنحذف",
-      remaining: "باقي {x} د.ب للتوصيل المجاني", freeDone: "التوصيل مجاني لطلبك",
-      tierLeft: "باقي {x} د.ب لمستوى الخصم", tierDone: "وصلت لمستوى الخصم",
+      remaining: "باقي {x} للتوصيل المجاني", freeDone: "وصلت للتوصيل المجاني",
+      freeMsg: "مبروك، شحنك مجاني لهذا الطلب", freeIn: "التوصيل المجاني",
+      tierLeft: "باقي {x} لمستوى الخصم", tierDone: "وصلت لمستوى الخصم",
       wish: "حفظ في المفضلة", remove: "حذف", coupon: "عندي كود خصم", apply: "تطبيق", couponBad: "الكود غير صحيح",
-      productsVal: "قيمة المنتجات", discount: "الخصم", shipping: "الشحن", free: "مجاني",
+      productsVal: "قيمة المنتجات", discount: "الخصم", shipping: "الشحن",
       shipLater: "يُحسب بعد اختيار العنوان", grand: "الإجمالي",
       shipInfo: "رسوم التوصيل تُحسب حسب الوزن والدولة",
-      trust: ["دفع آمن", "توصيل لدول الخليج", "إرجاع حسب الشروط", "دعم العملاء"],
       suggest: "مقترحة لك", recent: "شاهدتها مؤخراً", add: "إضافة", lowStock: "باقي قطعة وحدة",
-      completeLook: "أكمل الإطلالة", bhd: "د.ب"
+      mayLike: "منتجات قد تعجبك", bhd: "د.ب", choose: "اختر اللون والمقاس", fromPrice: "يبدأ من"
     },
     en: {
       cart: "Cart", close: "Close", keep: "Keep shopping", checkout: "Checkout", empty: "Your cart is empty",
       all: "All", selHint: "Unselected items stay in your cart",
-      remaining: "BD {x} more for free delivery", freeDone: "Free delivery on your order",
-      tierLeft: "BD {x} more to reach the next tier", tierDone: "You reached the next tier",
+      remaining: "{x} more for free delivery", freeDone: "You reached free delivery",
+      freeMsg: "Congrats, your shipping is free on this order", freeIn: "Free delivery",
+      tierLeft: "{x} more to reach the next tier", tierDone: "You reached the next tier",
       wish: "Save to wishlist", remove: "Remove", coupon: "Have a discount code?", apply: "Apply", couponBad: "Invalid code",
-      productsVal: "Products", discount: "Discount", shipping: "Shipping", free: "Free",
+      productsVal: "Products", discount: "Discount", shipping: "Shipping",
       shipLater: "Calculated after choosing an address", grand: "Total",
       shipInfo: "Delivery fee depends on weight and country",
-      trust: ["Secure payment", "Delivery across the Gulf", "Returns per terms", "Customer support"],
       suggest: "Suggested for you", recent: "Recently viewed", add: "Add", lowStock: "Only 1 left",
-      completeLook: "Complete the look", bhd: "BD"
+      mayLike: "You may also like", bhd: "BD", choose: "Choose color and size", fromPrice: "From"
     }
   };
 
@@ -53,14 +49,24 @@
   function jget(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
   function jset(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
+  // اسم المنتج حسب اللغة المختارة (إذا ما فيه اسم عربي يرجع للإنجليزي)
+  function pName(p) { return (lang() === "ar" && p.nameAr) ? p.nameAr : (p.nameEn || ""); }
+  function pDesc(p) { return (lang() === "ar" && p.descAr) ? p.descAr : (p.descEn || ""); }
+
+  // ===== التوصيل المجاني: حد لكل دولة بالعملة المحلية =====
+  function country() { return COUNTRIES[st().country] || COUNTRIES.BH; }
+  function localSub() { return localPrice(subtotalUSD() - discountUSD()); }
+  function isFree() { return selLines().length > 0 && localSub() >= country().free; }
+  function freeLeft() { return Math.max(0, country().free - localSub()); }
+
   // ===== لقطة السلة (نفس شكل showbiz_cart_snap) =====
   function readSnap() { return jget("showbiz_cart_snap", []); }
   function writeSnap(arr) { jset("showbiz_cart_snap", arr); }
   function entryOf(p, v) {
     return {
       vid: v.vid,
-      p: { pid: String(p.pid), nameEn: p.nameEn, image: p.image, weightG: p.weightG, dimsCm: p.dimsCm, categoryName: p.categoryName || null, stock: p.stock == null ? null : p.stock },
-      v: { vid: v.vid, key: v.key, sku: v.sku, price: v.price, image: v.image, weightG: v.weightG, dimsCm: v.dimsCm }
+      p: { pid: String(p.pid), nameEn: p.nameEn, nameAr: p.nameAr || "", image: p.image, weightG: p.weightG, dimsCm: p.dimsCm, categoryName: p.categoryName || null, stock: p.stock == null ? null : p.stock, choose: !!p.choose },
+      v: { vid: v.vid, key: v.key, keyAr: v.keyAr || "", sku: v.sku, price: v.price, image: v.image, weightG: v.weightG, dimsCm: v.dimsCm }
     };
   }
   var catCache = null;
@@ -70,14 +76,22 @@
     if (pid == null) return null;
     var image = p.image || p.bigImage || "";
     var vs = Array.isArray(p.variants) ? p.variants.filter(function (v) { return v && v.vid && !isNaN(Number(v.price)); }) : [];
+    vs.sort(function (a, b) { return Number(a.price) - Number(b.price); });
     var v0 = vs[0];
     var price = v0 ? Number(v0.price) : firstNum(p.sellPrice != null ? p.sellPrice : p.price);
     if (price === null || isNaN(price)) return null;
     var vid = v0 ? v0.vid : (p.vid || ("base-" + pid));
     var weightG = p.weightG || firstNum(p.weight);
     var dimsCm = p.dimsCm || null;
-    return entryOf({ pid: pid, nameEn: p.nameEn || p.name || "", image: image, weightG: weightG, dimsCm: dimsCm, categoryName: typeof p.categoryName === "string" ? p.categoryName : null, stock: p.stock },
-      { vid: vid, key: v0 ? (v0.key || "") : "", sku: v0 ? v0.sku : p.sku, price: price, image: (v0 && v0.image) || image, weightG: v0 ? v0.weightG : weightG, dimsCm: v0 ? v0.dimsCm : dimsCm });
+    return entryOf({ pid: pid, nameEn: p.nameEn || p.name || "", nameAr: p.nameAr || "", choose: !!p.choose, image: image, weightG: weightG, dimsCm: dimsCm, categoryName: typeof p.categoryName === "string" ? p.categoryName : null, stock: p.stock },
+      { vid: vid, key: v0 ? (v0.key || "") : "", keyAr: v0 ? (v0.keyAr || "") : "", sku: v0 ? v0.sku : p.sku, price: price, image: (v0 && v0.image) || image, weightG: v0 ? v0.weightG : weightG, dimsCm: v0 ? v0.dimsCm : dimsCm });
+  }
+  // قائمة المقترحات من الكتالوج الوهمي (مرحلة التجربة: بدون أي جلب من الـ API)
+  function catalogDemo() {
+    if (catCache) return Promise.resolve(catCache);
+    var list = (window.SHOWBIZ_DEMO && window.SHOWBIZ_DEMO.products) || [];
+    catCache = list.map(rawEntry).filter(Boolean);
+    return Promise.resolve(catCache);
   }
   function catalog(url) {
     if (catCache) return Promise.resolve(catCache);
@@ -113,7 +127,7 @@
     if (k >= 0) w.splice(k, 1);
     else {
       var e = entry || findEntryByPid(id);
-      w.push(e || { p: { pid: id, nameEn: "", image: "" }, v: { vid: "", price: 0 }, vid: "" });
+      w.push(e || { p: { pid: id, nameEn: "", nameAr: "", image: "" }, v: { vid: "", price: 0 }, vid: "" });
     }
     jset("showbiz_wish", w);
     emit();
@@ -180,14 +194,14 @@
     save(); emit();
   }
 
-  // ===== أشرطة الشحن والعروض =====
-  function totalBHD() { return (subtotalUSD() - discountUSD()) * RATE_BHD; }
+  // ===== شريط التوصيل المجاني والإعلان المتحرك =====
   function progressHTML() {
-    var b = totalBHD(), need = CFG.freeShipBHD, left = need - b;
-    var pct = Math.min(100, Math.max(0, (b / need) * 100));
-    var html = '<div class="ui-bar"><div class="ui-msg">' + (left > 0 ? fill(tr("remaining"), { x: left.toFixed(3) }) : tr("freeDone")) +
+    var c = country(), have = localSub(), need = c.free, left = need - have;
+    var pct = Math.min(100, Math.max(0, (have / need) * 100));
+    var html = '<div class="ui-bar"><div class="ui-msg">' + (left > 0 ? fill(tr("remaining"), { x: fmt(left) }) : tr("freeMsg")) +
       '</div><div class="ui-track"><span style="width:' + pct.toFixed(1) + '%"></span></div></div>';
     if (CFG.tier) {
+      var b = (subtotalUSD() - discountUSD()) * RATE_BHD;
       var l2 = CFG.tier.minBHD - b;
       var p2 = Math.min(100, Math.max(0, (b / CFG.tier.minBHD) * 100));
       html += '<div class="ui-bar"><div class="ui-msg">' + (l2 > 0 ? fill(tr("tierLeft"), { x: l2.toFixed(3) }) : tr("tierDone")) +
@@ -195,40 +209,77 @@
     }
     return html;
   }
-  // شريط الثقة أُزيل من الصفحات، ودعم العملاء صار في التذييل
+  // نص الإعلان يتغير حسب الدولة المختارة (بعملتها)
+  function announceText() {
+    var c = country();
+    return lang() === "en" ? "Free delivery over " + c.sym.en + " " + c.free : "توصيل مجاني فوق " + c.free + " " + c.sym.ar;
+  }
+  // الإعلان يظهر مرة وحدة ويتحرك بشكل مستمر من اليمين لليسار
+  function announceHTML() { return '<span class="mq">' + esc(announceText()) + '</span>'; }
+
+  // ===== احتفال صغير عند الوصول للتوصيل المجاني =====
+  var lastFree = null;
+  function celebrate() {
+    if (document.getElementById("confetti") || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+    var box = document.createElement("div");
+    box.id = "confetti"; box.className = "ui-conf";
+    var colors = ["#f59e4b", "#5b9cff", "#7ee2a8", "#ffffff", "#ffb4bf"];
+    for (var i = 0; i < 26; i++) {
+      var p = document.createElement("i");
+      var ang = Math.random() * Math.PI * 2, dist = 60 + Math.random() * 120;
+      p.style.setProperty("--dx", Math.cos(ang) * dist + "px");
+      p.style.setProperty("--dy", (Math.sin(ang) * dist + 80) + "px");
+      p.style.setProperty("--r", (Math.random() * 720 - 360) + "deg");
+      p.style.background = colors[i % colors.length];
+      p.style.animationDelay = (Math.random() * 0.15) + "s";
+      box.appendChild(p);
+    }
+    document.body.appendChild(box);
+    setTimeout(function () { box.remove(); }, 1600);
+  }
+  // يقارن حالة التوصيل المجاني مع آخر مرة، ويحتفل فقط عند الانتقال من "غير مجاني" إلى "مجاني"
+  function syncFree() {
+    var f = isFree();
+    if (lastFree === null) {
+      var prev = null;
+      try { prev = sessionStorage.getItem("showbiz_free"); } catch (e) {}
+      lastFree = prev === "1" ? true : (prev === "0" ? false : f);
+    }
+    if (f && !lastFree) celebrate();
+    lastFree = f;
+    try { sessionStorage.setItem("showbiz_free", f ? "1" : "0"); } catch (e) {}
+  }
   function trustHTML() { return ""; }
-  function announceText() { return CFG.announce[lang()]; }
 
   // ===== بطاقات مصغّرة وشرائط أفقية =====
   function miniHTML(e) {
     var low = e.p.stock != null && Number(e.p.stock) === 1;
     return '<div class="ui-mini"><img src="' + esc(e.v.image || e.p.image) + '" alt="">' +
-      '<div class="ui-mini-n">' + esc(e.p.nameEn) + '</div>' +
-      '<div class="ui-mini-p">' + fmt(localPrice(e.v.price)) + '</div>' +
+      '<div class="ui-mini-n">' + esc(pName(e.p)) + '</div>' +
+      '<div class="ui-mini-p">' + (e.p.choose ? tr("fromPrice") + " " : "") + fmt(localPrice(e.v.price)) + '</div>' +
       (low ? '<div class="ui-low">' + tr("lowStock") + '</div>' : '') +
       '<button class="ui-add" data-ui="addSug" data-vid="' + esc(e.vid) + '">+ ' + tr("add") + '</button></div>';
   }
+  // المنتجات اللي تحتاج اختيار خيارات ما تنضاف من السلة مباشرة
+  function addable(list) { return list.filter(function (e) { return !e.p.choose && !inCart(e.vid); }); }
   function blockHTML(title, entries) {
     return '<h4 class="ui-h">' + esc(title) + '</h4><div class="ui-grid">' + entries.map(miniHTML).join("") + '</div>';
   }
   function recentBlock() {
-    var r = recentList().filter(function (e) { return !inCart(e.vid); });
+    var r = addable(recentList());
     return r.length ? blockHTML(tr("recent"), r.slice(0, 8)) : "";
   }
   function suggestBlock(entries) {
-    var list = entries.filter(function (e) { return !inCart(e.vid); }).slice(0, 8);
+    var list = addable(entries).slice(0, 8);
     return list.length ? blockHTML(tr("suggest"), list) : "";
   }
-  function lookHTML(entries) {
-    var e = entries.filter(function (x) { return !inCart(x.vid); })[0];
-    if (!e) return "";
-    var low = e.p.stock != null && Number(e.p.stock) === 1;
-    return '<div class="ui-look"><div class="ui-look-t">' + tr("completeLook") + '</div><div class="ui-look-row">' +
-      '<img src="' + esc(e.v.image || e.p.image) + '" alt="">' +
-      '<div class="ui-look-i"><div class="ui-mini-n">' + esc(e.p.nameEn) + '</div>' +
-      '<div class="ui-mini-p">' + fmt(localPrice(e.v.price)) + '</div>' + (low ? '<div class="ui-low">' + tr("lowStock") + '</div>' : '') + '</div>' +
-      '<button class="ui-add2" data-ui="addSug" data-vid="' + esc(e.vid) + '">+ ' + tr("add") + ' · ' + fmt(localPrice(e.v.price)) + '</button></div></div>';
+  // صف أفقي يتسحب: منتجات قد تعجبك في صفحة السلة
+  function suggestRow(entries) {
+    var list = addable(entries).slice(0, 10);
+    if (!list.length) return "";
+    return '<h4 class="ui-h">' + esc(tr("mayLike")) + '</h4><div class="ui-hrow">' + list.map(miniHTML).join("") + '</div>';
   }
+  function lookHTML(entries) { return ""; }
 
   // ===== السلة الجانبية =====
   var openState = false, folded = {}, mode = "cart";
@@ -251,60 +302,72 @@
   function open(m) { ensureDom(); mode = m === "wish" ? "wish" : "cart"; openState = true; drawRender(); show(true); }
   function close() { openState = false; if (document.getElementById("sd")) show(false); }
 
+  function heartSVG() { return ShowbizCore.icon("heart"); }
+  function trashSVG() { return ShowbizCore.icon("trash"); }
+
   function lineHTML(l) {
     var on = (st().unsel || []).indexOf(l.vid) < 0;
     var wished = wishedPids().indexOf(String(l.p.pid)) >= 0;
     return '<div class="sd-line">' +
       '<input type="checkbox" class="sd-chk" data-ui="sel" data-vid="' + esc(l.vid) + '" ' + (on ? "checked" : "") + '>' +
       '<img src="' + esc(l.v.image || l.p.image) + '" alt="">' +
-      '<div class="sd-info"><div class="sd-name">' + esc(l.p.nameEn) + '</div>' +
+      '<div class="sd-info"><div class="sd-name">' + esc(pName(l.p)) + '</div>' +
       (l.v.key ? '<div class="sd-var">' + esc(variantLabel(l.v)) + '</div>' : '') +
       '<div class="sd-price">' + fmt(localPrice(l.v.price)) + '</div>' +
       '<div class="sd-days">' + CFG.days[lang()] + '</div>' +
       '<div class="sd-ctl">' +
-        '<span class="sd-qty"><button data-ui="dec" data-vid="' + esc(l.vid) + '">−</button><span>' + l.qty + '</span><button data-ui="inc" data-vid="' + esc(l.vid) + '">+</button></span>' +
-        '<button class="sd-ic" data-ui="wish" data-pid="' + esc(l.p.pid) + '" aria-label="' + tr("wish") + '">' + (wished ? "♥" : "♡") + '</button>' +
-        '<button class="sd-ic" data-ui="rm" data-vid="' + esc(l.vid) + '">' + tr("remove") + '</button>' +
+        '<span class="sd-qty"><button data-ui="dec" data-vid="' + esc(l.vid) + '" aria-label="−">−</button><span>' + l.qty + '</span><button data-ui="inc" data-vid="' + esc(l.vid) + '" aria-label="+">+</button></span>' +
+        '<button class="sd-ic sd-heart ' + (wished ? "on" : "") + '" data-ui="wish" data-pid="' + esc(l.p.pid) + '" aria-label="' + tr("wish") + '">' + heartSVG() + '</button>' +
+        '<button class="sd-ic" data-ui="rm" data-vid="' + esc(l.vid) + '" aria-label="' + tr("remove") + '">' + trashSVG() + '</button>' +
       '</div></div></div>';
   }
+  // كود الخصم: صندوق مرتب قابل للطي
   function couponHTML() {
     var s = st();
-    if (s.coupon) return '<div class="sd-row"><span>' + esc(s.coupon) + '</span><button class="sd-ic" data-ui="removeCoupon">' + tr("remove") + '</button></div>';
+    if (s.coupon) return '<div class="sd-coupon sd-coupon-on"><span>' + esc(s.coupon) + '</span><button class="sd-ic" data-ui="removeCoupon">' + tr("remove") + '</button></div>';
     var isOpen = !!folded.coupon;
-    return '<button class="sd-fold" data-ui="fold" data-k="coupon">' + tr("coupon") + ' ' + (isOpen ? "▴" : "▾") + '</button>' +
-      (isOpen ? '<div class="sd-cpn"><input id="sdCpn" placeholder="' + tr("coupon") + '"><button data-ui="apply">' + tr("apply") + '</button></div><p id="sdCpnMsg" class="sd-hint"></p>' : '');
+    return '<div class="sd-coupon">' +
+      '<button class="sd-fold" data-ui="fold" data-k="coupon"><span>% ' + tr("coupon") + '</span><span>' + (isOpen ? "▴" : "▾") + '</span></button>' +
+      (isOpen ? '<div class="sd-cpn"><input id="sdCpn" placeholder="' + esc(tr("coupon")) + '"><button data-ui="apply">' + tr("apply") + '</button></div><p id="sdCpnMsg" class="sd-hint"></p>' : '') +
+      '</div>';
   }
   function totalsValue() {
     var sub = localPrice(subtotalUSD()), disc = localPrice(discountUSD());
-    var ship = selectedAddr() ? shipLocal(shippingCalc().shipBHD) : null;
-    return { sub: sub, disc: disc, ship: ship, total: sub - disc + (ship || 0) };
+    var free = isFree();
+    var ship = free ? 0 : (selectedAddr() ? shipLocal(shippingCalc().shipBHD) : null);
+    return { sub: sub, disc: disc, ship: ship, free: free, total: sub - disc + (ship || 0) };
   }
   function totalsHTML() {
     var v = totalsValue();
     var rows = '<div class="sd-row"><span>' + tr("productsVal") + '</span><span>' + fmt(v.sub) + '</span></div>';
     if (v.disc > 0) rows += '<div class="sd-row"><span>' + tr("discount") + '</span><span>- ' + fmt(v.disc) + '</span></div>';
-    rows += '<div class="sd-row"><span>' + tr("shipping") + '</span><span class="sd-muted">' +
-      (v.ship === null ? tr("shipLater") : (v.ship === 0 ? tr("free") : fmt(v.ship))) + '</span></div>';
+    if (v.free) {
+      rows += '<div class="sd-row sd-ok"><span>' + tr("shipping") + '</span><span>' + tr("freeMsg") + '</span></div>';
+    } else {
+      rows += '<div class="sd-row"><span>' + tr("shipping") + '</span><span class="sd-muted">' +
+        (v.ship === null ? tr("shipLater") : fmt(v.ship)) + '</span></div>';
+    }
     rows += '<div class="sd-row sd-total"><strong>' + tr("grand") + '</strong><strong>' + fmt(v.total) + '</strong></div>';
-    rows += '<p class="sd-hint">' + tr("shipInfo") + '</p>';
+    if (!v.free) rows += '<p class="sd-hint">' + tr("shipInfo") + '</p>';
     return '<div class="sd-totals">' + rows + '</div>';
   }
   function wishHTML() {
     var w = wishList();
-    var head = '<div class="sd-head"><strong>' + (lang() === "en" ? "Wishlist" : "المفضلة") + ' · ' + w.length + '</strong>' +
-      '<button class="sd-x" data-ui="close" aria-label="' + tr("close") + '">✕</button></div>';
+    var head = '<strong>' + (lang() === "en" ? "Wishlist" : "المفضلة") + ' · ' + w.length + '</strong>' +
+      '<button class="sd-x" data-ui="close" aria-label="' + tr("close") + '">✕</button>';
+    document.getElementById("sdHead").innerHTML = head;
     var body = w.length
       ? w.map(function (e) {
+          var canAdd = e.v.vid && !e.p.choose;
           return '<div class="sd-line"><img src="' + esc(e.v.image || e.p.image) + '" alt="">' +
-            '<div class="sd-info"><div class="sd-name">' + esc(e.p.nameEn) + '</div>' +
+            '<div class="sd-info"><div class="sd-name">' + esc(pName(e.p)) + '</div>' +
             '<div class="sd-price">' + (e.v.price ? fmt(localPrice(e.v.price)) : "") + '</div>' +
             '<div class="sd-ctl">' +
-              (e.v.vid ? '<button class="sd-ic" data-ui="addSug" data-vid="' + esc(e.v.vid) + '">+ ' + tr("add") + '</button>' : '') +
+              (canAdd ? '<button class="sd-ic" data-ui="addSug" data-vid="' + esc(e.v.vid) + '">+ ' + tr("add") + '</button>' : '') +
               '<button class="sd-ic" data-ui="wish" data-pid="' + esc(e.p.pid) + '">' + tr("remove") + '</button>' +
             '</div></div></div>';
         }).join("")
       : '<p class="sd-empty">' + (lang() === "en" ? "No saved products yet" : "ما حفظت منتجات بعد") + '</p>';
-    document.getElementById("sdHead").outerHTML = head.replace('<div class="sd-head">', '<div class="sd-head" id="sdHead">');
     document.getElementById("sdBody").innerHTML = body;
     document.getElementById("sdFoot").innerHTML = "";
   }
@@ -331,12 +394,11 @@
       var tv = totalsValue();
       foot = '<div class="sd-tot"><span class="sd-hint">' + tr("grand") + '</span><strong>' + fmt(tv.total) + '</strong></div>' +
         '<a class="sd-go' + (selCount ? "" : " dis") + '" href="cart.html">' + tr("checkout") + '</a>';
-      drawFootCount = selCount;
     }
     document.getElementById("sdBody").innerHTML = body;
     document.getElementById("sdFoot").innerHTML = foot;
+    syncFree();
   }
-  var drawFootCount = 0;
 
   function applyCoupon() {
     var inp = document.getElementById("sdCpn");
@@ -387,12 +449,18 @@
     ".sd-tot{display:flex;flex-direction:column}",
     ".sd-go{background:#f59e4b;color:#111;padding:12px 18px;border-radius:12px;font-weight:800;text-decoration:none}",
     ".sd-go.dis{opacity:.4;pointer-events:none}",
-    ".sd-x,.sd-ic,.sd-fold,.sd-link,.sd-cpn button{border:1px solid #26334d;background:transparent;color:#eef2f7;border-radius:10px;padding:4px 10px;font:inherit;cursor:pointer}",
+    ".sd-x,.sd-ic,.sd-link{border:1px solid #26334d;background:transparent;color:#eef2f7;border-radius:10px;padding:4px 10px;font:inherit;cursor:pointer}",
     ".sd-link{border:0;color:#f59e4b;text-decoration:underline;padding:4px}",
-    ".sd-cpn{display:flex;gap:8px;margin:8px 0}",
-    ".sd-cpn input{flex:1;padding:8px;border-radius:10px;border:1px solid #26334d;background:#1d2a44;color:#eef2f7;font:inherit}",
-    ".sd-cpn button{background:#f59e4b;color:#111;border:0;font-weight:700}",
-    ".sd-fold{display:block;width:100%;text-align:start;margin:10px 0;border-radius:12px}",
+    ".sd-ic{width:34px;height:34px;padding:0;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}",
+    ".sd-ic .ico{width:17px;height:17px}",
+    ".sd-heart svg{stroke:#eef2f7}",
+    ".sd-heart.on svg{fill:#e5484d;stroke:#e5484d}",
+    ".sd-coupon{background:#162033;border:1px dashed #3a4a68;border-radius:14px;padding:10px 12px;margin:12px 0}",
+    ".sd-coupon-on{display:flex;justify-content:space-between;align-items:center;gap:8px;border-style:solid;border-color:#2f6b4f;color:#7ee2a8}",
+    ".sd-fold{display:flex;width:100%;justify-content:space-between;align-items:center;background:transparent;border:0;color:#eef2f7;font:inherit;font-weight:700;padding:4px 0;cursor:pointer}",
+    ".sd-cpn{display:flex;gap:8px;margin:10px 0 4px}",
+    ".sd-cpn input{flex:1;min-width:0;padding:9px 10px;border-radius:10px;border:1px solid #26334d;background:#1d2a44;color:#eef2f7;font:inherit}",
+    ".sd-cpn button{background:#f59e4b;color:#111;border:0;border-radius:10px;padding:0 14px;font-weight:700;font:inherit;cursor:pointer}",
     ".sd-all{display:flex;gap:8px;align-items:center;font-weight:700;margin:10px 0 2px}",
     ".sd-hint{color:#9aa7bd;font-size:12px;line-height:1.6;margin:4px 0}",
     ".sd-line{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid #26334d}",
@@ -402,21 +470,23 @@
     ".sd-name{font-weight:700;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}",
     ".sd-var,.sd-days,.sd-muted{color:#9aa7bd;font-size:12px}",
     ".sd-price{color:#f59e4b;font-weight:700;margin-top:2px}",
-    ".sd-ctl{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap}",
-    ".sd-qty{display:inline-flex;align-items:center;gap:6px}",
-    ".sd-qty button{width:28px;height:28px;border-radius:9px;border:1px solid #26334d;background:transparent;color:#eef2f7;cursor:pointer}",
+    ".sd-ctl{display:flex;gap:6px;align-items:center;justify-content:space-between;margin-top:8px;flex-wrap:nowrap}",
+    ".sd-qty{display:inline-flex;align-items:center;gap:0;border:1px solid #26334d;border-radius:10px;overflow:hidden;height:34px}",
+    ".sd-qty button{width:32px;height:100%;padding:0;border:0;background:transparent;color:#eef2f7;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}",
+    ".sd-qty span{min-width:28px;text-align:center;font-weight:700}",
     ".sd-totals .sd-row,.sd-row{display:flex;justify-content:space-between;gap:8px;padding:5px 0}",
+    ".sd-ok{color:#7ee2a8;font-weight:700}",
     ".sd-total{border-top:1px solid #26334d;margin-top:6px;padding-top:10px;font-size:16px}",
     ".sd-empty{text-align:center;color:#9aa7bd;padding:20px 0}",
     ".ui-bar{background:#162033;border:1px solid #26334d;border-radius:14px;padding:10px 12px;margin-bottom:10px}",
     ".ui-msg{font-size:13px;margin-bottom:6px}",
     ".ui-track{height:6px;background:#26334d;border-radius:99px;overflow:hidden}",
-    ".ui-track span{display:block;height:100%;background:#f59e4b;border-radius:99px}",
-    ".ui-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:14px 0;text-align:center;font-size:12px;color:#9aa7bd}",
-    ".ui-trust div{background:rgba(255,255,255,.03);border:1px solid #26334d;border-radius:12px;padding:10px 4px}",
-    "@media (max-width:520px){.ui-trust{grid-template-columns:repeat(2,1fr)}}",
+    ".ui-track span{display:block;height:100%;background:#f59e4b;border-radius:99px;transition:width .5s ease}",
     ".ui-h{margin:16px 0 8px;color:#9aa7bd;font-size:14px;font-weight:700}",
     ".ui-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}",
+    ".ui-hrow{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}",
+    ".ui-hrow::-webkit-scrollbar{display:none}",
+    ".ui-hrow .ui-mini{flex:0 0 138px}",
     ".ui-mini{min-width:0;background:#162033;border:1px solid #26334d;border-radius:14px;padding:8px}",
     ".ui-mini img{width:100%;height:110px;object-fit:cover;border-radius:10px;background:#1d2a44}",
     ".ui-mini-n{font-size:13px;line-height:1.5;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}",
@@ -424,15 +494,15 @@
     ".ui-mini-p{color:#f59e4b;font-weight:700;font-size:13px}",
     ".ui-low{color:#ff8593;font-size:12px}",
     ".ui-add{width:100%;margin-top:6px;padding:6px;border-radius:9px;border:1px solid #26334d;background:transparent;color:#eef2f7;font:inherit;font-size:12px;cursor:pointer}",
-    ".ui-look{background:#162033;border:1px solid #26334d;border-radius:16px;padding:12px;margin:14px 0}",
-    ".ui-look-t{font-size:12px;letter-spacing:.06em;color:#9aa7bd;margin-bottom:8px}",
-    ".ui-look-row{display:flex;gap:10px;align-items:center}",
-    ".ui-look-row img{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#1d2a44}",
-    ".ui-look-i{flex:1;min-width:0}",
-    ".ui-add2{padding:9px 10px;border-radius:12px;border:0;background:#f59e4b;color:#111;font:inherit;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap}"
+    ".ui-conf{position:fixed;left:50%;top:40%;width:0;height:0;z-index:80;pointer-events:none}",
+    ".ui-conf i{position:absolute;left:0;top:0;width:9px;height:14px;border-radius:2px;animation:ui-burst 1.3s cubic-bezier(.15,.7,.3,1) forwards}",
+    "@keyframes ui-burst{0%{transform:translate(0,0) rotate(0);opacity:1}100%{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0}}",
+    "@media (prefers-reduced-motion: reduce){.ui-conf{display:none}}"
   ].join("\n");
   // أنماط الهيدر المشترك (الصفحة الرئيسية وصفحة السلة)
-  CSS += "\n" + "/* ===== v37: هيدر جديد، شبكة بدون سكرول يمين ويسار، أسماء بسطرين ===== */\n.hd { position:sticky; top:0; z-index:5; background:rgba(13,23,40,.97); border-bottom:1px solid var(--line); padding:10px 16px; }\n.hd-row { display:flex; align-items:center; gap:10px; max-width:1200px; margin:0 auto; flex-wrap:wrap; }\n.hd-acts { display:flex; align-items:center; gap:4px; margin-inline-start:auto; }\n.logo { font-weight:800; font-size:20px; color:var(--orange); text-decoration:none; white-space:nowrap; }\n.searchbox { position:relative; flex:1; min-width:160px; }\n.searchbox input { margin:0; border-radius:999px; padding:10px 40px 10px 14px; height:42px; }\n.s-ico { position:absolute; top:50%; inset-inline-start:auto; inset-inline-end:14px; transform:translateY(-50%); color:var(--muted); pointer-events:none; display:inline-flex; z-index:1; }\n.s-ico .ico { width:18px; height:18px; }\n.ic-btn { position:relative; width:42px; height:42px; display:inline-flex; align-items:center; justify-content:center; background:transparent; color:var(--fg); border:0; border-radius:12px; padding:0; flex-shrink:0; }\n.ic-btn:hover { background:var(--card2); }\n.ic-btn .ico { width:22px; height:22px; }\n.cartn { position:absolute; top:-6px; inset-inline-end:-6px; min-width:18px; height:18px; border-radius:999px; background:var(--orange); color:#111; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; padding:0 4px; }\n.cartn[hidden] { display:none !important; }\n.pref-btn { padding:9px 12px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--fg); font-size:13px; font-weight:700; white-space:nowrap; cursor:pointer; font-family:inherit; }\n.hd-row2 { display:flex; gap:8px; align-items:center; margin-top:10px; max-width:1200px; margin-inline:auto; flex-wrap:wrap; }\n.hd-row2 select { width:auto; margin:0; }\n.menubtn { display:none; }\n@media (max-width:700px) {\n  .hd { padding:8px 10px; }\n  .menubtn { display:inline-flex; }\n  .catdd { display:none; }\n  .logo { font-size:18px; }\n  .searchbox { order:10; flex-basis:100%; min-width:0; }\n  .hd-acts { gap:0; }\n  .ic-btn { width:38px; height:38px; }\n  .pref-btn { padding:7px 9px; font-size:12px; }\n  .hd-row2 select { flex:1; min-width:0; }\n}\n.heartbtn { position:absolute; top:10px; inset-inline-end:10px; z-index:2; width:36px; height:36px; border-radius:50%; border:0; background:rgba(255,255,255,.92); color:#333; display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.15); }\n.heartbtn .ico { width:18px; height:18px; }\n.heartbtn.on { color:#e5484d; }\n.heartbtn.on svg { fill:#e5484d; }\n.pref-lbl { font-size:13px; color:var(--muted); margin:14px 0 8px; }\n.pref-langs { display:flex; gap:8px; }\n.pref-langs button { flex:1; }\n.pref-langs button.on { border-color:var(--orange); color:var(--orange); }\n.pref-list { display:flex; flex-direction:column; gap:6px; max-height:52vh; overflow-y:auto; }\n.pref-item { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; text-align:start; background:transparent; color:var(--fg); border:1px solid var(--line); border-radius:12px; padding:11px 12px; font-weight:400; font-family:inherit; }\n.pref-item strong { font-weight:700; color:var(--muted); font-size:13px; white-space:nowrap; }\n.pref-item.on { border-color:var(--orange); }\n.pimg { height:auto; aspect-ratio:1 / 1; }\n.pimg img { width:100%; height:100%; object-fit:cover; }\n.grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }\n@media (min-width:860px) { .grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; } }\n.card { min-width:0; }\n.pbody { min-width:0; }\n.pname { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; min-height:3em; }\n.price { font-size:15px; }\n.row2 { flex-wrap:wrap; }\n.row2 button { padding:9px 8px; font-size:13px; }\n.hov button { padding:8px; font-size:12px; }\n";
+  CSS += "\n" + "/* ===== v37: هيدر جديد، شبكة بدون سكرول يمين ويسار، أسماء بسطرين ===== */\n.hd { position:sticky; top:0; z-index:5; background:rgba(13,23,40,.97); border-bottom:1px solid var(--line); padding:10px 16px; }\n.hd-row { display:flex; align-items:center; gap:10px; max-width:1200px; margin:0 auto; flex-wrap:wrap; }\n.hd-acts { display:flex; align-items:center; gap:4px; margin-inline-start:auto; }\n.logo { font-weight:800; font-size:20px; color:var(--orange); text-decoration:none; white-space:nowrap; }\n.searchbox { position:relative; flex:1; min-width:0; }\n.searchbox input { margin:0; border-radius:999px; padding:10px 14px 10px 40px; height:42px; }\nhtml[dir=rtl] .searchbox input { padding:10px 40px 10px 14px; }\n.s-ico { position:absolute; top:50%; inset-inline-start:14px; transform:translateY(-50%); color:var(--muted); pointer-events:none; display:inline-flex; z-index:1; }\n.s-ico .ico { width:18px; height:18px; }\n.ic-btn { position:relative; width:42px; height:42px; display:inline-flex; align-items:center; justify-content:center; background:transparent; color:var(--fg); border:0; border-radius:12px; padding:0; flex-shrink:0; }\n.ic-btn:hover { background:var(--card2); }\n.ic-btn .ico { width:22px; height:22px; }\n.cartn { position:absolute; top:-6px; inset-inline-end:-6px; min-width:18px; height:18px; border-radius:999px; background:var(--orange); color:#111; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; padding:0 4px; }\n.cartn[hidden] { display:none !important; }\n.pref-btn { padding:9px 12px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--fg); font-size:13px; font-weight:700; white-space:nowrap; cursor:pointer; font-family:inherit; }\n.hd-row2 { display:flex; gap:8px; align-items:center; margin-top:10px; max-width:1200px; margin-inline:auto; flex-wrap:wrap; }\n.hd-row2 select { width:auto; margin:0; }\n.menubtn { display:none; }\n@media (max-width:700px) {\n  .hd { padding:8px 10px; }\n  .menubtn { display:inline-flex; }\n  .catdd { display:none; }\n  .logo { font-size:18px; }\n  .hd-acts { gap:0; }\n  .ic-btn { width:38px; height:38px; }\n  .pref-btn { padding:7px 9px; font-size:12px; }\n}\n.heartbtn { position:absolute; top:10px; inset-inline-end:10px; z-index:2; width:36px; height:36px; border-radius:50%; border:0; background:rgba(255,255,255,.92); color:#333; display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.15); }\n.heartbtn .ico { width:18px; height:18px; }\n.heartbtn.on { color:#e5484d; }\n.heartbtn.on svg { fill:#e5484d; }\n.pref-lbl { font-size:13px; color:var(--muted); margin:14px 0 8px; }\n.pref-langs { display:flex; gap:8px; }\n.pref-langs button { flex:1; }\n.pref-langs button.on { border-color:var(--orange); color:var(--orange); }\n.pref-list { display:flex; flex-direction:column; gap:6px; max-height:52vh; overflow-y:auto; }\n.pref-item { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; text-align:start; background:transparent; color:var(--fg); border:1px solid var(--line); border-radius:12px; padding:11px 12px; font-weight:400; font-family:inherit; }\n.pref-item strong { font-weight:700; color:var(--muted); font-size:13px; white-space:nowrap; }\n.pref-item.on { border-color:var(--orange); }\n.pimg { height:auto; aspect-ratio:1 / 1; }\n.pimg img { width:100%; height:100%; object-fit:cover; }\n.grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }\n@media (min-width:860px) { .grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; } }\n.card { min-width:0; }\n.pbody { min-width:0; }\n.pname { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; min-height:3em; }\n.price { font-size:15px; }\n.hov button { padding:8px; font-size:12px; }\n";
+  // أنماط مشتركة لصفحة السلة والمودالات (v41)
+  CSS += "\n" + ".req-star{color:#ff5d6c}\n.ui-req::after{content:' *';color:#ff5d6c;font-weight:800}\n";
   var styleEl = document.createElement("style");
   styleEl.textContent = CSS;
   document.head.appendChild(styleEl);
@@ -440,7 +510,11 @@
   window.ShowbizUI = {
     cfg: CFG,
     tr: tr,
-    freeShipBHD: function () { return CFG.freeShipBHD; },
+    pName: pName,
+    pDesc: pDesc,
+    isFree: isFree,
+    freeLeft: freeLeft,
+    syncFree: syncFree,
     open: open,
     close: close,
     wishedPids: wishedPids,
@@ -451,6 +525,7 @@
     pushSearch: pushSearch,
     searches: searches,
     catalog: catalog,
+    catalogDemo: catalogDemo,
     findEntry: findEntry,
     addEntry: addEntry,
     inCart: inCart,
@@ -463,9 +538,11 @@
     progressHTML: progressHTML,
     trustHTML: trustHTML,
     announceText: announceText,
+    announceHTML: announceHTML,
     miniHTML: miniHTML,
     recentBlock: recentBlock,
     suggestBlock: suggestBlock,
+    suggestRow: suggestRow,
     lookHTML: lookHTML,
     emit: emit
   };

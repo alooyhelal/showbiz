@@ -8,7 +8,10 @@
   :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; color-scheme:dark; }
   body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; }
   header { display:block; padding:10px 16px; background:#0d1728; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
-  .announce { background:var(--orange); color:#111; text-align:center; font-size:13px; font-weight:700; padding:8px 12px; }
+  .announce { background:var(--orange); color:#111; font-size:13px; font-weight:700; padding:7px 0; overflow:hidden; white-space:nowrap; }
+  .mq { display:inline-block; animation: mq 18s linear infinite; will-change:transform; }
+  @keyframes mq { from { transform:translateX(100vw); } to { transform:translateX(-100%); } }
+  @media (prefers-reduced-motion: reduce) { .mq { animation:none; transform:none; } }
   .hrow { display:flex; align-items:center; gap:8px; justify-content:space-between; flex-wrap:wrap; }
   .hctl { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
   .hrow2 { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
@@ -24,7 +27,7 @@
   .sugg button { display:flex; gap:8px; align-items:center; width:100%; background:transparent; color:var(--fg); font-weight:400; padding:6px 8px; text-align:start; }
   .sugg img { width:36px; height:36px; object-fit:cover; border-radius:8px; background:#f3f4f6; }
   .sugg-h { color:var(--muted); font-size:12px; padding:4px 8px; }
-  #sortSel { margin:0; width:auto; }
+  #sortSel { margin:0; width:auto; height:42px; padding:0 10px; font-size:13px; border-radius:999px; }
   .cat-tile small { display:block; color:var(--muted); font-weight:400; font-size:12px; margin-top:4px; }
   .chips { display:flex; flex-wrap:wrap; gap:8px; margin:-2px 0 10px; }
   .chip { background:var(--card2); color:var(--fg); border:1px solid var(--line); border-radius:999px; padding:7px 12px; font-size:13px; font-weight:600; }
@@ -44,7 +47,6 @@
   .hov { position:absolute; inset-inline:10px; bottom:10px; display:flex; gap:8px; opacity:0; transition:opacity .2s; }
   .hov button { flex:1; padding:8px; font-size:13px; }
   .pimg:hover .hov { opacity:1; }
-  @media (hover:hover) { .row2 { display:none; } }
   @media (hover:none) { .hov { display:none; } }
   .old { color:var(--muted); font-size:12px; margin-inline-end:6px; font-weight:400; }
   .cat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin:14px 0; }
@@ -136,6 +138,30 @@
   .ct-name.sub { font-weight:400; font-size:13px; }
   .ct-arrow { margin-inline-start:auto; color:var(--muted); }
   #resetSite { width:100%; margin-top:14px; }
+  /* بطاقات المنتج: زر الإضافة في سطر كامل، والتفاصيل تحته، وبدون فراغ زائد أسفل البطاقة */
+  .row2 { flex-direction:column; gap:6px; margin-top:8px; }
+  .row2 button { width:100%; flex:none; }
+  .pbody { padding:10px 12px 10px; }
+  .dots { padding-top:6px; }
+  .side-foot { margin-top:18px; text-align:center; color:#6b7a94; font-size:12px; }
+  main { zoom:.92; }
+  .ad { display:block; position:relative; margin:10px 0 4px; border-radius:18px; overflow:hidden; padding:18px 18px 16px; min-height:138px; background:linear-gradient(125deg,#17264a 0%,#25396a 58%,#c96a2a 130%); color:#fff; border:1px solid var(--line); }
+  .ad .adtag { display:inline-block; font-size:11px; font-weight:800; letter-spacing:.04em; background:rgba(255,255,255,.14); border-radius:999px; padding:3px 10px; margin-bottom:8px; }
+  .ad h2 { margin:0 0 4px; font-size:20px; line-height:1.35; text-wrap:balance; }
+  .ad p { margin:0 0 12px; font-size:13px; opacity:.88; }
+  .ad button { background:#111; color:#fff; border-radius:999px; padding:8px 16px; font-size:13px; }
+  .cat-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:6px 0 12px; }
+  .cat-grid2 .tile { width:auto; height:96px; flex:none; }
+  .pickrow-note { color:var(--muted); font-size:12px; margin:0 0 8px; }
+  .sec-h h3 { white-space:nowrap; }
+  #pmodal .modal.enter { animation: modalIn .32s ease; }
+  @keyframes modalIn { from { opacity:0; transform:scale(.9) translateY(14px); } to { opacity:1; transform:none; } }
+  .overlay { backdrop-filter:none; }
+  .card .pimg { cursor:pointer; }
+  .opt-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .opt-row > div { min-width:0; }
+  .opt-row select { margin-bottom:0; }
+  .gateBox .pref-list { max-height:44vh; }
 </style>
 <script src="version.js"></script>
 <script src="shared.js"></script>
@@ -148,11 +174,6 @@
   <div class="hd-row">
     <button class="ic-btn menubtn" id="menuBtn" type="button" data-icon="menu" aria-label="menu"></button>
     <a class="logo" href="index.html" id="siteName">Showbiz</a>
-    <div class="searchbox">
-      <span class="s-ico" data-icon="search"></span>
-      <input id="q" type="search" autocomplete="off">
-      <div class="sugg hidden" id="sugg"></div>
-    </div>
     <div class="hd-acts">
       <button class="pref-btn" id="prefBtn" type="button"></button>
       <button class="ic-btn" id="favBtn" type="button" data-icon="heart" aria-label="wishlist"></button>
@@ -175,6 +196,11 @@
       <button class="ghost" id="catBtn" type="button"></button>
       <div class="catpanel" id="catPanel"></div>
     </div>
+    <div class="searchbox">
+      <span class="s-ico" data-icon="search"></span>
+      <input id="q" type="search" autocomplete="off">
+      <div class="sugg hidden" id="sugg"></div>
+    </div>
     <select id="sortSel"></select>
     <select id="countrySel" class="hidden"></select>
   </div>
@@ -185,22 +211,23 @@
   <div class="side-head"><strong id="sideTitle"></strong><button class="ghost" id="sideX">✕</button></div>
   <div id="sideCats"></div>
   <button class="ghost" id="resetSite" type="button"></button>
+  <div class="side-foot" id="sideFoot"></div>
 </nav>
 
 <main><div id="view"></div></main>
 <div id="buildInfo" class="build"></div>
 <div class="overlay hidden" id="pmodal"></div>
 <div class="overlay hidden" id="gate">
-  <div class="modal">
+  <div class="modal gateBox">
     <h3 id="gTitle"></h3>
-    <label id="gCountryLbl"></label>
-    <select id="gCountry"></select>
-    <label id="gLangLbl"></label>
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <button class="ghost" data-glang="ar">العربية</button>
-      <button class="ghost" data-glang="en">English</button>
+    <div class="pref-lbl" id="gLangLbl"></div>
+    <div class="pref-langs">
+      <button class="ghost" data-glang="en" type="button">English</button>
+      <button class="ghost" data-glang="ar" type="button">العربية</button>
     </div>
-    <button id="gGo" style="width:100%"></button>
+    <div class="pref-lbl" id="gCurLbl"></div>
+    <div id="gCur" class="pref-list"></div>
+    <button id="gGo" type="button" style="width:100%;margin-top:14px"></button>
   </div>
 </div>
 
@@ -239,12 +266,12 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const COUNTRIES = {
-    BH: { iso:"BHD", flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2 },
-    SA: { iso:"SAR", flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"ر.س", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
-    AE: { iso:"AED", flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"د.إ", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
-    KW: { iso:"KWD", flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3 },
-    QA: { iso:"QAR", flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3 },
-    OM: { iso:"OMR", flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"ر.ع", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
+    BH: { iso:"BHD", flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2, free:20 },
+    SA: { iso:"SAR", flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"ر.س", en:"SAR"}, dec:2, rate:3.75, base:3.3, free:300 },
+    AE: { iso:"AED", flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"د.إ", en:"AED"}, dec:2, rate:3.6725, base:3.3, free:300 },
+    KW: { iso:"KWD", flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3, free:30 },
+    QA: { iso:"QAR", flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3, free:300 },
+    OM: { iso:"OMR", flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"ر.ع", en:"OMR"}, dec:3, rate:0.385, base:3.3, free:30 }
   };
 
   const T = {
@@ -272,7 +299,9 @@
       cats:"الأقسام", allCats:"كل الأقسام", other:"منتجات أخرى", seeAll:"عرض الكل", clearFilter:"مسح الفلاتر",
       noResults:"ما لقينا نتائج", searchPh:"ابحث عن منتج", recentSearch:"آخر البحوث", 
       sortDef:"الترتيب الافتراضي", sortAsc:"السعر: من الأقل إلى الأعلى", sortDesc:"السعر: من الأعلى إلى الأقل", sortName:"الاسم: من A إلى Z", sortNameDesc:"الاسم: من Z إلى A",
-      isNew:"جديد", isBest:"الأكثر مبيعاً", menu:"القائمة", homeLbl:"الصفحة الرئيسية", allProducts:"كل المنتجات", resetSite:"تصفير الموقع"
+      isNew:"جديد", isBest:"الأكثر مبيعاً", menu:"القائمة", homeLbl:"الصفحة الرئيسية", allProducts:"كل المنتجات", resetSite:"تصفير الموقع",
+      saleTitle:"الخصومات", catsHead:"الفئات", chooseColor:"اختر اللون", chooseSize:"اختر المقاس / السعة", chooseBoth:"اختر اللون والمقاس أولاً",
+      fromPrice:"يبدأ من", adTag:"عروض مختارة", adTitle:"خصومات مختارة هذا الأسبوع", adSub:"تشكيلة من المنتجات بأسعار مميزة", adBtn:"تسوّق الآن"
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
@@ -298,7 +327,9 @@
       cats:"Categories", allCats:"All categories", other:"Other products", seeAll:"See all", clearFilter:"Clear filters",
       noResults:"No results", searchPh:"Search products", recentSearch:"Recent searches", 
       sortDef:"Default order", sortAsc:"Price: low to high", sortDesc:"Price: high to low", sortName:"Name: A to Z", sortNameDesc:"Name: Z to A",
-      isNew:"New", isBest:"Best seller", menu:"Menu", homeLbl:"Home", allProducts:"All products", resetSite:"Reset site"
+      isNew:"New", isBest:"Best seller", menu:"Menu", homeLbl:"Home", allProducts:"All products", resetSite:"Reset site",
+      saleTitle:"Discounts", catsHead:"Categories", chooseColor:"Choose color", chooseSize:"Choose size / capacity", chooseBoth:"Choose color and size first",
+      fromPrice:"From", adTag:"Selected offers", adTitle:"Selected discounts this week", adSub:"A selection of products at special prices", adBtn:"Shop now"
     }
   };
 
@@ -347,7 +378,10 @@
     return state.lang === "ar" ? `${n} ${c.sym.ar}` : `${c.sym.en} ${n}`;
   }
   const fmt = (amount) => fmtFor(state.country, amount);
-  const variantLabel = (v) => v.key ? String(v.key).replace(/-/g, " · ") : t("defaultVariant");
+  const variantLabel = (v) => (state.lang === "ar" && v.keyAr) ? v.keyAr : (v.key ? String(v.key).replace(/-/g, " · ") : t("defaultVariant"));
+  // اسم ووصف المنتج حسب اللغة المختارة
+  const pName = (p) => (state.lang === "ar" && p.nameAr) ? p.nameAr : p.nameEn;
+  const pDesc = (p) => (state.lang === "ar" && p.descAr) ? p.descAr : (p.descEn || "");
 
   function stripHTML(html) {
     if (!html) return "";
@@ -413,7 +447,7 @@
     const chargeable = Math.max(actualKg, volKg);
     const orderBHD = (subtotalUSD() - discountUSD()) * RATE_BHD;
     // التوصيل مجاني فوق الحد المحدد في ui.js
-    const shipBHD = orderBHD >= ShowbizUI.freeShipBHD() ? 0
+    const shipBHD = ShowbizUI.isFree() ? 0
       : COUNTRIES[state.country].base + Math.max(0, chargeable - 1) * 0.5;
     const riskBHD = Math.max(orderBHD * 0.15, 0.3);
     return { actualKg, volKg, chargeable, shipBHD, riskBHD };
@@ -614,13 +648,24 @@
   function priceRange(p) {
     const prices = p.variants.map(v => v.price);
     const min = Math.min(...prices), max = Math.max(...prices);
+    if (p.choose) return `${t("fromPrice")} ${fmt(localPrice(min))}`;
     return min === max ? fmt(localPrice(min)) : `${fmt(localPrice(min))} – ${fmt(localPrice(max))}`;
   }
   function galleryFor(p, v) { return [...new Set([v && v.image, ...(p.images || []), p.image].filter(Boolean))]; }
+  // خيارات المنتج المطلوب اختيارها (الإلكترونيات): الألوان والمقاسات بدون تحديد مسبق
+  function optionValues(p) {
+    const uniq = (arr) => { const seen = new Map(); arr.forEach(o => { if (!seen.has(o.en)) seen.set(o.en, o); }); return [...seen.values()]; };
+    return { colors: uniq(p.variants.map(v => v.opt.color)), sizes: uniq(p.variants.map(v => v.opt.size)) };
+  }
+  function resolveChoice(p) {
+    if (!modal || !modal.color || !modal.size) return null;
+    return p.variants.find(v => v.opt.color.en === modal.color && v.opt.size.en === modal.size) || null;
+  }
   function curModal() {
     if (!modal) return null;
     const p = products.find(x => x.pid === modal.pid);
     if (!p) return null;
+    if (p.choose) { const cv = resolveChoice(p); modal.vid = cv ? cv.vid : null; return { p, v: cv }; }
     const v = p.variants.find(x => x.vid === modal.vid) || p.variants[0];
     return { p, v };
   }
@@ -628,14 +673,15 @@
     const p = products.find(x => x.pid === pid);
     if (!p) return;
     ShowbizUI.pushRecent(ShowbizUI.entryOf(p, p.variants[0]));
-    modal = { pid: p.pid, vid: p.variants[0].vid, qty: 1, idx: 0, paused: false, details: false };
+    modal = { pid: p.pid, vid: p.choose ? null : p.variants[0].vid, color: null, size: null, qty: 1, idx: 0, paused: false, details: false, fresh: true };
     renderModal();
   }
-  function detailsHTML(p, v) {
+  function detailsHTML(p, vIn) {
+    const v = vIn || p.variants[0];
     const d = v.dimsCm || p.dimsCm;
     const dims = d ? d.map(x => Number(x).toFixed(1)).join(" × ") + " cm" : "—";
     const w = v.weightG || p.weightG;
-    const txt = stripHTML(p.description);
+    const txt = pDesc(p) || stripHTML(p.description);
     return `
       <h4 style="margin:4px 0 10px">${t("detailsTitle")}</h4>
       <div class="row"><span class="muted">${t("dims")}</span><span>${dims}</span></div>
@@ -654,10 +700,31 @@
       ? `<button class="nav prev" data-action="mprev">‹</button><button class="nav next" data-action="mnext">›</button>` : "";
     const dots = g.length > 1
       ? `<div class="dots">${g.map((_, i) => `<span class="dot ${i === modal.idx ? "on" : ""}"></span>`).join("")}</div>` : "";
+    const enter = modal.fresh ? " enter" : "";
+    modal.fresh = false;
 
     let body;
     if (modal.details) {
       body = detailsHTML(p, v);
+    } else if (p.choose) {
+      const { colors, sizes } = optionValues(p);
+      const en = state.lang === "en";
+      body = `
+        ${v ? `<div class="price">${fmt(localPrice(v.price))}</div>` : `<div class="muted">${t("chooseBoth")}</div>`}
+        <div class="opt-row" style="margin-top:10px">
+          <div><label class="muted ui-req">${en ? "Color" : "اللون"}</label>
+            <select id="mColor"><option value="">${t("chooseColor")}</option>${colors.map(o =>
+              `<option value="${esc(o.en)}" ${modal.color === o.en ? "selected" : ""}>${esc(en ? o.en : o.ar)}</option>`).join("")}</select></div>
+          <div><label class="muted ui-req">${en ? "Size / capacity" : "المقاس / السعة"}</label>
+            <select id="mSize"><option value="">${t("chooseSize")}</option>${sizes.map(o =>
+              `<option value="${esc(o.en)}" ${modal.size === o.en ? "selected" : ""}>${esc(en ? o.en : o.ar)}</option>`).join("")}</select></div>
+        </div>
+        <div class="qtyrow">
+          <span>${t("qty")}</span>
+          <span class="qtyctl"><button class="ghost" data-action="mqdec">−</button> <strong>${modal.qty}</strong> <button class="ghost" data-action="mqinc">+</button></span>
+        </div>
+        <button id="mAdd" style="width:100%" ${v ? "" : "disabled"}>${t("add")}</button>
+        <button class="ghost" data-action="mdetails" style="width:100%;margin-top:8px">${t("details")}</button>`;
     } else {
       const opts = p.variants.length > 1
         ? `<label class="muted">${t("chooseOpt")}</label>
@@ -677,14 +744,14 @@
     }
 
     box.innerHTML = `
-      <div class="modal">
+      <div class="modal${enter}">
         <button class="xbtn" data-action="closeModal">✕</button>
         <div class="gallery">
           ${g.length ? `<img id="mImg" src="${esc(g[modal.idx])}" alt="">` : ""}
           ${nav}
         </div>
         ${dots}
-        <h3 style="margin:12px 0 6px">${esc(p.nameEn)}</h3>
+        <h3 style="margin:12px 0 6px">${esc(pName(p))}</h3>
         ${body}
       </div>`;
     box.classList.remove("hidden");
@@ -706,7 +773,7 @@
 
   // ===== العرض =====
   function fillCountrySelects() {
-    ["countrySel", "gCountry"].forEach(id => {
+    ["countrySel"].forEach(id => {
       const sel = document.getElementById(id);
       sel.innerHTML = "";
       Object.entries(COUNTRIES).forEach(([code, c]) => {
@@ -720,8 +787,8 @@
   }
   function renderGate() {
     document.getElementById("gTitle").textContent = t("welcome");
-    document.getElementById("gCountryLbl").textContent = t("chooseCountry");
     document.getElementById("gLangLbl").textContent = t("chooseLang");
+    document.getElementById("gCurLbl").textContent = t("chooseCountry");
     document.getElementById("gGo").textContent = t("go");
     document.getElementById("gate").classList.toggle("hidden", state.seen);
   }
@@ -775,14 +842,15 @@
   function filteredProducts() {
     const q = filt.q.trim().toLowerCase();
     let list = products.filter(p => {
-      if (filt.cat && filt.cat !== ALL && !inCat(p, filt.cat)) return false;
-      if (q && !String(p.nameEn).toLowerCase().includes(q)) return false;
+      if (filt.cat === SALE && !(cmpUSD(p) > 0)) return false;
+      if (filt.cat && filt.cat !== ALL && filt.cat !== SALE && !inCat(p, filt.cat)) return false;
+      if (q && !(String(p.nameEn) + " " + String(p.nameAr || "")).toLowerCase().includes(q)) return false;
       return true;
     });
     if (filt.sort === "asc") list = list.slice().sort((a, b) => minUSD(a) - minUSD(b));
     if (filt.sort === "desc") list = list.slice().sort((a, b) => minUSD(b) - minUSD(a));
-    if (filt.sort === "name") list = list.slice().sort((a, b) => String(a.nameEn).localeCompare(String(b.nameEn)));
-    if (filt.sort === "nameDesc") list = list.slice().sort((a, b) => String(b.nameEn).localeCompare(String(a.nameEn)));
+    if (filt.sort === "name") list = list.slice().sort((a, b) => pName(a).localeCompare(pName(b)));
+    if (filt.sort === "nameDesc") list = list.slice().sort((a, b) => pName(b).localeCompare(pName(a)));
     return list;
   }
   // سعر قبل الخصم (إذا المنتج فيه compareAt أعلى من السعر الحالي)
@@ -806,18 +874,14 @@
       <div class="card">
         <div class="pimg">${img ? `<img id="c-${esc(p.pid)}" src="${esc(img)}" alt="" loading="lazy">` : ""}${badges}
           <button class="heartbtn ${ShowbizUI.wishedPids().includes(String(p.pid)) ? "on" : ""}" data-action="wish" data-pid="${esc(p.pid)}" aria-label="wishlist">${ShowbizCore.icon("heart")}</button>
-          <div class="hov">
-            <button class="ghost" data-action="open" data-pid="${esc(p.pid)}">${t("details")}</button>
-            <button data-action="quickAdd" data-pid="${esc(p.pid)}">${t("add")}</button>
-          </div>
         </div>
         ${dots}
         <div class="pbody">
-          <div class="pname">${esc(p.nameEn)}</div>
+          <div class="pname">${esc(pName(p))}</div>
           <div class="price">${cmp ? `<s class="old">${fmt(localPrice(cmp))}</s>` : ""}${priceRange(p)}</div>
           <div class="row2">
-            <button class="ghost" data-action="open" data-pid="${esc(p.pid)}">${t("details")}</button>
             <button data-action="quickAdd" data-pid="${esc(p.pid)}">${t("add")}</button>
+            <button class="ghost" data-action="open" data-pid="${esc(p.pid)}">${t("details")}</button>
           </div>
         </div>
       </div>`;
@@ -853,6 +917,12 @@
       node.kids.map(k => tileHTML(k.key, "tag", catLabel(k.id), false)).join("") + `</div>`;
   }
 
+  const SALE = "__sale__";
+  let catsGrid = false;
+  const saleList = () => products.filter(p => cmpUSD(p) > 0);
+  function adHTML() {
+    return `<div class="ad"><span class="adtag">${t("adTag")}</span><h2>${t("adTitle")}</h2><p>${t("adSub")}</p><button data-clear="1">${t("adBtn")}</button></div>`;
+  }
   function shopBodyHTML() {
     if (!loaded) return `<p>${t("loading")}</p>`;
     if (loadError) return `<p>${t("loadErr")}</p>`;
@@ -860,17 +930,30 @@
     const filtered = filt.cat || filt.q.trim() || filt.sort !== "default";
     if (filtered) {
       const list = filteredProducts();
-      const node = filt.cat && filt.cat !== ALL ? nodeByKey(filt.cat) : null;
+      const isSale = filt.cat === SALE;
+      const node = filt.cat && filt.cat !== ALL && !isSale ? nodeByKey(filt.cat) : null;
       const topWithKids = !!(node && !String(node.key).includes("/") && node.kids.length);
-      const title = topWithKids ? catLabel(node.id) : (filt.cat && filt.cat !== ALL ? crumbs(filt.cat) : t("allCats"));
+      const title = isSale ? t("saleTitle")
+        : (topWithKids ? catLabel(node.id) : (filt.cat && filt.cat !== ALL ? crumbs(filt.cat) : t("allCats")));
       const head = `<div class="sec-h"><h3>${esc(title)}</h3><button class="linkbtn" data-clear="1">${t("clearFilter")}</button></div>`;
       return (topWithKids ? subStripHTML(node) : "") + head + (list.length ? `<div class="grid">${list.map(cardHTML).join("")}</div>` : `<p class="muted">${t("noResults")}</p>`);
     }
     const tops = catRoot.kids;
-    if (!tops.length) return ShowbizUI.trustHTML() + `<div class="grid">${products.map(cardHTML).join("")}</div>`;
-    // شريط التصنيفات الرئيسية (يتسحب)، وتحت كل قسم صف منتجات يتسحب يمين ويسار
-    let html = `<div class="tiles">${tops.map(n => tileHTML(n.key, n.id, catLabel(n.id), false)).join("")}</div>`;
-    html += ShowbizUI.trustHTML();
+    const sale = saleList();
+    const saleTile = sale.length ? tileHTML(SALE, "tag", t("saleTitle"), false) : "";
+    if (catsGrid) {
+      // عرض الكل للأقسام: شبكة من عمودين
+      return `<div class="sec-h"><h3>${t("catsHead")}</h3><button class="linkbtn" data-cats="back">${t("back")}</button></div>` +
+        `<div class="cat-grid2">${saleTile}${tops.map(n => tileHTML(n.key, n.id, catLabel(n.id), false)).join("")}</div>`;
+    }
+    if (!tops.length) return adHTML() + `<div class="grid">${products.map(cardHTML).join("")}</div>`;
+    // الإعلان، ثم الفئات (شريط يتسحب)، ثم الخصومات أول قسم، وبعدها الأقسام
+    let html = adHTML();
+    html += `<div class="sec-h"><h3>${t("catsHead")}</h3><button class="linkbtn" data-cats="all">${t("seeAll")}</button></div>`;
+    html += `<div class="tiles">${saleTile}${tops.map(n => tileHTML(n.key, n.id, catLabel(n.id), false)).join("")}</div>`;
+    if (sale.length) {
+      html += `<div class="sec-h"><h3>${t("saleTitle")}</h3><button class="linkbtn" data-cat="${SALE}">${t("seeAll")}</button></div><div class="hs">${sale.map(cardHTML).join("")}</div>`;
+    }
     tops.forEach(n => {
       html += `<div class="sec-h"><h3>${esc(catLabel(n.id))}</h3><button class="linkbtn" data-cat="${esc(n.key)}">${t("seeAll")}</button></div><div class="hs">${allItems(n).map(cardHTML).join("")}</div>`;
     });
@@ -886,12 +969,14 @@
   }
   function setCat(c) {
     filt.cat = c || null;
+    catsGrid = false;
     closeMenus();
     refreshShop();
     window.scrollTo(0, 0);
   }
   function clearFilters() {
     filt = { cat: null, q: "", sort: "default" };
+    catsGrid = false;
     document.getElementById("q").value = "";
     document.getElementById("sortSel").value = "default";
     closeMenus();
@@ -914,9 +999,9 @@
       box.classList.toggle("hidden", !rec.length);
       return;
     }
-    const m = products.filter(p => String(p.nameEn).toLowerCase().includes(q)).slice(0, 6);
+    const m = products.filter(p => (String(p.nameEn) + " " + String(p.nameAr || "")).toLowerCase().includes(q)).slice(0, 6);
     box.innerHTML = m.length
-      ? m.map(p => `<button data-openp="${esc(p.pid)}"><img src="${esc(p.image || "")}" alt="">${esc(p.nameEn)}</button>`).join("")
+      ? m.map(p => `<button data-openp="${esc(p.pid)}"><img src="${esc(p.image || "")}" alt="">${esc(pName(p))}</button>`).join("")
       : `<div class="sugg-h">${t("noResults")}</div>`;
     box.classList.remove("hidden");
   }
@@ -935,9 +1020,11 @@
     }).join("");
   }
   function catLinksHTML() {
+    const sale = saleList().length
+      ? `<button class="ct-name ${filt.cat === SALE ? "on" : ""}" data-cat="${SALE}">${catIcon("tag")}<span>${t("saleTitle")}</span></button>` : "";
     return `<button class="ct-name ${!filt.cat ? "on" : ""}" data-cat="">${catIcon("home")}<span>${t("homeLbl")}</span></button>` +
       `<button class="ct-name ${filt.cat === ALL ? "on" : ""}" data-cat="${ALL}">${catIcon("tag")}<span>${t("allCats")}</span></button>` +
-      catTreeHTML(catRoot.kids, 0);
+      sale + catTreeHTML(catRoot.kids, 0);
   }
   function fillFilters() {
     const s = document.getElementById("sortSel");
@@ -1058,8 +1145,8 @@
     try {
       localStorage.setItem("showbiz_cart_snap", JSON.stringify(cartLines().map(l => ({
         vid: l.vid,
-        p: { pid: l.p.pid, nameEn: l.p.nameEn, image: l.p.image, weightG: l.p.weightG, dimsCm: l.p.dimsCm },
-        v: { vid: l.vid, key: l.v.key, sku: l.v.sku, price: l.v.price, image: l.v.image, weightG: l.v.weightG, dimsCm: l.v.dimsCm }
+        p: { pid: l.p.pid, nameEn: l.p.nameEn, nameAr: l.p.nameAr || "", image: l.p.image, weightG: l.p.weightG, dimsCm: l.p.dimsCm, choose: !!l.p.choose },
+        v: { vid: l.vid, key: l.v.key, keyAr: l.v.keyAr || "", sku: l.v.sku, price: l.v.price, image: l.v.image, weightG: l.v.weightG, dimsCm: l.v.dimsCm }
       }))));
     } catch (e) {}
   }
@@ -1080,7 +1167,8 @@
     document.getElementById("menuDel").textContent = t("menuDel");
     document.getElementById("menuLogout").textContent = t("logout");
     document.getElementById("siteName").textContent = t("siteName");
-    document.getElementById("announce").textContent = ShowbizUI.announceText();
+    document.getElementById("announce").innerHTML = ShowbizUI.announceHTML();
+    document.getElementById("sideFoot").textContent = state.lang === "en" ? "Showbiz · All rights reserved" : "شوبيز · جميع الحقوق محفوظة";
     document.getElementById("catBtn").textContent = t("cats");
     document.getElementById("catPanel").innerHTML = catLinksHTML();
     document.getElementById("sideCats").innerHTML = catLinksHTML();
@@ -1104,6 +1192,7 @@
     renderGate();
     renderBuild();
     renderModal();
+    ShowbizUI.syncFree();
   }
 
   // ===== حركات الإضافة للسلة وفتح التفاصيل =====
@@ -1170,9 +1259,15 @@
     setTimeout(() => { fl.remove(); if (mi.isConnected) mi.style.opacity = ""; }, 480);
   }
 
+  // فتح التفاصيل من البطاقة: الصورة تطير لمكانها الكبير، وإذا ما فيه صورة يفتح مباشرة
+  function openFromCard(pid) {
+    const im = document.getElementById("c-" + pid);
+    if (im && !reduceMotion()) heroOpen(pid, im); else openProduct(pid);
+  }
+
   // ===== الأحداث =====
   async function handleAction(a, ds) {
-    if (a === "open") { openProduct(ds.pid); return; }
+    if (a === "open") { openFromCard(ds.pid); return; }
     if (a === "quickAdd") {
       const p = products.find(x => x.pid === ds.pid);
       if (!p) return;
@@ -1183,7 +1278,7 @@
         const vid = p.variants[0].vid;
         flyToCart(img, img ? img.src : "", () => { addLine(vid, 1); render(); });
       }
-      else openProduct(p.pid);
+      else openFromCard(p.pid);
       return;
     }
     if (a === "closeModal") { modal = null; renderModal(); return; }
@@ -1269,7 +1364,7 @@
   document.getElementById("pmodal").addEventListener("click", (e) => {
     if (e.target.id === "pmodal") { modal = null; renderModal(); return; }
     if (e.target.id === "mAdd") {
-      const c = curModal(); if (!c) return;
+      const c = curModal(); if (!c || !c.v) return;
       const mi = document.getElementById("mImg");
       const vid = c.v.vid, qty = modal.qty;
       flyToCart(mi, mi ? mi.src : "", () => { addLine(vid, qty); modal = null; render(); });
@@ -1279,9 +1374,10 @@
     if (b) handleAction(b.dataset.action, b.dataset);
   });
   document.getElementById("pmodal").addEventListener("change", (e) => {
-    if (e.target.id === "mVariant" && modal) {
-      modal.vid = e.target.value; modal.idx = 0; modal.paused = true; renderModal();
-    }
+    if (!modal) return;
+    if (e.target.id === "mVariant") { modal.vid = e.target.value; modal.idx = 0; modal.paused = true; renderModal(); }
+    if (e.target.id === "mColor") { modal.color = e.target.value || null; modal.idx = 0; modal.paused = true; renderModal(); }
+    if (e.target.id === "mSize") { modal.size = e.target.value || null; modal.idx = 0; modal.paused = true; renderModal(); }
   });
 
   // تغيير الدولة من الهيدر: يتحفظ كدولة مفضلة لو الزائر مسجل دخول
@@ -1291,7 +1387,10 @@
     render();
   }
   document.getElementById("countrySel").addEventListener("change", (e) => changeCountry(e.target.value));
-  document.getElementById("gCountry").addEventListener("change", (e) => changeCountry(e.target.value));
+  document.getElementById("gCur").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cur]");
+    if (b) changeCountry(b.dataset.cur);
+  });
   document.querySelectorAll("[data-glang]").forEach(btn => {
     btn.addEventListener("click", () => { state.lang = btn.dataset.glang; save(); render(); });
   });
@@ -1317,11 +1416,13 @@
     document.getElementById("prefTitle").textContent = L.title;
     document.getElementById("prefLangLbl").textContent = L.lang;
     document.getElementById("prefCurLbl").textContent = L.cur;
-    document.getElementById("prefCur").innerHTML = Object.entries(COUNTRIES).map(([code, c]) => `
+    const curHTML = Object.entries(COUNTRIES).map(([code, c]) => `
       <button class="pref-item ${code === state.country ? "on" : ""}" data-cur="${code}" type="button">
         <span>${c.flag} ${esc(c.name[state.lang])}</span>
         <strong>${esc(c.sym.ar)} · ${c.iso}</strong>
       </button>`).join("");
+    document.getElementById("prefCur").innerHTML = curHTML;
+    document.getElementById("gCur").innerHTML = curHTML;
     document.querySelectorAll("[data-glang]").forEach(b => b.classList.toggle("on", b.dataset.glang === state.lang));
   }
 
@@ -1339,6 +1440,8 @@
     }
     const c = e.target.closest("[data-cat]");
     if (c && c.closest("#shopBody, #catPanel, #sideCats")) { setCat(c.dataset.cat || null); return; }
+    const cs = e.target.closest("[data-cats]");
+    if (cs) { catsGrid = cs.dataset.cats === "all"; refreshShop(); window.scrollTo(0, 0); return; }
     const cl = e.target.closest("[data-clear]");
     if (cl) { clearFilters(); return; }
     const qb = e.target.closest("[data-q]");

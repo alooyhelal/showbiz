@@ -132,6 +132,14 @@
     if (document.getElementById("siteFooter")) return;
     var s = readJSON("showbiz_state", {});
     var L = FT[s.lang === "en" ? "en" : "ar"];
+    // صفحات الشراء (data-lite): سطر نصي بسيط بدل التذييل الكامل
+    if (document.body && document.body.hasAttribute("data-lite")) {
+      var line = document.createElement("p");
+      line.id = "siteFooter"; line.className = "copyline";
+      line.textContent = (s.lang === "en" ? "Showbiz · " : "شوبيز · ") + L.copy;
+      document.body.appendChild(line);
+      return;
+    }
     var sup = [];
     if (CONTACT.phone) sup.push('<a dir="ltr" href="tel:' + CONTACT.phone + '">' + CONTACT.phone + "</a>");
     if (CONTACT.whatsapp) sup.push('<a href="https://wa.me/' + CONTACT.whatsapp + '" target="_blank" rel="noopener">WhatsApp</a>');
@@ -164,6 +172,8 @@
     ".sfoot p{margin:0}",
     ".sfoot-brand{color:#f59e4b;font-size:18px}",
     ".sfoot-copy{grid-column:1/-1;text-align:center;border-top:1px solid #26334d;padding-top:14px;margin-top:4px}",
+    "label.req::after{content:\" *\";color:#ff5d6c;font-weight:800}",
+    ".copyline{text-align:center;color:#6b7a94;font-size:12px;margin:18px 0 0;padding:0 16px}",
     "@media (max-width:700px){.sfoot-in{grid-template-columns:1fr;gap:18px}}"
   ].join("\n");
   var sharedStyle = document.createElement("style");
