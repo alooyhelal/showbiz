@@ -31,6 +31,10 @@
   .logo2 { text-align:center; font-weight:800; font-size:19px; color:var(--orange); text-decoration:none; }
 
   .cwrap { max-width:640px; margin:0 auto; padding:0 14px 40px; zoom:.88; }
+  .line.out { opacity:.5; filter:grayscale(.6); }
+  .chkoff { width:18px; height:18px; border:2px solid #3a4a68; border-radius:4px; flex-shrink:0; opacity:.5; margin-top:4px; }
+  .sd-oos { display:inline-block; margin-top:4px; padding:3px 10px; border-radius:999px; background:#ff5d6c; color:#fff; font-size:12px; font-weight:800; }
+  .sd-alert { background:#3b1d24; border:1px solid #ff5d6c; color:#ffd0d6; border-radius:12px; padding:10px 12px; font-size:13px; font-weight:700; margin-bottom:10px; }
   .steps { position:sticky; top:58px; z-index:4; background:var(--bg); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding:10px 0 8px; }
   .step { display:flex; align-items:center; justify-content:center; gap:6px; min-width:0; padding:8px 6px; border-radius:12px; border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--muted); font-size:12px; }
   .step .sn { width:20px; height:20px; border-radius:50%; background:var(--card2); display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0; }
@@ -198,7 +202,7 @@
     ar: {
       goLogin:"تسجيل الدخول", cartEmpty:"سلتك فارغة حالياً", snapMissing:"افتح الصفحة الرئيسية مرة وحدة عشان تتحدث السلة", emptyHint:"أضف منتجات من الموقع وترجع لها هنا", goStore:"تصفح المنتجات",
       s1:"السلة", s2:"العنوان", s3:"الدفع والتأكيد",
-      productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"الشحن", shipLater:"يُحسب بعد اختيار العنوان",
+      productsVal:"قيمة المنتجات", outOfStock:"غير متوفر", someOut:"بعض المنتجات في سلتك غير متوفرة، أزلها للمتابعة إلى الدفع", discount:"الخصم", shipping:"الشحن", shipLater:"يُحسب بعد اختيار العنوان",
       freeMsg:"مبروك، شحنك مجاني لهذا الطلب", grand:"الإجمالي", coupon:"عندي كود خصم", apply:"تطبيق", removeCoupon:"إزالة",
       badCoupon:"الكود غير صحيح", toAddr:"متابعة للعنوان", toPay:"متابعة للدفع", keep:"متابعة التسوق", back2:"رجوع",
       addrTitle:"عنوان التوصيل", addrSelected:"دولة الطلب", addrOther:"عناوين دول أخرى",
@@ -220,7 +224,7 @@
     en: {
       goLogin:"Sign in", cartEmpty:"Your cart is empty", snapMissing:"Open the home page once so the cart can refresh", emptyHint:"Add products from the store and come back here", goStore:"Browse products",
       s1:"Cart", s2:"Address", s3:"Payment & confirm",
-      productsVal:"Products", discount:"Discount", shipping:"Shipping", shipLater:"Calculated after choosing an address",
+      productsVal:"Products", outOfStock:"Out of stock", someOut:"Some items in your cart are out of stock. Remove them to continue to checkout", discount:"Discount", shipping:"Shipping", shipLater:"Calculated after choosing an address",
       freeMsg:"Congrats, your shipping is free on this order", grand:"Total", coupon:"Have a discount code?", apply:"Apply", removeCoupon:"Remove",
       badCoupon:"Invalid code", toAddr:"Continue to address", toPay:"Continue to payment", keep:"Keep shopping", back2:"Back",
       addrTitle:"Delivery address", addrSelected:"Order country", addrOther:"Other countries",
@@ -273,15 +277,23 @@
 
   // ===== السلة: تفاصيل المنتجات من اللقطة اللي تكتبها الصفحة الرئيسية =====
   function readSnap() { try { return JSON.parse(localStorage.getItem("showbiz_cart_snap") || "[]"); } catch (e) { return []; } }
+  // التوفر من الكتالوج الحي إذا متوفر، وإلا من اللقطة المحفوظة
+  function liveUnavail(vid, fallback) {
+    try {
+      if (window.SHOWBIZ_DEMO) for (const p of window.SHOWBIZ_DEMO.products) { const v = p.variants.find(x => x.vid === vid); if (v) return !!v.unavailable; }
+    } catch (e) {}
+    return !!fallback;
+  }
   function cartLines() {
     const snap = readSnap();
     return state.cart
-      .map(i => { const s = snap.find(x => x.vid === i.vid); return s ? { vid: i.vid, qty: i.qty, p: s.p, v: s.v } : null; })
+      .map(i => { const s = snap.find(x => x.vid === i.vid); return s ? { vid: i.vid, qty: i.qty, p: s.p, v: { ...s.v, unavailable: liveUnavail(i.vid, s.v.unavailable) } } : null; })
       .filter(Boolean);
   }
   // المنتجات غير المحددة تبقى في السلة لكن ما تدخل في الحساب والطلب
   const isSelected = (l) => !(state.unsel || []).includes(l.vid);
-  const selLines = () => cartLines().filter(isSelected);
+  const selLines = () => cartLines().filter(l => isSelected(l) && !l.v.unavailable);
+  const hasOut = () => cartLines().some(l => l.v.unavailable);
   const subtotalUSD = () => selLines().reduce((s, l) => s + l.v.price * l.qty, 0);
   const discountUSD = () => subtotalUSD() * (COUPONS[state.coupon] || 0);
 
@@ -537,6 +549,8 @@
   // ===== الخطوات =====
   function setStep(s) {
     if (s === "address" && !me) { goLogin(); return; }
+    // ما ينتقل لإتمام الطلب قبل ما تنزل المنتجات غير المتوفرة من السلة
+    if (s !== "cart" && hasOut()) s = "cart";
     step = s;
     const h = s === "cart" ? "" : "#" + s;
     history.replaceState(null, "", location.pathname + h);
@@ -577,22 +591,24 @@
   const catalogPool = () => catalogList.filter(e => !state.cart.some(i => i.vid === e.vid));
 
   function lineHTML(l) {
-    const on = isSelected(l);
+    const out = !!l.v.unavailable;
+    const on = isSelected(l) && !out;
     const wished = ShowbizUI.wishedPids().includes(String(l.p.pid));
     return `
-      <div class="line ${on ? "" : "off"}">
-        <input type="checkbox" data-ui="sel" data-vid="${esc(l.vid)}" ${on ? "checked" : ""} aria-label="${esc(pName(l.p))}">
+      <div class="line ${on ? "" : "off"}${out ? " out" : ""}">
+        ${out ? `<span class="chkoff" aria-hidden="true"></span>` : `<input type="checkbox" data-ui="sel" data-vid="${esc(l.vid)}" ${on ? "checked" : ""} aria-label="${esc(pName(l.p))}">`}
         <img src="${esc(l.v.image || l.p.image)}" alt="">
         <div class="info">
           <div class="name">${esc(pName(l.p))}</div>
           ${l.v.key ? `<div class="var">${esc(variantLabel(l.v))}</div>` : ""}
+          ${out ? `<div class="sd-oos">${t("outOfStock")}</div>` : `
           <div class="unit">${fmt(localPrice(l.v.price))}</div>
           <div class="days">${ShowbizUI.cfg.days[state.lang] || ""}</div>
           <div class="qty">
             <button data-a="dec" data-vid="${esc(l.vid)}" aria-label="−">−</button>
             <span>${l.qty}</span>
             <button data-a="inc" data-vid="${esc(l.vid)}" aria-label="+">+</button>
-          </div>
+          </div>`}
         </div>
         <div class="acts">
           <button class="heart ${wished ? "on" : ""}" data-ui="wish" data-pid="${esc(l.p.pid)}" aria-label="wish">${ShowbizCore.icon("heart")}</button>
@@ -613,8 +629,9 @@
       return stepsHTML() + emptyHTML(`${t("cartEmpty")}<br><span style="font-size:13px">${t("emptyHint")}</span>`)
         + ShowbizUI.suggestRow(catalogPool().slice(0, 12));
     }
-    const selCount = lines.filter(isSelected).length;
-    const allOn = selCount === lines.length;
+    const selCount = lines.filter(l => isSelected(l) && !l.v.unavailable).length;
+    const outN = lines.filter(l => l.v.unavailable).length;
+    const allOn = lines.filter(l => !l.v.unavailable).every(isSelected);
     const cpnBox = state.coupon
       ? `<div class="cbox on"><span>${esc(state.coupon)}</span><button class="linkbtn" data-a="removeCoupon">${t("removeCoupon")}</button></div>`
       : `<div class="cbox"><button class="cfold" data-a="foldCpn"><span>% ${t("coupon")}</span><span>${folds.cpn ? "▴" : "▾"}</span></button>` +
@@ -625,6 +642,7 @@
     const free = ShowbizUI.isFree();
     return stepsHTML() + `
       ${ShowbizUI.progressHTML()}
+      ${outN ? `<div class="sd-alert">${t("someOut")}</div>` : ""}
       <div class="panel">
         <label class="selall"><input type="checkbox" data-ui="selAll" ${allOn ? "checked" : ""}> ${t("selAll")} (${lines.length})</label>
         <p class="selhint">${t("selHint")}</p>
@@ -639,7 +657,7 @@
       ${ShowbizUI.suggestRow(catalogPool().slice(0, 12))}
       <div class="stickyfoot">
         <div class="tot"><span class="muted">${t("grand")}</span><strong>${fmt(grandNow)}</strong></div>
-        <button class="primary" data-a="toAddr" ${selCount ? "" : "disabled"}>${t("toAddr")}</button>
+        <button class="primary" data-a="toAddr" ${selCount && !outN ? "" : "disabled"}>${t("toAddr")}</button>
       </div>
       <p class="manage"><a href="index.html">${t("keep")}</a></p>`;
   }
@@ -811,7 +829,7 @@
     const h = location.hash.replace("#", "");
     if (h === "address" || h === "payment") {
       if (h === "address" && !me && ready) { goLogin(); return; }
-      step = h; render();
+      step = hasOut() ? "cart" : h; render();
     } else { step = "cart"; render(); }
   });
 
@@ -819,7 +837,7 @@
   (async () => {
     try { localStorage.removeItem("showbiz_next"); } catch (e) {}
     const hashStep = location.hash.replace("#", "");
-    if (hashStep === "address" || hashStep === "payment") step = hashStep;
+    if (hashStep === "address" || hashStep === "payment") step = hasOut() ? "cart" : hashStep;
     render();
     const ok = await ShowbizCore.enforceLogin(sb);
     if (ok) {

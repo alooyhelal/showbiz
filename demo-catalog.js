@@ -288,6 +288,8 @@
     var built = buildVariants(n, root, sub, price, sku, compareAt);
     // مقاسات غير متوفرة في التيشيرت الأساسي (تظهر باهتة وغير قابلة للاختيار)
     if (name === "Basic Cotton Tee") built.variants.forEach(function (v) { if (/-(M|XL)$/.test(v.vid)) v.unavailable = true; });
+    // جاكيت جينز: مقاس لارج غير متوفر
+    if (name === "Denim Jacket") built.variants.forEach(function (v) { if (/-L$/.test(v.vid)) v.unavailable = true; });
     var ar = AR_NAMES[name] || name;
     var d = DESC[root] || { ar: "", en: "" };
     return {
