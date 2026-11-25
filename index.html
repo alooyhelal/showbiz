@@ -271,6 +271,15 @@
   #pmodal .pp-sec .row span:first-child { color:var(--muted); }
   #pmodal .pp-long { font-size:14.5px; color:#b9c4d6; }
   #pmodal .price { font-size:24px; }
+  /* ===== v41: زر المشاركة أيقونة فقط، والمفضلة داخل التفاصيل ===== */
+  #pmodal .mhead { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:12px 0 6px; }
+  #pmodal .mhead .mtitle { margin:0; min-width:0; overflow-wrap:anywhere; }
+  #pmodal .mshare { background:transparent; border:0; color:#fff; padding:0; width:36px; height:36px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; }
+  #pmodal .mshare svg { width:22px; height:22px; }
+  #pmodal .mheart { position:fixed; top:10px; inset-inline-end:10px; z-index:5; width:40px; height:40px; border-radius:50%; background:rgba(0,0,0,.55); color:#fff; border:0; padding:0; display:inline-flex; align-items:center; justify-content:center; }
+  #pmodal .mheart .ico { width:20px; height:20px; }
+  #pmodal .mheart.on { color:#e5484d; }
+  #pmodal .mheart.on svg { fill:#e5484d; }
   .rv-card { border-radius:var(--r-lg); }
   .rv-star.on { color:var(--orange); }
   .stars { color:var(--orange); }
@@ -460,6 +469,7 @@
   let products = [], loaded = false, loadError = false, rawCount = 0, loadMsg = "";
   let view = "shop", notice = "";
   let modal = null, cardIdx = {};
+  let modalPushed = false; // هل فتحنا المنتج كحالة في سجل المتصفح؟
   let me = null, profile = null, sessionChecked = false;
   let accountOrders = null, ordersFailed = false, lastSaveOk = true;
 
@@ -800,7 +810,19 @@
     ShowbizUI.pushRecent(ShowbizUI.entryOf(p, p.variants[0]));
     modal = { pid: p.pid, vid: (p.choose || p.variants.length > 1) ? null : p.variants[0].vid, color: null, size: null, qty: 1, idx: 0, paused: false, details: false, fresh: true };
     renderModal();
+    if (!modalPushed) { try { history.pushState({ pm: String(pid) }, "", location.href); modalPushed = true; } catch (e) {} }
   }
+  // إغلاق المنتج: يرجع للصفحة اللي كان فيها (مثل زر الرجوع في المتصفح) بدون ما يطلع من الموقع
+  function closeProduct() {
+    if (!modal) return;
+    const pushed = modalPushed;
+    modal = null; modalPushed = false;
+    renderModal();
+    if (pushed) { try { history.back(); } catch (e) {} }
+  }
+  window.addEventListener("popstate", () => {
+    if (modal && modalPushed) { modal = null; modalPushed = false; renderModal(); }
+  });
   function detailsHTML(p, vIn) {
     const v = vIn || p.variants[0];
     const d = (v && v.dimsCm) || p.dimsCm;
@@ -965,7 +987,7 @@
         </div>
         <div class="qtyrow">
           <span>${t("qty")}</span>
-          <span class="qtyctl"><button class="ghost" data-action="mqdec">−</button> <strong>${modal.qty}</strong> <button class="ghost" data-action="mqinc">+</button></span>
+          <span class="sd-qty"><button type="button" data-action="mqdec" aria-label="−">−</button><span>${modal.qty}</span><button type="button" data-action="mqinc" aria-label="+">+</button></span>
         </div>
         <button id="mAdd" style="width:100%" ${v ? "" : "disabled"}>${t("add")}</button>`;
     } else {
@@ -980,7 +1002,7 @@
         ${opts}
         <div class="qtyrow">
           <span>${t("qty")}</span>
-          <span class="qtyctl"><button class="ghost" data-action="mqdec">−</button> <strong>${modal.qty}</strong> <button class="ghost" data-action="mqinc">+</button></span>
+          <span class="sd-qty"><button type="button" data-action="mqdec" aria-label="−">−</button><span>${modal.qty}</span><button type="button" data-action="mqinc" aria-label="+">+</button></span>
         </div>
         <button id="mAdd" style="width:100%" ${v && !v.unavailable ? "" : "disabled"}>${t("add")}</button>`;
     }
@@ -991,19 +1013,20 @@
     const dims = d ? d.map(x => Number(x).toFixed(1)).join(" × ") + " cm" : "—";
     const w = (v && v.weightG) || p.weightG;
     const avg = avgOf(reviewsFor(p));
-    const shareRow = `<button class="ghost" type="button" data-action="share" style="margin:4px 0 10px">${t("shareBtn")}</button>`;
+    const wished = ShowbizUI.wishedPids().includes(String(p.pid));
+    const shareIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5.5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="18.5" r="2.6"/><path d="M8.3 10.7l7.4-4.1M8.3 13.3l7.4 4.1"/></svg>`;
 
     box.innerHTML = `
       <div class="modal${enter}">
         <button class="xbtn" data-action="closeModal" aria-label="close">✕</button>
+        <button class="mheart ${wished ? "on" : ""}" type="button" data-action="mwish" aria-label="wishlist">${ShowbizCore.icon("heart")}</button>
         <div class="gallery">
           ${g.length ? `<img id="mImg" src="${esc(g[modal.idx])}" alt="">` : ""}
           ${nav}
         </div>
         ${dots}
         <div style="padding:0 2px">
-          <h3 class="mtitle" style="margin:12px 0 6px">${esc(pName(p))}</h3>
-          ${shareRow}
+          <div class="mhead"><h3 class="mtitle">${esc(pName(p))}</h3><button class="mshare" type="button" data-action="share" aria-label="${t("shareBtn")}">${shareIcon}</button></div>
           <div class="pp-rate">${starsHTML(avg)}<span class="muted">${avg.toFixed(1)}</span></div>
           ${short ? `<p class="pp-short">${esc(short)}${txt.length > 140 ? "…" : ""}</p>` : ""}
           ${buy}
@@ -1692,7 +1715,14 @@
       else openFromCard(p.pid);
       return;
     }
-    if (a === "closeModal") { modal = null; renderModal(); return; }
+    if (a === "closeModal") { closeProduct(); return; }
+    if (a === "mwish") {
+      const c = curModal(); if (!c) return;
+      const pid = c.p.pid;
+      const doIt = () => { ShowbizUI.toggleWish(pid, ShowbizUI.entryOf(c.p, c.v || c.p.variants[0])); render(); renderModal(true); };
+      if (ShowbizUI.wishedPids().includes(String(pid))) ShowbizCore.confirmDel("wish", doIt); else doIt();
+      return;
+    }
     if (a === "wish") {
       const p = products.find(x => String(x.pid) === String(ds.pid));
       if (!p) return;
@@ -1791,12 +1821,12 @@
     }
   });
   document.getElementById("pmodal").addEventListener("click", (e) => {
-    if (e.target.id === "pmodal") { modal = null; renderModal(); return; }
+    if (e.target.id === "pmodal") { closeProduct(); return; }
     if (e.target.id === "mAdd") {
       const c = curModal(); if (!c || !c.v) return;
       const mi = document.getElementById("mImg");
       const vid = c.v.vid, qty = modal.qty;
-      flyToCart(mi, mi ? mi.src : "", () => { addLine(vid, qty); modal = null; render(); });
+      flyToCart(mi, mi ? mi.src : "", () => { addLine(vid, qty); closeProduct(); render(); });
       return;
     }
     const b = e.target.closest("[data-action]");
