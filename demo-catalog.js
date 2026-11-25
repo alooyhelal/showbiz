@@ -1,7 +1,8 @@
-/* كتالوج وهمي للتجربة فقط: 100 منتج في 10 أقسام رئيسية.
-   يظهر فقط بالرابط ?demo=1 ولا يظهر للزوار العاديين.
-   - الأقسام الرئيسية والفرعية تُعرّف في TREE بالترتيب اللي يظهر فيه في الموقع.
-   - كل منتج يحدد مساره بـ cat مثل "cars/mercedes/sedan" (مستوى ثالث).
+/* كتالوج وهمي للتجربة فقط: 100 منتج في 10 أقسام رئيسية (v41).
+   - يظهر للجميع في مرحلة التجربة، ولا يتم جلب أي منتجات من الـ API أو CJ.
+   - كل منتج له اسم عربي (nameAr) وإنجليزي (nameEn)، والموقع يعرض حسب اللغة المختارة.
+   - الإلكترونيات تحتاج اختيار اللون والمقاس قبل الإضافة، والخيار الأساسي بدون فرق سعر،
+     وباقي الخيارات تضيف فرق السعر SURCHARGE_USD.
    - الصور SVG داخلية (بدون تحميل من الإنترنت). */
 (function () {
   // ===== شجرة الأقسام (الترتيب هنا هو ترتيب ظهورها في الصفحة الرئيسية) =====
@@ -35,7 +36,10 @@
     { id: "sports", ar: "الرياضة", en: "Sports" }
   ];
 
-  // ===== المنتجات: [المسار، الاسم، السعر بالدولار، الأيقونة] =====
+  // فرق السعر لكل خيار غير أساسي في الإلكترونيات (بالدولار، عملة الكتالوج)
+  var SURCHARGE_USD = 5.5;
+
+  // ===== المنتجات: [المسار، الاسم الإنجليزي، السعر بالدولار، الأيقونة] =====
   var ROWS = [
     // السيارات: منتج لكل ماركة، ومرسيدس تحت تصنيف فرعي
     ["cars/hyundai", "Hyundai Elantra", 18500, "🚗"],
@@ -149,9 +153,74 @@
     ["sports", "Basketball", 30, "🏀"]
   ];
 
+  // ===== أسماء المنتجات بالعربي =====
+  var AR_NAMES = {
+    "Hyundai Elantra": "هيونداي إلانترا", "Kia Sportage": "كيا سبورتيج", "Mercedes C-Class": "مرسيدس فئة C",
+    "BMW M3": "بي إم دبليو M3", "Jeep Wrangler": "جيب رانجلر", "Honda Civic": "هوندا سيفيك",
+    "Bugatti Chiron": "بوغاتي شيرون", "Toyota Land Cruiser": "تويوتا لاند كروزر", "Ford Mustang": "فورد موستانج",
+    "Lexus LX": "لكزس LX",
+    "Nova X1 Phone": "هاتف Nova X1", "Nova X1 Pro": "Nova X1 برو", "Pixel Lite 5": "بيكسل لايت 5",
+    "Arka Mini 8": "أركا ميني 8", "Vertex Book 14": "فيرتكس بوك 14", "Vertex Pro 16": "فيرتكس برو 16",
+    "Lumen Slim 13": "لومن سليم 13", "Echo Buds Air": "سماعات إيكو بادز إير", "Bass Max Headset": "سماعة باس ماكس",
+    "Mini Speaker Go": "مكبر صوت ميني غو",
+    "Basic Cotton Tee": "تيشيرت قطن أساسي", "Denim Jacket": "جاكيت جينز", "Linen Shirt": "قميص كتان",
+    "Classic Hoodie": "هودي كلاسيك", "Chino Pants": "بنطلون تشينو", "Knit Sweater": "سويتر محبوك",
+    "Polo Shirt": "قميص بولو", "Winter Coat": "معطف شتوي", "Track Pants": "بنطلون رياضي", "Summer Dress": "فستان صيفي",
+    "Air Runner": "حذاء Air Runner", "Classic Loafer": "لوفر كلاسيك", "Trail Boot": "بوت للمشي",
+    "Canvas Sneaker": "حذاء قماش", "Leather Oxford": "أوكسفورد جلد", "Running Pro": "حذاء جري برو",
+    "Slip-on Mule": "موك بدون رباط", "Chelsea Boot": "بوت تشيلسي", "Court White": "حذاء أبيض كورت",
+    "Flex Sandal": "صندل مرن",
+    "Classic Watch": "ساعة كلاسيك", "Chrono Steel": "ساعة كرونو ستيل", "Smart Band": "سمارت باند",
+    "Rose Watch": "ساعة روز", "Diver 200": "ساعة غطس 200", "Minimal Black": "ساعة مينيمال سوداء",
+    "Field Watch": "ساعة فيلد", "Pilot Gold": "ساعة طيار ذهبية", "Sport Digital": "ساعة رياضية رقمية",
+    "Slim Date": "ساعة سليم بالتاريخ",
+    "Pink Tote Bag": "حقيبة توت وردية", "Crossbody Bag": "حقيبة كروس بودي", "Backpack Pro": "حقيبة ظهر برو",
+    "Mini Clutch": "كلتش صغير", "Travel Duffel": "حقيبة سفر", "Laptop Sleeve": "غلاف لابتوب",
+    "Belt Bag": "حقيبة حزام", "Leather Satchel": "حقيبة جلد ساتشيل", "Weekend Bag": "حقيبة عطلة",
+    "Hip Pack": "حقيبة خصر",
+    "Oud Night": "عود الليل", "Rose Veil": "ستار الورد", "Citrus Splash": "حمضيات منعشة",
+    "Amber Musk": "عنبر ومسك", "Ocean Breeze": "نسيم المحيط", "Vanilla Dream": "حلم الفانيليا",
+    "Jasmine Glow": "توهج الياسمين", "Sandal Wood": "خشب الصندل", "Mint Fresh": "نعناع منعش",
+    "Night Bloom": "إزهار الليل",
+    "Puzzle 500": "بازل 500 قطعة", "Race Car Set": "طقم سيارات سباق", "Plush Bear": "دب قطيفة",
+    "Building Blocks": "مكعبات بناء", "Mini Drone": "درون صغير", "Board Game Night": "لعبة ليلة السمر",
+    "Doll House": "بيت دمى", "Science Kit": "مجموعة علوم", "Train Set": "طقم قطار", "Art Studio": "استوديو فنون",
+    "Table Lamp": "مصباح طاولة", "Ceramic Vase": "مزهرية خزف", "Throw Blanket": "بطانية ناعمة",
+    "Wall Clock": "ساعة حائط", "Coffee Mug Set": "طقم أكواب قهوة", "Storage Box": "صندوق تخزين",
+    "Candle Set": "طقم شموع", "Cushion Cover": "غطاء وسادة", "Desk Organizer": "منظم مكتب", "Plant Pot": "أصيص نباتات",
+    "Yoga Mat": "سجادة يوغا", "Dumbbell Pair": "زوج دمبل", "Football": "كرة قدم", "Tennis Racket": "مضرب تنس",
+    "Steel Bottle": "زجاجة ستيل", "Jump Rope": "حبل قفز", "Gym Gloves": "قفازات جيم",
+    "Cycling Helmet": "خوذة دراجة", "Resistance Bands": "أربطة مقاومة", "Basketball": "كرة سلة"
+  };
+
+  // ===== وصف عام لكل قسم (يتكيّف مع اسم المنتج) =====
+  var DESC = {
+    cars: { ar: "سيارة عملية ومريحة للاستخدام اليومي والرحلات الطويلة.", en: "A practical, comfortable car for daily driving and long trips." },
+    electronics: { ar: "جهاز بمواصفات حديثة وتصميم أنيق، ومتوفر بعدة ألوان وخيارات.", en: "A modern device with a sleek design, available in several colors and options." },
+    clothing: { ar: "قطعة مريحة بخامة ناعمة تناسب الاستخدام اليومي. اختر المقاس المناسب.", en: "A comfortable piece in a soft fabric for everyday wear. Choose your size." },
+    shoes: { ar: "حذاء مريح بنعل متين، متوفر بمقاسات EU 40 إلى 44.", en: "Comfortable shoes with a durable sole, available in EU 40 to 44." },
+    watches: { ar: "ساعة بتصميم أنيق ومقاومة للاستخدام اليومي.", en: "A stylish watch built for everyday use." },
+    bags: { ar: "حقيبة عملية بتصميم أنيق تتسع لأغراضك اليومية.", en: "A practical bag with a clean design that fits your daily essentials." },
+    perfumes: { ar: "عطر بتركيبة متوازنة تدوم طويلاً.", en: "A balanced fragrance that lasts." },
+    toys: { ar: "لعبة ممتعة ومناسبة للأطفال، تنمّي الخيال والمهارات.", en: "A fun toy that builds imagination and skills." },
+    home: { ar: "قطعة منزلية عملية تضيف لمسة جميلة لمساحتك.", en: "A practical home piece that adds a nice touch to your space." },
+    sports: { ar: "أداة رياضية متينة للتدريب واللياقة اليومية.", en: "A durable sports item for training and everyday fitness." }
+  };
+
+  // ===== خيارات الإلكترونيات: لون + مقاس (إجباري قبل الإضافة) =====
+  var COLORS = [
+    { en: "Black", ar: "أسود" },
+    { en: "Silver", ar: "فضي" },
+    { en: "Blue", ar: "أزرق" }
+  ];
+  var ELEC_SIZES = {
+    phones: [{ en: "128GB", ar: "128 جيجا" }, { en: "256GB", ar: "256 جيجا" }],
+    laptops: [{ en: "13-inch", ar: "13 بوصة" }, { en: "14-inch", ar: "14 بوصة" }],
+    audio: [{ en: "Standard", ar: "عادي" }, { en: "Plus", ar: "بلس" }]
+  };
   var SIZES = {
-    clothing: ["S", "M", "L", "XL"],
-    shoes: ["EU 40", "EU 41", "EU 42", "EU 43", "EU 44"]
+    clothing: [{ en: "S", ar: "S" }, { en: "M", ar: "M" }, { en: "L", ar: "L" }, { en: "XL", ar: "XL" }],
+    shoes: [{ en: "EU 40", ar: "EU 40" }, { en: "EU 41", ar: "EU 41" }, { en: "EU 42", ar: "EU 42" }, { en: "EU 43", ar: "EU 43" }, { en: "EU 44", ar: "EU 44" }]
   };
 
   function svgImg(label, emoji, hue) {
@@ -167,36 +236,72 @@
     return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(s);
   }
 
+  // بناء خيارات المنتج: الإلكترونيات لها لون ومقاس، والأساسي (أول خيار) بدون فرق سعر
+  function buildVariants(n, root, sub, price, sku, compareAt) {
+    var list = [];
+    if (root === "electronics") {
+      var sizes = ELEC_SIZES[sub] || ELEC_SIZES.phones;
+      COLORS.forEach(function (c, ci) {
+        sizes.forEach(function (s, si) {
+          var extra = (ci || si) ? SURCHARGE_USD : 0;
+          var v = {
+            vid: "demo-" + n + "-" + c.en + "-" + s.en,
+            key: c.en + "-" + s.en,
+            keyAr: c.ar + " · " + s.ar,
+            sku: sku + "-" + c.en.slice(0, 2).toUpperCase() + s.en.replace(/\W/g, ""),
+            price: price + extra,
+            weightG: 200 + n * 5,
+            opt: { color: c, size: s }
+          };
+          if (compareAt) v.compareAt = compareAt + extra;
+          list.push(v);
+        });
+      });
+      return { choose: true, variants: list };
+    }
+    var keys = SIZES[root] ? SIZES[root] : [null];
+    keys.forEach(function (k) {
+      var v = {
+        vid: "demo-" + n + (k ? "-" + k.en.replace(/\s+/g, "") : "-base"),
+        key: k ? k.en : "",
+        keyAr: k ? k.ar : "",
+        sku: sku + (k ? "-" + k.en.replace(/\s+/g, "") : ""),
+        price: price,
+        weightG: 200 + n * 5
+      };
+      if (compareAt) v.compareAt = compareAt;
+      list.push(v);
+    });
+    return { choose: false, variants: list };
+  }
+
   var products = ROWS.map(function (row, i) {
     var n = i + 1;
     var path = row[0], name = row[1], price = row[2], emoji = row[3];
-    var root = path.split("/")[0];
+    var parts = path.split("/");
+    var root = parts[0];
+    var sub = parts.length > 1 ? parts[1] : "";
     var hue = (n * 37) % 360;
-    var sizes = SIZES[root];
-    var keys = sizes ? sizes : [""];
     var sku = "DEMO-" + String(n).padStart(3, "0");
     // بعض المنتجات عليها خصم (سعر قبل الخصم أعلى)
     var compareAt = (n % 4 === 0) ? Math.round(price * 1.25) : 0;
+    var built = buildVariants(n, root, sub, price, sku, compareAt);
+    var ar = AR_NAMES[name] || name;
+    var d = DESC[root] || { ar: "", en: "" };
     return {
       pid: "demo-" + n,
       nameEn: name,
+      nameAr: ar,
+      descEn: name + ". " + d.en,
+      descAr: ar + ". " + d.ar,
       cat: path,
-      catPath: path.split("/"),
+      catPath: parts,
       isNew: n % 9 === 1,
       bestseller: n % 7 === 3,
+      choose: built.choose,
       image: svgImg(name, emoji, hue),
       images: [svgImg(name, emoji, hue), svgImg(name + " 2", emoji, (hue + 90) % 360)],
-      variants: keys.map(function (k, j) {
-        var v = {
-          vid: "demo-" + n + (k ? "-" + k.replace(/\s+/g, "") : "-base"),
-          key: k,
-          sku: sku + (k ? "-" + k.replace(/\s+/g, "") : ""),
-          price: price,
-          weightG: 200 + n * 5
-        };
-        if (compareAt) v.compareAt = compareAt;
-        return v;
-      })
+      variants: built.variants
     };
   });
 
@@ -209,5 +314,5 @@
     });
   })(TREE);
 
-  window.SHOWBIZ_DEMO = { tree: TREE, labels: labels, products: products };
+  window.SHOWBIZ_DEMO = { tree: TREE, labels: labels, products: products, surchargeUSD: SURCHARGE_USD };
 })();

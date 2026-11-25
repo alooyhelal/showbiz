@@ -9,176 +9,144 @@
 <script src="ui.js"></script>
 <style>
   :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; color-scheme:dark; }
-  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; }
-  header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; padding:12px 16px; background:#0d1728; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
-  main { padding:16px 16px 56px; max-width:1000px; margin:auto; }
-  select, input { padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card2); color:var(--fg); width:100%; box-sizing:border-box; margin-bottom:8px; font-size:15px; font-family:inherit; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding-left:max(0px, env(safe-area-inset-left, 0px)); padding-right:max(0px, env(safe-area-inset-right, 0px)); overflow-x:hidden; }
+  body.modal-open .cwrap { filter:blur(5px); pointer-events:none; }
+  button { font-family:inherit; cursor:pointer; }
+  input, select, textarea { font-family:inherit; font-size:14px; }
+  input[type="radio"], input[type="checkbox"] { width:auto; margin:0; accent-color:var(--orange); }
+  input, select { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:12px; background:var(--card2); color:var(--fg); box-sizing:border-box; margin:0; min-width:0; }
   select option { background:var(--card2); color:var(--fg); }
-  input:focus, select:focus { outline:2px solid var(--orange); outline-offset:1px; }
-  header select { width:auto; margin:0; }
-  button { padding:10px 14px; border:0; border-radius:10px; background:var(--orange); color:#111; cursor:pointer; font-size:14px; font-family:inherit; font-weight:700; }
-  button.ghost { background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:400; }
-  button.linkbtn { background:none; color:var(--orange); padding:4px 6px; text-decoration:underline; font-weight:400; }
-  button:disabled { opacity:.45; cursor:not-allowed; }
-  .btnfull { width:100%; }
-  .btnlink { display:block; text-align:center; padding:12px; border-radius:10px; background:var(--orange); color:#111; text-decoration:none; font-weight:700; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
-  .pad { padding:14px; margin-bottom:12px; }
-  .pimg { height:210px; background:#f3f4f6; display:flex; align-items:center; justify-content:center; }
-  .pimg img { width:100%; height:100%; object-fit:contain; transition:opacity .4s; }
-  .pbody { padding:12px 14px 14px; }
-  .pname { font-size:15px; line-height:1.5; margin-bottom:6px; }
-  .price { color:var(--blue); font-weight:bold; font-size:17px; }
-  .row2 { display:flex; gap:8px; margin-top:10px; }
-  .row2 button { flex:1; }
-  .dots { display:flex; gap:6px; justify-content:center; padding:8px 0 0; }
-  .dot { width:8px; height:8px; border-radius:50%; background:var(--dot); display:inline-block; }
-  .dot.on { background:var(--blue); }
+  input:focus, select:focus, textarea:focus { outline:2px solid var(--orange); outline-offset:0; }
+  .ltr { direction:ltr; }
   .muted { color:var(--muted); font-size:13px; line-height:1.7; }
-  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0; flex-wrap:wrap; }
-  .row.total { border-top:1px solid var(--line); margin-top:6px; padding-top:12px; font-size:17px; }
-  h4 { margin:14px 0 8px; color:var(--muted); font-size:14px; font-weight:600; }
-  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; align-items:center; justify-content:center; padding:12px; overflow:auto; z-index:20; }
-  .modal { background:var(--card); color:var(--fg); padding:18px; border-radius:18px; width:100%; max-width:440px; box-sizing:border-box; position:relative; }
-  .gallery { position:relative; height:300px; background:#f3f4f6; border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-  .gallery img { width:100%; height:100%; object-fit:contain; transition:opacity .4s; }
-  .nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.45); color:#fff; padding:6px 12px; }
-  .nav.prev { left:8px; } .nav.next { right:8px; }
-  .xbtn { position:absolute; top:10px; left:10px; background:rgba(0,0,0,.55); color:#fff; padding:4px 10px; z-index:2; }
-  .qtyrow { display:flex; justify-content:space-between; align-items:center; margin:12px 0; }
-  .qtyctl button { padding:6px 12px; }
-  .crow { display:flex; gap:12px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
-  .crow img { width:72px; height:72px; object-fit:contain; background:#f3f4f6; border-radius:10px; }
-  .cinfo { flex:1; }
-  .couponrow { display:flex; gap:8px; } .couponrow input { margin:0; } .couponrow button { white-space:nowrap; }
-  .addrpick { display:block; cursor:pointer; margin-bottom:8px; position:relative; }
-  .addrpick .flagc { position:absolute; top:12px; inset-inline-end:14px; line-height:0; }
-  .flagimg { width:24px; height:18px; border-radius:2px; object-fit:cover; vertical-align:middle; }
-  .addrpick strong { padding-inline-end:36px; display:block; }
-  button:disabled { opacity:.45; cursor:not-allowed; }
-  .addrpick .pickrow { display:flex; gap:10px; align-items:flex-start; }
-  .addrpick input[type=radio] { width:auto; margin:4px 0 0; }
-  .hidden { display:none !important; }
-  .acctwrap { position:relative; display:inline-block; }
-  .menu { position:absolute; top:calc(100% + 6px); inset-inline-end:0; min-width:210px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:6px; z-index:30; box-shadow:0 12px 30px rgba(0,0,0,.5); }
-  .menu-who { padding:8px 12px; color:var(--muted); font-size:13px; border-bottom:1px solid var(--line); margin-bottom:4px; word-break:break-all; direction:ltr; text-align:start; }
-  .menu a { display:block; padding:10px 12px; border-radius:8px; color:var(--fg); text-decoration:none; font-size:14px; }
-  .menu a:hover { background:var(--card2); }
-  .menu button.menu-out { width:100%; margin-top:4px; background:transparent; color:var(--fg); border:1px solid var(--line); font-weight:400; }
-  .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card); color:var(--ok); border:1px solid #2f6b4f; padding:16px 26px; border-radius:14px; font-size:17px; font-weight:bold; z-index:60; box-shadow:0 10px 30px rgba(0,0,0,.5); max-width:90vw; text-align:center; }
-  .notice { padding:10px 12px; border-radius:10px; font-size:14px; margin:8px 0; color:var(--err); background:#3b1620; border:1px solid #7a2b3b; }
-  .build { position:fixed; bottom:0; left:0; right:0; background:#070d18; color:#6b7a94; font:12px monospace; text-align:center; padding:6px; direction:ltr; z-index:4; border-top:1px solid var(--line); }
-</style>
-<style>
-  .cwrap { max-width: 640px; margin: 0 auto; padding-block: 8px 40px; }
-  .topbar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin: 6px 0 16px; }
-  .back { display:inline-flex; align-items:center; gap:8px; color: var(--fg, #f2f5fa); text-decoration:none; font-weight:700; font-size:15px; }
-  .back .ico { display:inline-block; font-size:20px; line-height:1; }
-  html[dir="rtl"] .back .ico { transform: scaleX(-1); }
-  .cartcount { font-size:13px; color: var(--muted, #9aa8bf); }
-  .steps { display:flex; gap:6px; margin: 4px 0 18px; }
-  .steps span { flex:1; text-align:center; padding:9px 6px; border-radius:12px; font-size:13px; color: var(--muted, #9aa8bf); background: rgba(255,255,255,.04); border:1px solid var(--line, #2c4168); }
-  .steps span.on { color: var(--fg, #f2f5fa); border-color: var(--orange, #f59e4b); background: rgba(245,158,75,.10); }
-  .steps span.done { color: var(--fg, #f2f5fa); }
-  .panel { background: var(--card, #14213a); border:1px solid var(--line, #2c4168); border-radius:18px; padding:16px; margin-bottom:14px; }
-  .sect-title { font-size:16px; font-weight:800; margin: 18px 0 10px; }
-  .empty { text-align:center; padding: 44px 16px; }
-  .empty .big { font-size: 40px; margin-bottom: 10px; }
-  .empty p { color: var(--muted, #9aa8bf); margin: 6px 0 18px; line-height:1.7; }
-  .line { display:flex; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--line, #2c4168); }
-  .line:last-child { border-bottom:0; }
-  .line img { width:64px; height:64px; object-fit:cover; border-radius:12px; background: var(--card2, #1a2b4a); flex-shrink:0; }
-  .line .info { flex:1; min-width:0; }
-  .line .name { font-weight:700; font-size:14px; line-height:1.5; }
-  .line .var { color: var(--muted, #9aa8bf); font-size:12px; }
-  .line .unit { color: var(--orange, #f59e4b); font-weight:700; font-size:14px; margin-top:4px; }
-  .qty { display:inline-flex; align-items:center; gap:8px; margin-top:8px; }
-  .qty button { width:30px; height:30px; border-radius:10px; border:1px solid var(--line, #2c4168); background: transparent; color: var(--fg, #f2f5fa); font-size:16px; cursor:pointer; }
-  .rm { background:none; border:0; color: var(--muted, #9aa8bf); font-size:18px; cursor:pointer; padding:6px; }
-  .totals .row { display:flex; justify-content:space-between; gap:10px; padding:6px 0; font-size:14px; }
-  .totals .grand { border-top:1px solid var(--line, #2c4168); margin-top:8px; padding-top:12px; font-size:16px; font-weight:800; }
-  .muted { color: var(--muted, #9aa8bf); }
-  .couponrow { display:flex; gap:8px; margin-bottom:10px; }
-  .couponrow input { flex:1; }
-  .addr { display:flex; gap:12px; align-items:flex-start; padding:14px; border:1px solid var(--line, #2c4168); border-radius:16px; margin-bottom:10px; cursor:pointer; background: var(--card2, #1a2b4a); }
-  .addr.pref { border-color: var(--orange, #f59e4b); background: rgba(245,158,75,.08); }
-  .addr input { margin-top:4px; accent-color: var(--orange, #f59e4b); }
-  .addr .lbl { font-weight:800; font-size:15px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-  .addr .tag { font-size:11px; font-weight:700; color:#111; background: var(--orange, #f59e4b); border-radius:999px; padding:2px 8px; }
-  .addr .txt { font-size:13px; color: var(--muted, #9aa8bf); line-height:1.7; margin-top:4px; }
-  .pay { display:flex; gap:10px; align-items:center; padding:14px; border:1px solid var(--line, #2c4168); border-radius:14px; margin-bottom:10px; cursor:pointer; background: var(--card2, #1a2b4a); font-weight:700; }
-  .pay input { accent-color: var(--orange, #f59e4b); }
-  .pay small { display:block; font-weight:400; color: var(--muted, #9aa8bf); font-size:12px; }
-  .terms { display:flex; gap:10px; align-items:flex-start; font-size:14px; line-height:1.7; margin: 14px 0; }
-  .terms input { margin-top:5px; accent-color: var(--orange, #f59e4b); }
-  .terms a { color: var(--orange, #f59e4b); }
-  .btnrow { display:flex; gap:10px; margin-top:16px; }
-  .btnrow > * { flex:1; }
-  .primary { width:100%; padding:14px; border-radius:14px; border:0; background: var(--orange, #f59e4b); color:#111; font-weight:800; font-size:15px; cursor:pointer; font-family:inherit; }
-  .primary:disabled { opacity:.45; cursor:not-allowed; }
-  .ghostbtn { padding:12px 14px; border-radius:14px; border:1px solid var(--line, #2c4168); background:transparent; color: var(--fg, #f2f5fa); font-weight:700; font-size:14px; cursor:pointer; font-family:inherit; text-decoration:none; text-align:center; display:inline-block; }
-  .notice { font-size:13px; line-height:1.7; color: var(--muted, #9aa8bf); margin-top:10px; }
-  .errmsg { color: #ff8593; font-size:13px; margin-top:8px; min-height:1em; }
-  .done { text-align:center; padding: 40px 14px; }
-  .done .big { font-size: 46px; }
-  .done h2 { margin: 10px 0 6px; }
-  .done p { color: var(--muted, #9aa8bf); line-height:1.7; }
-  input[type="radio"], input[type="checkbox"] { width:auto; padding:0; flex:0 0 auto; }
-  .addr .tag { white-space:nowrap; }
-  .manage { text-align:center; margin: 12px 0 0; font-size:13px; }
-  .manage a { color: var(--orange, #f59e4b); text-decoration:none; font-weight:700; }
-  .line .name { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
-  .line .info, .line .name { min-width:0; }
-  .verline { text-align:center; color: var(--muted, #9aa8bf); font:12px monospace; padding:18px 12px; direction:ltr; }
+  .errmsg { color:#ff8593; font-size:13px; min-height:1em; margin:8px 0 0; }
+  .ok-t { color:var(--ok); }
+
+  /* الهيدر: رجوع يمين (عربي) ويسار (إنجليزي)، اسم المتجر في الوسط */
+  .hd2 { position:sticky; top:0; z-index:6; display:grid; grid-template-columns:44px 1fr 44px; align-items:center; padding:10px 12px; background:#0d1728; border-bottom:1px solid var(--line); }
+  .back2 { width:40px; height:40px; border-radius:12px; border:1px solid var(--line); background:transparent; color:var(--fg); display:inline-flex; align-items:center; justify-content:center; padding:0; }
+  .back2 .ico { width:20px; height:20px; }
+  html[dir="rtl"] .back2 .ico { transform:scaleX(-1); }
+  .logo2 { text-align:center; font-weight:800; font-size:19px; color:var(--orange); text-decoration:none; }
+
+  .cwrap { max-width:640px; margin:0 auto; padding:0 14px 40px; zoom:.92; }
+  .steps { position:sticky; top:58px; z-index:4; background:var(--bg); display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; padding:10px 0 8px; }
+  .step { display:flex; align-items:center; justify-content:center; gap:6px; min-width:0; padding:8px 6px; border-radius:12px; border:1px solid var(--line); background:rgba(255,255,255,.03); color:var(--muted); font-size:12px; }
+  .step .sn { width:20px; height:20px; border-radius:50%; background:var(--card2); display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0; }
+  .step .sl { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .step.on { color:var(--fg); border-color:var(--orange); }
+  .step.on .sn { background:var(--orange); color:#111; }
+  .step.done { color:var(--fg); }
+  .step.done .sn { background:#2f6b4f; color:#fff; }
+  .step.later { opacity:.45; }
+
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px; margin-bottom:12px; }
+  .sect-title { font-size:15px; font-weight:800; margin:0 0 10px; }
+  .empty { text-align:center; padding:36px 14px; }
+  .empty .big { font-size:40px; margin-bottom:8px; }
+  .empty p { color:var(--muted); margin:6px 0 16px; line-height:1.7; }
+
+  /* سطر المنتج */
   .selall { display:flex; gap:8px; align-items:center; font-weight:700; margin-bottom:2px; }
-  .selall input, .line > input[type="checkbox"] { accent-color: var(--orange, #f59e4b); margin: 0; }
-  .selhint { color: var(--muted, #9aa8bf); font-size:12px; margin: 2px 0 6px; }
+  .selhint { color:var(--muted); font-size:12px; margin:2px 0 6px; }
+  .line { display:flex; gap:10px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--line); }
+  .line:last-child { border-bottom:0; }
   .line.off { opacity:.55; }
-  .line .days { color: var(--muted, #9aa8bf); font-size:12px; margin-top:2px; }
-  .line .acts { display:flex; flex-direction:column; gap:6px; align-items:center; }
-  .line .acts button { background:none; border:1px solid var(--line, #2c4168); color: var(--fg, #f2f5fa); border-radius:10px; padding:4px 8px; cursor:pointer; font-size:12px; font-family:inherit; }
-  .line .acts .heart { font-size:16px; line-height:1; color: var(--orange, #f59e4b); }
-  .foldbtn { display:block; width:100%; text-align:start; background:none; border:1px solid var(--line, #2c4168); color: var(--fg, #f2f5fa); border-radius:12px; padding:11px 12px; font-family:inherit; font-size:14px; cursor:pointer; margin-bottom:8px; }
-  .notebox textarea { width:100%; box-sizing:border-box; min-height:70px; background: var(--card2, #1a2b4a); color: var(--fg, #f2f5fa); border:1px solid var(--line, #2c4168); border-radius:12px; padding:10px; font-family:inherit; font-size:14px; }
-  .shipnote { color: var(--muted, #9aa8bf); font-size:12px; line-height:1.7; margin-top:8px; }
-  .stickyfoot { position:sticky; bottom:0; background: var(--bg, #0b1220); border-top:1px solid var(--line, #2c4168); margin-top:14px; padding:12px 0 calc(12px + env(safe-area-inset-bottom, 0px)); display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:3; }
+  .line > input[type="checkbox"] { margin-top:6px; }
+  .line img { width:64px; height:64px; object-fit:cover; border-radius:12px; background:var(--card2); flex-shrink:0; }
+  .line .info { flex:1; min-width:0; }
+  .line .name { font-weight:700; font-size:14px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+  .line .var { color:var(--muted); font-size:12px; }
+  .line .unit { color:var(--orange); font-weight:700; font-size:14px; margin-top:3px; }
+  .line .days { color:var(--muted); font-size:12px; margin-top:2px; }
+  .qty { display:flex; justify-content:center; align-items:center; gap:0; margin:8px auto 0; width:max-content; border:1px solid var(--line); border-radius:12px; overflow:hidden; height:36px; }
+  .qty button { width:38px; height:100%; border:0; border-radius:0; background:transparent; color:var(--fg); font-size:18px; padding:0; display:flex; align-items:center; justify-content:center; }
+  .qty span { min-width:34px; text-align:center; font-weight:700; }
+  .acts { display:flex; flex-direction:column; gap:6px; align-items:center; }
+  .acts button { width:34px; height:34px; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--fg); padding:0; display:inline-flex; align-items:center; justify-content:center; }
+  .acts .ico { width:17px; height:17px; }
+  .acts .heart.on svg { fill:#e5484d; stroke:#e5484d; }
+
+  /* كود الخصم والملاحظة */
+  .cbox { background:var(--card2); border:1px dashed #3a4a68; border-radius:14px; padding:10px 12px; margin-bottom:10px; }
+  .cbox.on { border-style:solid; border-color:#2f6b4f; color:var(--ok); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .cfold { display:flex; width:100%; justify-content:space-between; align-items:center; background:transparent; border:0; color:var(--fg); font-weight:700; font-size:14px; padding:4px 0; }
+  .couponrow { display:flex; gap:8px; margin-top:10px; }
+  .couponrow input { margin:0; flex:1; }
+  .couponrow button { white-space:nowrap; }
+  .notebox textarea { width:100%; box-sizing:border-box; min-height:70px; margin-top:10px; background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:12px; padding:10px; font-family:inherit; font-size:14px; }
+
+  /* الإجماليات */
+  .totals .row { display:flex; justify-content:space-between; gap:10px; padding:6px 0; font-size:14px; }
+  .totals .row.ok { color:var(--ok); font-weight:700; }
+  .totals .row.grand { border-top:1px solid var(--line); margin-top:8px; padding-top:12px; font-size:16px; font-weight:800; }
+  .shipnote { color:var(--muted); font-size:12px; line-height:1.7; margin:8px 0 0; }
+
+  /* أزرار عامة */
+  .primary { padding:13px 18px; border-radius:14px; border:0; background:var(--orange); color:#111; font-weight:800; font-size:15px; }
+  .primary:disabled { opacity:.45; cursor:not-allowed; }
+  .ghostbtn { padding:11px 14px; border-radius:14px; border:1px solid var(--line); background:transparent; color:var(--fg); font-weight:700; font-size:14px; text-decoration:none; text-align:center; display:inline-block; }
+  .ghostbtn.sm { padding:6px 10px; font-size:12px; border-radius:10px; }
+  .btnrow { display:flex; gap:10px; margin-top:14px; }
+  .btnrow > * { flex:1; }
+  .stickyfoot { position:sticky; bottom:0; background:var(--bg); border-top:1px solid var(--line); margin:12px -14px 0; padding:12px 14px calc(12px + env(safe-area-inset-bottom,0px)); display:flex; align-items:center; justify-content:space-between; gap:12px; z-index:3; }
   .stickyfoot .tot { display:flex; flex-direction:column; }
-  .stickyfoot .primary { width:auto; padding:13px 22px; }
-  .look { margin: 14px 0; }
-  .look .primary-s { white-space:nowrap; }
-  .dim { color: var(--muted, #9aa8bf); font-size:13px; }
+  .manage { text-align:center; margin:12px 0 0; font-size:13px; }
+  .manage a { color:var(--orange); text-decoration:none; font-weight:700; }
+  .verline { text-align:center; color:var(--muted); font:12px monospace; padding:14px 12px 4px; direction:ltr; }
+
+  /* اختيار العنوان */
+  .acard { display:flex; gap:12px; align-items:flex-start; padding:12px; border:1px solid var(--line); border-radius:16px; margin-bottom:10px; cursor:pointer; background:var(--card2); }
+  .acard.on { border-color:var(--orange); background:rgba(245,158,75,.08); }
+  .acard input { margin-top:5px; }
+  .acard .ac-body { flex:1; min-width:0; }
+  .acard .ac-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-weight:800; font-size:15px; }
+  .tag { font-size:11px; font-weight:700; color:#111; background:var(--orange); border-radius:999px; padding:2px 8px; white-space:nowrap; }
+  .ac-txt { font-size:13px; color:var(--muted); line-height:1.7; margin-top:3px; overflow-wrap:anywhere; }
+  .flag { font-size:18px; line-height:1; }
+  .addnew { width:100%; margin-top:4px; }
+
+  /* صفحة الدفع: العنوان، والعلم فوق زر الرجوع في الجهة المقابلة للنص */
+  .paddr { display:flex; justify-content:space-between; align-items:stretch; gap:12px; padding:12px; border:1px solid var(--line); border-radius:16px; background:var(--card2); }
+  .paddr .pa-txt { flex:1; min-width:0; }
+  .paddr .pa-side { display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:8px; flex-shrink:0; }
+  .paddr .pa-flag { font-size:26px; line-height:1; }
+  .paddr .ghostbtn { padding:5px 10px; font-size:12px; border-radius:10px; }
+  .pay { display:flex; gap:10px; align-items:center; padding:13px 14px; border:1px solid var(--line); border-radius:14px; margin-bottom:8px; cursor:pointer; background:var(--card2); font-weight:700; }
+  .pay.on { border-color:var(--orange); }
+  .terms { display:flex; gap:10px; align-items:flex-start; font-size:14px; line-height:1.7; margin:14px 0 6px; }
+  .terms input { margin-top:5px; }
+  .terms a { color:var(--orange); }
+  .done { text-align:center; padding:34px 12px; }
+  .done .big { font-size:44px; }
+  .done h2 { margin:10px 0 6px; font-size:19px; }
+
+  /* حجب الخلفية ونافذة إضافة العنوان */
+  .overlay { position:fixed; inset:0; background:rgba(5,10,20,.55); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); display:flex; align-items:flex-end; justify-content:center; z-index:20; overflow:auto; }
+  .overlay.hidden { display:none; }
+  .sheet { background:var(--card); color:var(--fg); width:100%; max-width:520px; max-height:92vh; overflow:auto; border:1px solid var(--line); border-radius:22px 22px 0 0; padding:16px 16px calc(18px + env(safe-area-inset-bottom,0px)); box-sizing:border-box; }
+  .sheet-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .sheet-head h3 { margin:0; font-size:17px; }
+  .xbtn { width:36px; height:36px; border-radius:50%; border:1px solid var(--line); background:transparent; color:var(--fg); padding:0; font-size:15px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+  .grid2 > .full { grid-column:1 / -1; }
+  @media (max-width:480px) { .grid2 { grid-template-columns:1fr; } }
+  label { display:block; font-size:13px; font-weight:600; color:var(--muted); margin:0 0 6px; }
+  label.req::after { content:" *"; color:#ff5d6c; font-weight:800; }
+  .hidden { display:none !important; }
+  @media (min-width:700px) { .sheet { border-radius:22px; align-self:center; } .overlay { align-items:center; } }
+  .copyline { text-align:center; color:#6b7a94; font-size:12px; margin:18px 0 0; }
+  .sd-hidden { display:none; }
 </style>
 </head>
-<body>
+<body data-lite>
 
-<div class="announce" id="announce"></div>
-<header class="hd">
-  <div class="hd-row">
-    <a class="ghostbtn" href="index.html" style="padding:8px 12px;font-size:13px"><span id="backTxt"></span></a>
-    <a class="logo" href="index.html">Showbiz</a>
-    <div class="hd-acts">
-      <button class="pref-btn" id="prefBtn" type="button"></button>
-      <button class="ic-btn" id="favBtn" type="button" data-icon="heart" aria-label="wishlist"></button>
-      <button class="ic-btn" id="acctBtn" type="button" data-icon="user" aria-label="account"></button>
-      <button class="ic-btn cartbtn" id="cartBtn" type="button" data-icon="cart" aria-label="cart"><span class="cartn" id="cartN">0</span></button>
-    </div>
-  </div>
+<header class="hd2">
+  <button class="back2" id="backBtn" type="button" aria-label="back" data-icon="back"></button>
+  <a class="logo2" href="index.html">Showbiz</a>
+  <span></span>
 </header>
-
-<div class="overlay hidden" id="prefModal">
-  <div class="modal">
-    <button class="xbtn" id="prefX" type="button" aria-label="close">✕</button>
-    <h3 id="prefTitle"></h3>
-    <div class="pref-lbl" id="prefLangLbl"></div>
-    <div class="pref-langs">
-      <button class="ghost" data-glang="en" type="button">English</button>
-      <button class="ghost" data-glang="ar" type="button">العربية</button>
-    </div>
-    <div class="pref-lbl" id="prefCurLbl"></div>
-    <div id="prefCur" class="pref-list"></div>
-  </div>
-</div>
 
 <div class="cwrap">
   <div class="steps" id="steps"></div>
@@ -186,72 +154,81 @@
   <div class="verline" id="verLine"></div>
 </div>
 
+<div class="overlay hidden" id="addrModal" role="dialog" aria-modal="true">
+  <div class="sheet">
+    <div class="sheet-head"><h3 id="amTitle"></h3><button class="xbtn" id="amX" type="button" aria-label="close">✕</button></div>
+    <div id="amBody"></div>
+  </div>
+</div>
+
 <script src="locations.js"></script>
+<script src="addr-fields.js"></script>
+<script src="demo-catalog.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js" onerror="document.write('<script src=\'https://unpkg.com/@supabase/supabase-js@2.50.0/dist/umd/supabase.js\'><\/script>')"></script>
 <script>
   const SUPABASE_URL = "https://fgfteqzwmtxiluqvtrak.supabase.co";
   const SUPABASE_KEY = "sb_publishable_yjE5H3v--wTK29FCi57xSA_TS3NOc5V";
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
-    const RATE_BHD = 0.377;
+  const RATE_BHD = 0.377;
   const COUPONS = { TEST10: 0.10 };
   const COUNTRIES = {
-    BH: { iso:"BHD", flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2 },
-    SA: { iso:"SAR", flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"ر.س", en:"SAR"}, dec:2, rate:3.75, base:3.3 },
-    AE: { iso:"AED", flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"د.إ", en:"AED"}, dec:2, rate:3.6725, base:3.3 },
-    KW: { iso:"KWD", flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3 },
-    QA: { iso:"QAR", flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3 },
-    OM: { iso:"OMR", flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"ر.ع", en:"OMR"}, dec:3, rate:0.385, base:3.3 }
+    BH: { iso:"BHD", flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2, free:20 },
+    SA: { iso:"SAR", flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"ر.س", en:"SAR"}, dec:2, rate:3.75, base:3.3, free:300 },
+    AE: { iso:"AED", flag:"🇦🇪", dial:"+971", name:{ar:"الإمارات", en:"UAE"}, sym:{ar:"د.إ", en:"AED"}, dec:2, rate:3.6725, base:3.3, free:300 },
+    KW: { iso:"KWD", flag:"🇰🇼", dial:"+965", name:{ar:"الكويت", en:"Kuwait"}, sym:{ar:"د.ك", en:"KD"}, dec:3, rate:0.307, base:3.3, free:30 },
+    QA: { iso:"QAR", flag:"🇶🇦", dial:"+974", name:{ar:"قطر", en:"Qatar"}, sym:{ar:"ر.ق", en:"QR"}, dec:2, rate:3.64, base:3.3, free:300 },
+    OM: { iso:"OMR", flag:"🇴🇲", dial:"+968", name:{ar:"عُمان", en:"Oman"}, sym:{ar:"ر.ع", en:"OMR"}, dec:3, rate:0.385, base:3.3, free:30 }
   };
 
   const T = {
     ar: {
-      goLogin:"تسجيل الدخول", back:"الموقع", cart:"السلة", cartTitle:"سلة المشتريات", empty:"سلتك فارغة حالياً",
-      emptyHint:"أضف منتجات من الموقع وترجع لها هنا", goStore:"تصفح المنتجات",
-      s1:"السلة", s2:"العنوان", s3:"الدفع",
+      goLogin:"تسجيل الدخول", cartEmpty:"سلتك فارغة حالياً", snapMissing:"افتح الصفحة الرئيسية مرة وحدة عشان تتحدث السلة", emptyHint:"أضف منتجات من الموقع وترجع لها هنا", goStore:"تصفح المنتجات",
+      s1:"السلة", s2:"العنوان", s3:"الدفع والتأكيد",
       productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"الشحن", shipLater:"يُحسب بعد اختيار العنوان",
-      grand:"الإجمالي", coupon:"كود الخصم", apply:"تطبيق", removeCoupon:"إزالة", badCoupon:"الكود غير صحيح",
-      toAddr:"متابعة للعنوان", toPay:"متابعة للدفع", keep:"متابعة التسوق", back2:"رجوع",
-      addrTitle:"عنوان التوصيل", addrSelected:"عنوان الدولة المختارة", addrOther:"عناوين دول أخرى",
+      freeMsg:"مبروك، شحنك مجاني لهذا الطلب", grand:"الإجمالي", coupon:"عندي كود خصم", apply:"تطبيق", removeCoupon:"إزالة",
+      badCoupon:"الكود غير صحيح", toAddr:"متابعة للعنوان", toPay:"متابعة للدفع", keep:"متابعة التسوق", back2:"رجوع",
+      addrTitle:"عنوان التوصيل", addrSelected:"دولة الطلب", addrOther:"عناوين دول أخرى",
       noAddr:"ما عندك عناوين محفوظة بعد", addAddr:"إضافة عنوان جديد", manageAddr:"إدارة العناوين",
-      payTitle:"طريقة الدفع", pay_apple:"Apple Pay", pay_cash:"الكاش عند الاستلام", pay_benefit:"Benefit",
-      pay_card:"بطاقة ائتمان", pay_soon:"قريباً",
-      termsA:"أوافق على", termsLink:"الشروط والأحكام", send:"إرسال الطلب", sending:"جاري الإرسال...",
+      payTitle:"طريقة الدفع", pay_apple:"Apple Pay", pay_cash:"الكاش عند الاستلام", pay_benefit:"Benefit", pay_card:"بطاقة ائتمان",
+      termsA:"أوافق على", termsLink:"الشروط والأحكام", send:"تأكيد وإرسال الطلب", sending:"جاري الإرسال...",
       needTerms:"وافق على الشروط والأحكام عشان نكمل", needPay:"اختر طريقة الدفع",
       doneTitle:"تم استلام طلبك", doneMsg:"شكراً لك. تقدر تتابع حالة طلبك من صفحة طلباتي.",
       myOrders:"طلباتي", home:"الصفحة الرئيسية", savedLocal:"تم حفظ الطلب على هذا الجهاز مؤقتاً لأن الحفظ على السيرفر تعذر.",
-      snapMissing:"افتح الصفحة الرئيسية مرة وحدة عشان تتحدث السلة", pickAddrErr:"اختر عنوان أولاً",
-      loading:"جاري التحميل...", needLogin:"سجّل دخولك عشان تكمل الطلب",
+      pickAddrErr:"اختر عنوان أولاً", loading:"جاري التحميل...", needLogin:"سجّل دخولك عشان تكمل الطلب",
       defaultVariant:"افتراضي", buildLabel:"النسخة", updatedLabel:"آخر تحديث", qty:"الكمية",
-      saveErr:"تعذر إرسال الطلب، حاول مرة ثانية",
       selAll:"تحديد الكل", selHint:"المنتجات غير المحددة تبقى في السلة ولا تنحذف", note:"أضف ملاحظة",
-      notePh:"مثال: اتصل قبل التوصيل", shipInfo:"رسوم التوصيل تُحسب حسب الوزن والدولة"
+      notePh:"مثال: اتصل قبل التوصيل", shipInfo:"رسوم التوصيل تُحسب حسب الوزن والدولة", mayLike:"منتجات قد تعجبك",
+      addrName:"اسم العنوان", country:"الدولة", phoneCode:"رمز الدولة", phone:"رقم الهاتف", recipient:"الاسم (اختياري)",
+      saveAddr:"حفظ العنوان", cancel:"إلغاء", choose:"اختر...", errLabel:"اكتب اسم العنوان", errArea:"أكمل اختيار الموقع حتى آخر مستوى",
+      errField:"أكمل الحقل: ", errPhone:"رقم الجوال لازم يكون {n} أرقام", storeErr:"تعذّر حفظ العنوان في حسابك، حاول مرة ثانية",
+      addrSaved:"تم حفظ العنوان"
     },
     en: {
-      goLogin:"Sign in", back:"Store", cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty",
-      emptyHint:"Add products from the store and come back here", goStore:"Browse products",
-      s1:"Cart", s2:"Address", s3:"Payment",
+      goLogin:"Sign in", cartEmpty:"Your cart is empty", snapMissing:"Open the home page once so the cart can refresh", emptyHint:"Add products from the store and come back here", goStore:"Browse products",
+      s1:"Cart", s2:"Address", s3:"Payment & confirm",
       productsVal:"Products", discount:"Discount", shipping:"Shipping", shipLater:"Calculated after choosing an address",
-      grand:"Total", coupon:"Coupon code", apply:"Apply", removeCoupon:"Remove", badCoupon:"Invalid code",
-      toAddr:"Continue to address", toPay:"Continue to payment", keep:"Keep shopping", back2:"Back",
-      addrTitle:"Delivery address", addrSelected:"Address in selected country", addrOther:"Other countries",
+      freeMsg:"Congrats, your shipping is free on this order", grand:"Total", coupon:"Have a discount code?", apply:"Apply", removeCoupon:"Remove",
+      badCoupon:"Invalid code", toAddr:"Continue to address", toPay:"Continue to payment", keep:"Keep shopping", back2:"Back",
+      addrTitle:"Delivery address", addrSelected:"Order country", addrOther:"Other countries",
       noAddr:"You have no saved addresses yet", addAddr:"Add new address", manageAddr:"Manage addresses",
-      payTitle:"Payment method", pay_apple:"Apple Pay", pay_cash:"Cash on delivery", pay_benefit:"Benefit",
-      pay_card:"Credit card", pay_soon:"Soon",
-      termsA:"I agree to the", termsLink:"Terms and conditions", send:"Send order", sending:"Sending...",
+      payTitle:"Payment method", pay_apple:"Apple Pay", pay_cash:"Cash on delivery", pay_benefit:"Benefit", pay_card:"Credit card",
+      termsA:"I agree to the", termsLink:"Terms and conditions", send:"Confirm and send order", sending:"Sending...",
       needTerms:"Accept the terms to continue", needPay:"Choose a payment method",
       doneTitle:"Order received", doneMsg:"Thank you. You can follow your order from My orders.",
       myOrders:"My orders", home:"Home page", savedLocal:"The order was saved on this device for now because the server could not be reached.",
-      snapMissing:"Open the home page once so the cart can refresh", pickAddrErr:"Choose an address first",
-      loading:"Loading...", needLogin:"Sign in to complete your order",
+      pickAddrErr:"Choose an address first", loading:"Loading...", needLogin:"Sign in to complete your order",
       defaultVariant:"Default", buildLabel:"Version", updatedLabel:"Last update", qty:"Quantity",
-      saveErr:"Could not send the order, please try again",
       selAll:"Select all", selHint:"Unselected items stay in your cart", note:"Add a note",
-      notePh:"e.g. call before delivery", shipInfo:"Delivery fee depends on weight and country"
+      notePh:"e.g. call before delivery", shipInfo:"Delivery fee depends on weight and country", mayLike:"You may also like",
+      addrName:"Address name", country:"Country", phoneCode:"Country code", phone:"Phone number", recipient:"Recipient name (optional)",
+      saveAddr:"Save address", cancel:"Cancel", choose:"Select...", errLabel:"Enter an address name", errArea:"Complete the location down to the last level",
+      errField:"Complete the field: ", errPhone:"Phone number must be {n} digits", storeErr:"Could not save the address to your account, please try again",
+      addrSaved:"Address saved"
     }
   };
 
-  // ===== الحالة (نفس المفاتيح اللي تستخدمها الصفحة الرئيسية) =====
+  // ===== الحالة =====
   let state = { country:"BH", lang:"ar", cart:[], addrId:null, coupon:null, unsel:[], note:"" };
   try { Object.assign(state, JSON.parse(localStorage.getItem("showbiz_state") || "{}")); } catch (e) {}
   if (!Array.isArray(state.cart)) state.cart = [];
@@ -261,20 +238,25 @@
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
 
   let me = null, profile = null, ready = false, step = "cart", busy = false, doneLocal = false, addrs = [];
-  let payMethod = null, termsOk = false;
+  let payMethod = null, termsOk = false, catalogList = [];
+  let folds = { cpn: false, note: false };
+  let am = null; // حالة نافذة إضافة العنوان
 
   const t = (k) => T[state.lang][k];
+  const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const digits = (s) => String(s || "").replace(/\D/g, "");
   const flagImg = (code) => (COUNTRIES[code] ? COUNTRIES[code].flag : "");
   const localPrice = (usd) => usd * COUNTRIES[state.country].rate;
   const shipLocal = (bhd) => bhd * (COUNTRIES[state.country].rate / RATE_BHD);
+  const pName = (p) => ShowbizUI.pName(p);
   function fmtFor(code, amount) {
     const c = COUNTRIES[code] || COUNTRIES[state.country];
     const n = Number(amount).toFixed(c.dec);
     return state.lang === "ar" ? `${n} ${c.sym.ar}` : `${c.sym.en} ${n}`;
   }
   const fmt = (amount) => fmtFor(state.country, amount);
-  const variantLabel = (v) => v.key ? String(v.key).replace(/-/g, " · ") : t("defaultVariant");
+  const variantLabel = (v) => (state.lang === "ar" && v.keyAr) ? v.keyAr : (v.key ? String(v.key).replace(/-/g, " · ") : t("defaultVariant"));
 
   // ===== السلة: تفاصيل المنتجات من اللقطة اللي تكتبها الصفحة الرئيسية =====
   function readSnap() { try { return JSON.parse(localStorage.getItem("showbiz_cart_snap") || "[]"); } catch (e) { return []; } }
@@ -300,8 +282,8 @@
     });
     const chargeable = Math.max(actualKg, volKg);
     const orderBHD = (subtotalUSD() - discountUSD()) * RATE_BHD;
-    // التوصيل مجاني فوق الحد المحدد في ui.js
-    const shipBHD = orderBHD >= ShowbizUI.freeShipBHD() ? 0
+    // التوصيل مجاني عند بلوغ حد الدولة (في ui.js)
+    const shipBHD = ShowbizUI.isFree() ? 0
       : COUNTRIES[state.country].base + Math.max(0, chargeable - 1) * 0.5;
     const riskBHD = Math.max(orderBHD * 0.15, 0.3);
     return { shipBHD, riskBHD };
@@ -322,6 +304,8 @@
     if (f.flat) parts.push(f.flat);
     if (f.makani) parts.push("Makani " + f.makani);
     if (f.pobox) parts.push("PO " + f.pobox);
+    if (f.district) parts.push(f.district);
+    if (f.postal) parts.push(f.postal);
     return parts.join(" · ");
   }
 
@@ -335,9 +319,9 @@
   }
   function removeLine(vid) { state.cart = state.cart.filter(x => x.vid !== vid); save(); render(); }
   function applyCoupon() {
-    const code = (document.getElementById("cpn").value || "").trim().toUpperCase();
+    const code = (($("cpn") || {}).value || "").trim().toUpperCase();
     if (COUPONS[code]) { state.coupon = code; save(); render(); }
-    else document.getElementById("cpnMsg").textContent = t("badCoupon");
+    else if ($("cpnMsg")) $("cpnMsg").textContent = t("badCoupon");
   }
 
   // الدخول مطلوب قبل خطوة العنوان. بعد الدخول يرجعنا هنا مباشرة على خطوة العنوان
@@ -345,12 +329,143 @@
     try { localStorage.setItem("showbiz_next", "cart"); } catch (e) {}
     location.href = "login.html";
   }
-  function goAddAddr() {
-    try {
-      localStorage.setItem("showbiz_next", "cart");
-      localStorage.setItem("showbiz_open_add", "1");
-    } catch (e) {}
-    location.href = "addresses.html";
+
+  // ===== نافذة إضافة العنوان (داخل الصفحة، فقط حقول الدولة المختارة) =====
+  function amFieldsKey() { return FIELDS[am.country] ? am.country : "BH"; }
+  function amTxt(n) { return state.lang === "en" && n.en ? n.en : n.ar; }
+  function amCountries() {
+    const s = $("amCountry");
+    s.innerHTML = "";
+    getCountries().forEach(c => s.appendChild(new Option(c.flag + " " + (state.lang === "en" ? c.en : c.ar), c.code)));
+    s.value = am.country;
+  }
+  function amPhoneCodes() {
+    const s = $("amCc");
+    s.innerHTML = "";
+    PHONE_CODES.forEach(p => s.appendChild(new Option(p.flag + " " + p.dial, p.dial)));
+    const c = getCountry(am.country);
+    s.value = c && PHONE_CODES.some(p => p.dial === c.dial) ? c.dial : "+973";
+  }
+  function amRenderChain() {
+    const box = $("amChain");
+    box.innerHTML = "";
+    let items = getTopLevel(am.country);
+    for (let depth = 0; items.length; depth++) {
+      const wrap = document.createElement("div");
+      wrap.className = "full";
+      const lab = document.createElement("label");
+      lab.className = "req";
+      const tl = TYPE_LABEL[items[0].type] || TYPE_LABEL.area;
+      lab.textContent = state.lang === "en" ? tl[1] : tl[0];
+      const sel = document.createElement("select");
+      sel.appendChild(new Option(t("choose"), ""));
+      items.forEach(n => sel.appendChild(new Option(amTxt(n), n.id)));
+      sel.value = am.chosen[depth] || "";
+      const d = depth;
+      sel.addEventListener("change", () => {
+        am.chosen = am.chosen.slice(0, d);
+        am.chosen[d] = sel.value;
+        amRenderChain();
+      });
+      wrap.append(lab, sel);
+      box.appendChild(wrap);
+      const picked = items.find(n => n.id === am.chosen[depth]);
+      if (!picked) break;
+      items = getChildren(picked);
+    }
+  }
+  function amChainResult() {
+    const path = [];
+    let items = getTopLevel(am.country);
+    let node = null;
+    for (let d = 0; items.length; d++) {
+      node = items.find(n => n.id === am.chosen[d]) || null;
+      if (!node) return { ok: false, path: [] };
+      path.push(node.id);
+      items = getChildren(node);
+    }
+    return { ok: !!node, path: path };
+  }
+  function amRenderFields() {
+    const box = $("amFields");
+    box.innerHTML = "";
+    (FIELDS[amFieldsKey()] || []).forEach(f => {
+      const d = document.createElement("div");
+      const lab = document.createElement("label");
+      lab.htmlFor = "amf_" + f.k;
+      if (f.req) lab.className = "req";
+      lab.textContent = state.lang === "en" ? f.en : f.ar;
+      const inp = document.createElement("input");
+      inp.id = "amf_" + f.k;
+      inp.value = am.vals[f.k] || "";
+      if (f.digits) { inp.className = "ltr"; inp.dir = "ltr"; inp.inputMode = "numeric"; }
+      d.append(lab, inp);
+      box.appendChild(d);
+    });
+  }
+  function amBuild() {
+    $("amTitle").textContent = t("addAddr");
+    $("amBody").innerHTML = `
+      <div id="amMsg" class="errmsg"></div>
+      <div class="grid2">
+        <div class="full"><label for="amLabel" class="req">${t("addrName")}</label><input id="amLabel" maxlength="40"></div>
+        <div class="full"><label for="amCountry" class="req">${t("country")}</label><select id="amCountry"></select></div>
+      </div>
+      <div id="amChain" class="grid2"></div>
+      <div id="amFields" class="grid2"></div>
+      <div class="grid2">
+        <div><label for="amCc" class="req">${t("phoneCode")}</label><select id="amCc" class="ltr"></select></div>
+        <div><label for="amNum" class="req">${t("phone")}</label><input id="amNum" class="ltr" dir="ltr" inputmode="numeric"></div>
+        <div class="full"><label for="amRecip">${t("recipient")}</label><input id="amRecip" maxlength="60"></div>
+      </div>
+      <div class="btnrow"><button class="ghostbtn" type="button" data-a="closeAddr">${t("cancel")}</button><button class="primary" type="button" data-a="saveAddr">${t("saveAddr")}</button></div>`;
+    $("amCountry").addEventListener("change", () => {
+      am.country = $("amCountry").value; am.chosen = []; am.vals = {};
+      amPhoneCodes(); amRenderChain(); amRenderFields();
+    });
+    $("amNum").addEventListener("input", () => { $("amNum").value = digits($("amNum").value); });
+    amCountries(); amPhoneCodes(); amRenderChain(); amRenderFields();
+  }
+  function openAddrModal() {
+    if (!me) { goLogin(); return; }
+    am = { country: state.country, chosen: [], vals: {} };
+    amBuild();
+    $("addrModal").classList.remove("hidden");
+    document.body.classList.add("modal-open");
+  }
+  function closeAddrModal() {
+    $("addrModal").classList.add("hidden");
+    document.body.classList.remove("modal-open");
+    am = null;
+  }
+  function amErr(msg) { $("amMsg").textContent = msg; }
+  async function saveAddr() {
+    amErr("");
+    const label = $("amLabel").value.trim();
+    if (!label) return amErr(t("errLabel"));
+    const r = amChainResult();
+    if (!r.ok) return amErr(t("errArea"));
+    const fields = {};
+    for (const f of (FIELDS[amFieldsKey()] || [])) {
+      let v = ($("amf_" + f.k).value || "").trim();
+      if (f.digits) v = digits(v);
+      if (f.req && !v) return amErr(t("errField") + (state.lang === "en" ? f.en : f.ar));
+      fields[f.k] = v;
+    }
+    const pc = PHONE_CODES.find(p => p.dial === $("amCc").value) || PHONE_CODES[0];
+    const num = digits($("amNum").value);
+    if (num.length !== pc.len) return amErr(t("errPhone").replace("{n}", pc.len));
+    const entry = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      label: label, country: am.country, path: r.path, fields: fields,
+      phone: pc.dial + num, recipient: $("amRecip").value.trim()
+    };
+    try { await ShowbizCore.upsertAddress(sb, me.id, entry); }
+    catch (e) { return amErr(t("storeErr")); }
+    addrs = await ShowbizCore.fetchAddresses(sb, me.id);
+    state.addrId = entry.id; state.country = entry.country; save();
+    closeAddrModal();
+    render();
   }
 
   // ===== الطلب =====
@@ -358,10 +473,10 @@
     if (busy) return;
     const addr = selectedAddr();
     if (!addr) { setStep("address"); return; }
-    if (!payMethod) { document.getElementById("payMsg").textContent = t("needPay"); return; }
-    if (!termsOk) { document.getElementById("payMsg").textContent = t("needTerms"); return; }
+    if (!payMethod) { $("payMsg").textContent = t("needPay"); return; }
+    if (!termsOk) { $("payMsg").textContent = t("needTerms"); return; }
     busy = true;
-    const btn = document.getElementById("sendBtn");
+    const btn = $("sendBtn");
     if (btn) { btn.disabled = true; btn.textContent = t("sending"); }
     const lines = selLines();
     if (!lines.length) { busy = false; setStep("cart"); return; }
@@ -415,50 +530,48 @@
     render();
     window.scrollTo(0, 0);
   }
-
   function stepsHTML() {
     if (step === "done") return "";
     const order = ["cart", "address", "payment"];
     const idx = order.indexOf(step);
-    return `<div class="steps">${[["cart", t("s1")], ["address", t("s2")], ["payment", t("s3")]]
-      .map(([k, label], i) => `<span class="${i === idx ? "on" : i < idx ? "done" : ""}">${label}</span>`).join("")}</div>`;
-  }
-
-  function emptyHTML(msg) {
-    return `<div class="panel empty"><div class="big">🛒</div><p>${msg}</p>
-      <a class="ghostbtn" href="index.html">${t("goStore")}</a></div>`;
+    const labels = [t("s1"), t("s2"), t("s3")];
+    return `<div class="steps">${labels.map((label, i) => {
+      const cls = i === idx ? "on" : i < idx ? "done" : "later";
+      return `<div class="step ${cls}"><span class="sn">${i < idx ? "✓" : i + 1}</span><span class="sl">${esc(label)}</span></div>`;
+    }).join("")}</div>`;
   }
 
   function summaryRows(withShip) {
     const sub = localPrice(subtotalUSD());
     const disc = localPrice(discountUSD());
+    const free = ShowbizUI.isFree();
     let rows = `<div class="row"><span>${t("productsVal")}</span><span>${fmt(sub)}</span></div>`;
     if (disc > 0) rows += `<div class="row"><span>${t("discount")}</span><span>- ${fmt(disc)}</span></div>`;
-    if (withShip) {
+    let total = sub - disc;
+    if (free) {
+      rows += `<div class="row ok"><span>${t("shipping")}</span><span>${t("freeMsg")}</span></div>`;
+    } else if (withShip) {
       const ship = shipLocal(shippingCalc().shipBHD);
       rows += `<div class="row"><span>${t("shipping")}</span><span>${fmt(ship)}</span></div>`;
-      rows += `<div class="row grand"><span>${t("grand")}</span><span>${fmt(sub - disc + ship)}</span></div>`;
+      total += ship;
     } else {
       rows += `<div class="row"><span>${t("shipping")}</span><span class="muted">${t("shipLater")}</span></div>`;
-      rows += `<div class="row grand"><span>${t("grand")}</span><span>${fmt(sub - disc)}</span></div>`;
     }
+    rows += `<div class="row grand"><span>${t("grand")}</span><span>${fmt(total)}</span></div>`;
     return `<div class="totals">${rows}</div>`;
   }
 
-  // حالة الطيّ للكوبون والملاحظة (تبقى بين التحديثات)
-  let folds = { cpn: false, note: false };
-  let catalogList = [];
-  const pool = () => catalogList.filter(e => !state.cart.some(i => i.vid === e.vid));
+  const catalogPool = () => catalogList.filter(e => !state.cart.some(i => i.vid === e.vid));
 
   function lineHTML(l) {
     const on = isSelected(l);
-    const wished = ShowbizUI.wishList().includes(String(l.p.pid));
+    const wished = ShowbizUI.wishedPids().includes(String(l.p.pid));
     return `
       <div class="line ${on ? "" : "off"}">
-        <input type="checkbox" data-ui="sel" data-vid="${esc(l.vid)}" ${on ? "checked" : ""} aria-label="${esc(l.p.nameEn)}">
+        <input type="checkbox" data-ui="sel" data-vid="${esc(l.vid)}" ${on ? "checked" : ""} aria-label="${esc(pName(l.p))}">
         <img src="${esc(l.v.image || l.p.image)}" alt="">
         <div class="info">
-          <div class="name">${esc(l.p.nameEn)}</div>
+          <div class="name">${esc(pName(l.p))}</div>
           ${l.v.key ? `<div class="var">${esc(variantLabel(l.v))}</div>` : ""}
           <div class="unit">${fmt(localPrice(l.v.price))}</div>
           <div class="days">${ShowbizUI.cfg.days[state.lang] || ""}</div>
@@ -469,28 +582,34 @@
           </div>
         </div>
         <div class="acts">
-          <button class="heart" data-ui="wish" data-pid="${esc(l.p.pid)}" aria-label="wish">${wished ? "♥" : "♡"}</button>
-          <button data-a="rm" data-vid="${esc(l.vid)}" aria-label="remove">✕</button>
+          <button class="heart ${wished ? "on" : ""}" data-ui="wish" data-pid="${esc(l.p.pid)}" aria-label="wish">${ShowbizCore.icon("heart")}</button>
+          <button data-a="rm" data-vid="${esc(l.vid)}" aria-label="remove">${ShowbizCore.icon("trash")}</button>
         </div>
       </div>`;
+  }
+
+  function emptyHTML(msg) {
+    return `<div class="panel empty"><div class="big">🛒</div><p>${msg}</p>
+      <a class="ghostbtn" href="index.html">${t("goStore")}</a></div>`;
   }
 
   function cartHTML() {
     const lines = cartLines();
     if (!lines.length) {
       if (state.cart.length) return stepsHTML() + emptyHTML(t("snapMissing"));
-      return stepsHTML() + emptyHTML(`${t("empty")}<br><span style="font-size:13px">${t("emptyHint")}</span>`)
-        + ShowbizUI.recentBlock() + ShowbizUI.suggestBlock(catalogList);
+      return stepsHTML() + emptyHTML(`${t("cartEmpty")}<br><span style="font-size:13px">${t("emptyHint")}</span>`)
+        + ShowbizUI.suggestRow(catalogPool().slice(0, 12));
     }
     const selCount = lines.filter(isSelected).length;
     const allOn = selCount === lines.length;
     const cpnBox = state.coupon
-      ? `<div class="row" style="display:flex;justify-content:space-between;align-items:center;font-size:14px"><span class="muted">${esc(state.coupon)}</span><button class="rm" style="font-size:13px" data-a="removeCoupon">${t("removeCoupon")}</button></div>`
-      : `<button class="foldbtn" data-a="foldCpn">${t("coupon")} ${folds.cpn ? "▴" : "▾"}</button>` +
-        (folds.cpn ? `<div class="couponrow"><input id="cpn" placeholder="${t("coupon")}"><button class="ghostbtn" data-a="applyCoupon">${t("apply")}</button></div><p id="cpnMsg" class="errmsg"></p>` : "");
-    const noteBox = `<button class="foldbtn" data-a="foldNote">${t("note")} ${folds.note ? "▴" : "▾"}</button>` +
-      (folds.note ? `<div class="notebox"><textarea id="noteTa" placeholder="${t("notePh")}">${esc(state.note || "")}</textarea></div>` : "");
+      ? `<div class="cbox on"><span>${esc(state.coupon)}</span><button class="linkbtn" data-a="removeCoupon">${t("removeCoupon")}</button></div>`
+      : `<div class="cbox"><button class="cfold" data-a="foldCpn"><span>% ${t("coupon")}</span><span>${folds.cpn ? "▴" : "▾"}</span></button>` +
+        (folds.cpn ? `<div class="couponrow"><input id="cpn" placeholder="${esc(t("coupon"))}"><button class="ghostbtn" data-a="applyCoupon">${t("apply")}</button></div><p id="cpnMsg" class="errmsg"></p>` : "") + `</div>`;
+    const noteBox = `<div class="cbox"><button class="cfold" data-a="foldNote"><span>${t("note")}</span><span>${folds.note ? "▴" : "▾"}</span></button>` +
+      (folds.note ? `<div class="notebox"><textarea id="noteTa" placeholder="${esc(t("notePh"))}">${esc(state.note || "")}</textarea></div>` : "") + `</div>`;
     const grandNow = localPrice(subtotalUSD() - discountUSD());
+    const free = ShowbizUI.isFree();
     return stepsHTML() + `
       ${ShowbizUI.progressHTML()}
       <div class="panel">
@@ -498,17 +617,15 @@
         <p class="selhint">${t("selHint")}</p>
         ${lines.map(lineHTML).join("")}
       </div>
-      ${ShowbizUI.lookHTML(catalogList)}
-      ${ShowbizUI.trustHTML()}
       <div class="panel">
-        ${cpnBox}
         ${noteBox}
+        ${cpnBox}
         ${summaryRows(false)}
-        <p class="shipnote">${t("shipInfo")}</p>
+        ${free ? "" : `<p class="shipnote">${t("shipInfo")}</p>`}
       </div>
-      ${ShowbizUI.suggestBlock(pool().slice(1))}
+      ${ShowbizUI.suggestRow(catalogPool().slice(0, 12))}
       <div class="stickyfoot">
-        <div class="tot"><span class="dim">${t("grand")}</span><strong>${fmt(grandNow)}</strong></div>
+        <div class="tot"><span class="muted">${t("grand")}</span><strong>${fmt(grandNow)}</strong></div>
         <button class="primary" data-a="toAddr" ${selCount ? "" : "disabled"}>${t("toAddr")}</button>
       </div>
       <p class="manage"><a href="index.html">${t("keep")}</a></p>`;
@@ -524,12 +641,12 @@
     const pref = addrs.filter(a => a.country === state.country);
     const other = addrs.filter(a => a.country !== state.country);
     const card = (a, isPref) => `
-      <label class="addr ${isPref ? "pref" : ""}">
+      <label class="acard ${state.addrId === a.id ? "on" : ""}">
         <input type="radio" name="addr" data-pick="${esc(a.id)}" ${state.addrId === a.id ? "checked" : ""}>
-        <div style="flex:1;min-width:0">
-          <div class="lbl">${flagImg(a.country)} ${esc(a.label)} ${isPref ? `<span class="tag">${t("addrSelected")}</span>` : ""}</div>
-          <div class="txt">${esc(addrText(a))}</div>
-          <div class="txt" dir="ltr">${esc(a.phone || "")}</div>
+        <div class="ac-body">
+          <div class="ac-top"><span class="flag">${flagImg(a.country)}</span><span>${esc(a.label)}</span>${isPref ? `<span class="tag">${t("addrSelected")}</span>` : ""}</div>
+          <div class="ac-txt">${esc(addrText(a))}</div>
+          <div class="ac-txt ltr">${esc(a.phone || "")}</div>
         </div>
       </label>`;
     let list = "";
@@ -537,15 +654,15 @@
     else {
       if (pref.length) list += pref.map(a => card(a, true)).join("");
       if (other.length) {
-        list += `<div class="sect-title" style="font-size:13px;color:var(--muted,#9aa8bf);margin:14px 0 8px">${t("addrOther")}</div>`;
+        list += `<div class="muted" style="margin:12px 0 8px">${t("addrOther")}</div>`;
         list += other.map(a => card(a, false)).join("");
       }
     }
     return stepsHTML() + `
       <div class="panel">
-        <div class="sect-title" style="margin-top:0">${t("addrTitle")}</div>
+        <div class="sect-title">${t("addrTitle")}</div>
         ${list}
-        <button class="ghostbtn" style="width:100%" data-a="addAddr">${t("addAddr")}</button>
+        <button class="ghostbtn addnew" data-a="addAddr">${t("addAddr")}</button>
         <p class="manage"><a href="addresses.html">${t("manageAddr")}</a></p>
       </div>
       <div class="panel">${summaryRows(!!sel)}</div>
@@ -559,58 +676,67 @@
   function payHTML() {
     if (!me || !selectedAddr()) return addressHTML();
     const methods = [
-      { k: "apple_pay", label: t("pay_apple"), on: true },
-      { k: "cash", label: t("pay_cash"), on: true },
-      { k: "benefit", label: t("pay_benefit"), on: true },
-      { k: "card", label: t("pay_card"), on: true }
+      { k: "apple_pay", label: t("pay_apple") },
+      { k: "cash", label: t("pay_cash") },
+      { k: "benefit", label: t("pay_benefit") },
+      { k: "card", label: t("pay_card") }
     ];
     const opts = methods.map(m => `
-      <label class="pay"><input type="radio" name="pay" data-paym="${m.k}" ${payMethod === m.k ? "checked" : ""}>${esc(m.label)}</label>`).join("");
+      <label class="pay ${payMethod === m.k ? "on" : ""}"><input type="radio" name="pay" data-paym="${m.k}" ${payMethod === m.k ? "checked" : ""}>${esc(m.label)}</label>`).join("");
     const sel = selectedAddr();
     return stepsHTML() + `
       <div class="panel">
-        <div class="sect-title" style="margin-top:0">${t("addrTitle")}</div>
-        <div class="addr" style="cursor:default"><div style="flex:1"><div class="lbl">${flagImg(sel.country)} ${esc(sel.label)}</div>
-          <div class="txt">${esc(addrText(sel))}</div></div></div>
-        <button class="ghostbtn" style="margin-top:6px" data-a="backAddr">${t("back2")}</button>
+        <div class="sect-title">${t("addrTitle")}</div>
+        <div class="paddr">
+          <div class="pa-txt">
+            <div class="ac-top">${esc(sel.label)}</div>
+            <div class="ac-txt">${esc(addrText(sel))}</div>
+            <div class="ac-txt ltr">${esc(sel.phone || "")}</div>
+          </div>
+          <div class="pa-side">
+            <span class="pa-flag">${flagImg(sel.country)}</span>
+            <button class="ghostbtn" data-a="backAddr">${t("back2")}</button>
+          </div>
+        </div>
       </div>
       <div class="panel">
-        <div class="sect-title" style="margin-top:0">${t("payTitle")}</div>
+        <div class="sect-title">${t("payTitle")}</div>
         ${opts}
         <label class="terms"><input type="checkbox" id="termsCb" ${termsOk ? "checked" : ""}>
           <span>${t("termsA")} <a href="terms.html" target="_blank" rel="noopener">${t("termsLink")}</a></span></label>
-        <div class="totals">${summaryRows(true)}</div>
+        ${summaryRows(true)}
         <p id="payMsg" class="errmsg"></p>
-        <button class="primary" id="sendBtn" data-a="send" style="width:100%">${t("send")}</button>
+        <button class="primary" id="sendBtn" data-a="send" style="width:100%;margin-top:6px">${t("send")}</button>
       </div>`;
   }
 
   function doneHTML() {
-    return `<div class="panel done"><div class="big">✅</div><h2>${t("doneTitle")}</h2><p>${t("doneMsg")}</p>
+    return `<div class="panel done"><div class="big">✅</div><h2>${t("doneTitle")}</h2><p class="muted">${t("doneMsg")}</p>
       ${doneLocal ? `<p class="muted">${t("savedLocal")}</p>` : ""}
-      <div class="btnrow" style="margin-top:14px"><a class="ghostbtn" href="orders.html">${t("myOrders")}</a><a class="primary" href="index.html" style="text-align:center;text-decoration:none;display:block;padding:14px">${t("home")}</a></div></div>`;
+      <div class="btnrow" style="margin-top:14px"><a class="ghostbtn" href="orders.html">${t("myOrders")}</a><a class="primary" href="index.html" style="text-align:center;text-decoration:none;display:block;padding:13px">${t("home")}</a></div></div>`;
   }
 
   function render() {
     document.documentElement.lang = state.lang;
     document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
-    document.getElementById("backTxt").textContent = t("back");
-    const snapIds = new Set(readSnap().map(x => x.vid));
-    const cn = document.getElementById("cartN"), nItems = state.cart.filter(i => snapIds.has(i.vid)).reduce((s, i) => s + i.qty, 0);
-    cn.textContent = nItems; cn.hidden = nItems === 0;
-    document.getElementById("prefBtn").textContent = COUNTRIES[state.country].iso + " · " + (state.lang === "ar" ? "العربية" : "English");
-    document.getElementById("announce").textContent = ShowbizUI.announceText();
-    renderPrefs();
-    const v = document.getElementById("view");
+    document.getElementById("backBtn").setAttribute("aria-label", t("back2"));
+    const v = $("view");
     if (step === "done") v.innerHTML = doneHTML();
     else if (step === "address") v.innerHTML = addressHTML();
     else if (step === "payment") v.innerHTML = payHTML();
     else v.innerHTML = cartHTML();
-    document.getElementById("verLine").textContent = `${t("buildLabel")}: ${window.SHOWBIZ_BUILD.version} · ${t("updatedLabel")}: ${window.SHOWBIZ_BUILD.updated}`;
+    $("verLine").textContent = `${t("buildLabel")}: ${window.SHOWBIZ_BUILD.version} · ${t("updatedLabel")}: ${window.SHOWBIZ_BUILD.updated}`;
+    ShowbizUI.syncFree();
   }
 
   // ===== الأحداث =====
   document.addEventListener("click", (e) => {
+    if (e.target.closest("#backBtn")) {
+      if (step === "payment") setStep("address");
+      else if (step === "address") setStep("cart");
+      else location.href = "index.html";
+      return;
+    }
     const el = e.target.closest("[data-a]");
     if (!el) return;
     const a = el.dataset.a;
@@ -621,7 +747,9 @@
     if (a === "removeCoupon") { state.coupon = null; save(); render(); return; }
     if (a === "toAddr") { setStep("address"); return; }
     if (a === "login") { goLogin(); return; }
-    if (a === "addAddr") { goAddAddr(); return; }
+    if (a === "addAddr") { openAddrModal(); return; }
+    if (a === "closeAddr") { closeAddrModal(); return; }
+    if (a === "saveAddr") { saveAddr(); return; }
     if (a === "backCart") { setStep("cart"); return; }
     if (a === "toPay") { if (selectedAddr()) setStep("payment"); return; }
     if (a === "backAddr") { setStep("address"); return; }
@@ -629,24 +757,29 @@
     if (a === "foldCpn") { folds.cpn = !folds.cpn; render(); return; }
     if (a === "foldNote") { folds.note = !folds.note; render(); return; }
   });
+  document.getElementById("addrModal").addEventListener("click", (e) => {
+    if (e.target.id === "addrModal") closeAddrModal();
+  });
+  $("amX") && $("amX").addEventListener("click", closeAddrModal);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && am) closeAddrModal(); });
 
   // الملاحظة تُحفظ أثناء الكتابة بدون إعادة رسم (عشان ما يطيح التركيز)
   document.addEventListener("input", (e) => {
     if (e.target.id === "noteTa") { state.note = e.target.value; save(); }
   });
-  // أي تغيير من اللوحة الجانبية أو من الصفحة يعيد رسم السلة
-  document.addEventListener("cartchange", () => { if (step === "cart") render(); });
+  // أي تغيير من السلة الجانبية أو من الصفحة يعيد رسم السلة
+  document.addEventListener("cartchange", () => { if (step === "cart" || step === "address") render(); });
 
   document.addEventListener("change", (e) => {
     const tgt = e.target;
     if (tgt.dataset && tgt.dataset.pick) {
       const a = addrs.find(x => x.id === tgt.dataset.pick);
       if (!a) return;
-      state.addrId = a.id; save(); render();
+      state.addrId = a.id; state.country = a.country; save(); render();
       return;
     }
-    if (tgt.dataset && tgt.dataset.paym) { payMethod = tgt.dataset.paym; document.getElementById("payMsg").textContent = ""; return; }
-    if (tgt.id === "termsCb") { termsOk = tgt.checked; document.getElementById("payMsg").textContent = ""; }
+    if (tgt.dataset && tgt.dataset.paym) { payMethod = tgt.dataset.paym; render(); return; }
+    if (tgt.id === "termsCb") { termsOk = tgt.checked; const m = $("payMsg"); if (m) m.textContent = ""; }
   });
 
   window.addEventListener("hashchange", () => {
@@ -657,37 +790,6 @@
       step = h; render();
     } else { step = "cart"; render(); }
   });
-
-  // ===== التفضيلات والهيدر =====
-  function openPref(on) { document.getElementById("prefModal").classList.toggle("hidden", !on); }
-  document.getElementById("prefBtn").addEventListener("click", () => openPref(true));
-  document.getElementById("prefX").addEventListener("click", () => openPref(false));
-  document.getElementById("prefModal").addEventListener("click", (e) => { if (e.target.id === "prefModal") openPref(false); });
-  document.getElementById("prefCur").addEventListener("click", (e) => {
-    const b = e.target.closest("[data-cur]");
-    if (!b) return;
-    state.country = b.dataset.cur; state.addrId = null; save(); openPref(false); render();
-  });
-  document.querySelectorAll("[data-glang]").forEach(b => b.addEventListener("click", () => { state.lang = b.dataset.glang; save(); render(); }));
-  document.getElementById("favBtn").addEventListener("click", () => ShowbizUI.open("wish"));
-  document.getElementById("cartBtn").addEventListener("click", () => ShowbizUI.open());
-  document.getElementById("acctBtn").addEventListener("click", () => {
-    if (me) location.href = "account.html"; else goLogin();
-  });
-  function renderPrefs() {
-    const L = state.lang === "en"
-      ? { title: "Preferences", lang: "Language", cur: "Currency" }
-      : { title: "التفضيلات", lang: "اللغة", cur: "العملة" };
-    document.getElementById("prefTitle").textContent = L.title;
-    document.getElementById("prefLangLbl").textContent = L.lang;
-    document.getElementById("prefCurLbl").textContent = L.cur;
-    document.getElementById("prefCur").innerHTML = Object.entries(COUNTRIES).map(([code, c]) => `
-      <button class="pref-item ${code === state.country ? "on" : ""}" data-cur="${code}" type="button">
-        <span>${c.flag} ${esc(c.name[state.lang])}</span>
-        <strong>${esc(c.sym.ar)} · ${c.iso}</strong>
-      </button>`).join("");
-    document.querySelectorAll("[data-glang]").forEach(b => b.classList.toggle("on", b.dataset.glang === state.lang));
-  }
 
   // ===== البدء =====
   (async () => {
@@ -716,8 +818,8 @@
     if (!me && step === "address") { goLogin(); return; }
     ready = true;
     render();
-    // قائمة المنتجات المقترحة (تظهر في إكمال الطلب والسلة الفارغة)
-    ShowbizUI.catalog(WORKER_URL).then(list => { catalogList = list; render(); });
+    // منتجات قد تعجبك من الكتالوج الوهمي (مرحلة التجربة: بدون جلب من الـ API)
+    ShowbizUI.catalogDemo().then(list => { catalogList = list; render(); });
   })();
 
   function userFromStoredToken() {

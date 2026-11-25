@@ -1,5 +1,5 @@
 // مصدر رقم النسخة الوحيد للموقع: عدّل VER و DATE هنا عند كل تعديل، وكل الصفحات تتحدث
-window.SHOWBIZ_BUILD = { version: "v40", updated: "2026-11-25 02:39" };
+window.SHOWBIZ_BUILD = { version: "v41", updated: "2026-11-25 04:48" };
 (function () {
   function put() {
     var el = document.getElementById("verLine");

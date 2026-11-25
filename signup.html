@@ -220,7 +220,7 @@
     if (emailOK) b1 = `<div class="okline"><span dir="ltr">${esc(S.sEmail)}</span><button class="link" type="button" data-act="changeEmail">${t().change}</button></div>`;
     else if (S.sLoading) b1 = loading(t().sending);
     else if (!S.sCodeSent) b1 = `
-        <label for="sEmail">${t().email}</label>
+        <label for="sEmail" class="req">${t().email}</label>
         <input id="sEmail" type="email" dir="ltr" autocomplete="email" placeholder="name@example.com" value="${esc(S.sEmail)}">
         <div class="ferr hidden" id="sEmailErr"></div>
         ${msgHTML("email")}
@@ -242,18 +242,18 @@
 
     const countryOpts = COUNTRIES.map(c => `<option value="${c.code}" ${c.code === S.country ? "selected" : ""}>${c.flag} ${lang === "ar" ? c.ar : c.en}</option>`).join("");
     const b3 = detailsOpen ? `
-        <label for="sFirst">${t().first}</label>
+        <label for="sFirst" class="req">${t().first}</label>
         <input id="sFirst" value="${esc(S.first)}">
         <div class="ferr hidden" id="sFirstErr"></div>
-        <label for="sLast">${t().last}</label>
+        <label for="sLast" class="req">${t().last}</label>
         <input id="sLast" value="${esc(S.last)}">
         <div class="ferr hidden" id="sLastErr"></div>
-        <label for="sCountry">${t().country}</label>
+        <label for="sCountry" class="req">${t().country}</label>
         <select id="sCountry">${countryOpts}</select>
-        <label for="sPass">${t().password}</label>
+        <label for="sPass" class="req">${t().password}</label>
         <div class="pw"><input id="sPass" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("sPass")}</div>
         <div class="ferr hidden" id="sPassErr"></div>
-        <label for="sPass2">${t().confirm}</label>
+        <label for="sPass2" class="req">${t().confirm}</label>
         <div class="pw"><input id="sPass2" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("sPass2")}</div>
         <div class="ferr hidden" id="sPass2Err"></div>
         <button class="btn btn-main" type="button" data-act="create">${t().create}</button>`
