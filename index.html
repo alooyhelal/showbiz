@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Showbiz</title>
 <style>
   :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; color-scheme:dark; }
@@ -27,7 +27,7 @@
   .sugg button { display:flex; gap:8px; align-items:center; width:100%; background:transparent; color:var(--fg); font-weight:400; padding:6px 8px; text-align:start; }
   .sugg img { width:36px; height:36px; object-fit:cover; border-radius:8px; background:#f3f4f6; }
   .sugg-h { color:var(--muted); font-size:12px; padding:4px 8px; }
-  #sortSel { margin:0; width:auto; height:42px; padding:0 10px; font-size:13px; border-radius:999px; }
+  #sortSel { margin:0; width:auto; min-width:9.5em; max-width:48vw; height:42px; padding:0 12px; font-size:13px; border-radius:999px; }
   .cat-tile small { display:block; color:var(--muted); font-weight:400; font-size:12px; margin-top:4px; }
   .chips { display:flex; flex-wrap:wrap; gap:8px; margin:-2px 0 10px; }
   .chip { background:var(--card2); color:var(--fg); border:1px solid var(--line); border-radius:999px; padding:7px 12px; font-size:13px; font-weight:600; }
@@ -137,6 +137,9 @@
   .ct-name { display:flex; align-items:center; gap:8px; }
   .ct-name.sub { font-weight:400; font-size:13px; }
   .ct-arrow { margin-inline-start:auto; color:var(--muted); }
+  .logo { text-decoration:none; cursor:default; user-select:none; }
+  .logo-a { color:var(--orange); }
+  .logo-b { color:var(--teal); }
   .side-build { margin-top:14px; font-size:12px; color:var(--muted); text-align:center; line-height:1.7; }
   /* بطاقات المنتج: زر الإضافة في سطر كامل، والتفاصيل تحته، وبدون فراغ زائد أسفل البطاقة */
   .row2 { flex-direction:column; gap:6px; margin-top:8px; }
@@ -248,7 +251,9 @@
   .cat-tile:hover { transform:translateY(-2px); border-color:var(--teal); }
   button { transition:transform .15s ease, filter .15s ease; }
   button:active { transform:scale(.97); }
-  #pmodal .modal.enter { animation:ppIn .38s cubic-bezier(.2,.7,.2,1) both; }
+  #pmodal:not(.hidden) { animation:ppFade .28s ease both; }
+  @keyframes ppFade { from { opacity:0; } to { opacity:1; } }
+  #pmodal .modal.enter { animation:ppIn .5s cubic-bezier(.22,.8,.2,1) both; }
   @keyframes ppIn { from { opacity:0; transform:translateY(18px) scale(.985); } to { opacity:1; transform:none; } }
   #pmodal .gallery img { animation:ppImg .5s ease both; }
   @keyframes ppImg { from { opacity:0; transform:scale(1.03); } to { opacity:1; transform:none; } }
@@ -276,7 +281,7 @@
       <button class="ic-btn" id="favBtn" type="button" data-icon="heart" aria-label="wishlist"></button>
       <button class="ic-btn themebtn" id="themeBtn" type="button" aria-label="theme"></button>
     </div>
-    <a class="logo" href="index.html" id="siteName">Showbiz</a>
+    <span class="logo" id="siteName" aria-label="Showbiz"><span class="logo-a">Show</span><span class="logo-b">biz</span></span>
     <div class="hd-side hd-end">
       <button class="ic-btn" id="prefBtn" type="button" aria-label="language and currency"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h6M7 12h10M7 16h10M15 8h2"/></svg></button>
       <div class="acctwrap">
@@ -398,7 +403,7 @@
       needLogin:"سجّل دخولك لإتمام الطلب", goLogin:"تسجيل الدخول",
       buildLabel:"النسخة", updatedLabel:"آخر تحديث",
       menuInfo:"معلومات حسابي", menuOrders:"طلباتي", menuAddr:"عناويني", menuDel:"حذف الحساب",
-      cats:"الأقسام", allCats:"كل الأقسام", other:"منتجات أخرى", seeAll:"عرض الكل", clearFilter:"مسح الفلاتر",
+      cats:"الأقسام", allCats:"كل الفئات", allProductsLbl:"كل المنتجات", shareBtn:"مشاركة", shareDone:"تم نسخ الرابط", other:"منتجات أخرى", seeAll:"عرض الكل", clearFilter:"مسح الفلاتر",
       noResults:"ما لقينا نتائج", searchPh:"ابحث عن منتج", recentSearch:"آخر البحوث", 
       sortDef:"الترتيب الافتراضي", sortAsc:"السعر: من الأقل إلى الأعلى", sortDesc:"السعر: من الأعلى إلى الأقل", sortName:"الاسم: من A إلى Z", sortNameDesc:"الاسم: من Z إلى A",
       isNew:"جديد", isBest:"الأكثر مبيعاً", menu:"القائمة", homeLbl:"الصفحة الرئيسية", allProducts:"كل المنتجات", resetSite:"تصفير الموقع",
@@ -426,7 +431,7 @@
       needLogin:"Log in to complete your order", goLogin:"Log in",
       buildLabel:"Build", updatedLabel:"Last update",
       menuInfo:"My details", menuOrders:"My orders", menuAddr:"My addresses", menuDel:"Delete account",
-      cats:"Categories", allCats:"All categories", other:"Other products", seeAll:"See all", clearFilter:"Clear filters",
+      cats:"Categories", allCats:"All categories", allProductsLbl:"All products", shareBtn:"Share", shareDone:"Link copied", other:"Other products", seeAll:"See all", clearFilter:"Clear filters",
       noResults:"No results", searchPh:"Search products", recentSearch:"Recent searches", 
       sortDef:"Default order", sortAsc:"Price: low to high", sortDesc:"Price: high to low", sortName:"Name: A to Z", sortNameDesc:"Name: Z to A",
       isNew:"New", isBest:"Best seller", menu:"Menu", homeLbl:"Home", allProducts:"All products", resetSite:"Reset site",
@@ -648,7 +653,7 @@
     try { pid = new URLSearchParams(location.search).get("open"); } catch (e) {}
     if (!pid) return;
     const p = products.find(x => String(x.pid) === String(pid));
-    if (p) { history.replaceState(null, "", "index.html"); openProduct(p.pid); }
+    if (p) { history.replaceState(null, "", location.pathname + location.hash); openProduct(p.pid); }
   }
 
   // ===== الحساب =====
@@ -802,6 +807,15 @@
       <button class="ghost" data-action="mback" style="width:100%">${t("back")}</button>`;
   }
   // ===== تقييمات تجريبية (10 لكل منتج) + تقييمات المستخدم المحفوظة =====
+  // مشاركة المنتج: رابط خاص به تحت قسمه الأصلي (وليس الخصومات)
+  function shareProduct(p) {
+    const own = productPath(p).join("/");
+    const url = location.origin + location.pathname + "?open=" + encodeURIComponent(p.pid) + (own ? "#" + slugOf(own) : "");
+    const title = pName(p);
+    if (navigator.share) { navigator.share({ title, url }).catch(() => {}); return; }
+    const done = () => { if (window.ShowbizUI && ShowbizUI.flash) ShowbizUI.flash(t("shareDone")); };
+    try { navigator.clipboard.writeText(url).then(done).catch(done); } catch (e) { done(); }
+  }
   // مواصفات تجريبية ثابتة لكل منتج (تتغير حسب المنتج، ولا تتغير مع كل فتح)
   const SPEC_MAT_AR = ["قطن", "جلد صناعي", "ستانلس ستيل", "بلاستيك عالي الجودة", "خشب طبيعي", "ألومنيوم"];
   const SPEC_MAT_EN = ["Cotton", "Faux leather", "Stainless steel", "High-grade plastic", "Natural wood", "Aluminum"];
@@ -969,6 +983,7 @@
     const dims = d ? d.map(x => Number(x).toFixed(1)).join(" × ") + " cm" : "—";
     const w = (v && v.weightG) || p.weightG;
     const avg = avgOf(reviewsFor(p));
+    const shareRow = `<button class="ghost" type="button" data-action="share" style="margin:4px 0 10px">${t("shareBtn")}</button>`;
 
     box.innerHTML = `
       <div class="modal${enter}">
@@ -980,6 +995,7 @@
         ${dots}
         <div style="padding:0 2px">
           <h3 class="mtitle" style="margin:12px 0 6px">${esc(pName(p))}</h3>
+          ${shareRow}
           <div class="pp-rate">${starsHTML(avg)}<span class="muted">${avg.toFixed(1)}</span></div>
           ${short ? `<p class="pp-short">${esc(short)}${txt.length > 140 ? "…" : ""}</p>` : ""}
           ${buy}
@@ -1266,7 +1282,7 @@
       const node = filt.cat && filt.cat !== ALL && !isSale ? nodeByKey(filt.cat) : null;
       const topWithKids = !!(node && !String(node.key).includes("/") && node.kids.length);
       const title = isSale ? t("saleTitle")
-        : (topWithKids ? catLabel(node.id) : (filt.cat && filt.cat !== ALL ? crumbs(filt.cat) : t("allCats")));
+        : (topWithKids ? catLabel(node.id) : (filt.cat && filt.cat !== ALL ? crumbs(filt.cat) : t("allProductsLbl")));
       const head = `<div class="sec-h"><h3>${esc(title)}</h3><button class="linkbtn" data-clear="1">${t("clearFilter")}</button></div>`;
       return (topWithKids ? subStripHTML(node) : "") + head + (list.length ? `<div class="grid">${list.map(cardHTML).join("")}</div>` : `<p class="muted">${t("noResults")}</p>`);
     }
@@ -1318,12 +1334,14 @@
   // ===== روابط الأقسام بالهاش: #all، #discounts، #cars، #cars-hyundai، #cars-all-items =====
   function slugOf(key) {
     if (key === SALE) return "discounts";
+    if (key === ALL) return "products";
     return String(key).split("/").join("-");
   }
   function keyFromSlug(raw) {
     const s = String(raw || "").replace(/^#/, "").toLowerCase();
     if (s === "all") return { cat: null, all: true };
     if (s === "discounts") return { cat: SALE, all: false };
+    if (s === "products") return { cat: ALL, all: false };
     const base = s.replace(/-all-items$/, "");
     const keys = new Set();
     products.forEach(p => { const path = productPath(p); for (let i = 1; i <= path.length; i++) keys.add(path.slice(0, i).join("/")); });
@@ -1339,6 +1357,7 @@
     const r = keyFromSlug(location.hash);
     if (r.all) { filt.cat = null; catsGrid = true; }
     else { filt.cat = r.cat; catsGrid = false; }
+    if (!r.all && !r.cat) { filt.cat = null; catsGrid = false; }
   }
   window.addEventListener("hashchange", () => { applyHash(); render(); window.scrollTo(0, 0); });
   function clearFilters() {
@@ -1390,8 +1409,9 @@
   function catLinksHTML() {
     const sale = saleList().length
       ? `<button class="ct-name ${filt.cat === SALE ? "on" : ""}" data-cat="${SALE}">${catIcon("tag")}<span>${t("saleTitle")}</span></button>` : "";
-    return `<button class="ct-name ${!filt.cat ? "on" : ""}" data-home="1">${catIcon("home")}<span>${t("homeLbl")}</span></button>` +
-      `<button class="ct-name ${filt.cat === ALL ? "on" : ""}" data-cat="${ALL}">${catIcon("tag")}<span>${t("allCats")}</span></button>` +
+    return `<button class="ct-name ${!filt.cat && !catsGrid ? "on" : ""}" data-home="1">${catIcon("home")}<span>${t("homeLbl")}</span></button>` +
+      `<button class="ct-name ${catsGrid ? "on" : ""}" data-cats="all">${catIcon("tag")}<span>${t("allCats")}</span></button>` +
+      `<button class="ct-name ${filt.cat === ALL ? "on" : ""}" data-cat="${ALL}">${catIcon("tag")}<span>${t("allProductsLbl")}</span></button>` +
       sale + catTreeHTML(catRoot.kids, 0);
   }
   function fillFilters() {
@@ -1536,7 +1556,7 @@
     document.getElementById("menuAddr").textContent = t("menuAddr");
     document.getElementById("menuDel").textContent = t("menuDel");
     document.getElementById("menuLogout").textContent = t("logout");
-    document.getElementById("siteName").textContent = t("siteName");
+    // الشعار نص بلونين: Show برتقالي و biz تركوازي، بدون رابط
     document.getElementById("announce").innerHTML = ShowbizUI.announceHTML();
     ShowbizUI.runAnnounce();
     document.getElementById("sideFoot").textContent = ShowbizCore.copyright(state.lang);
@@ -1675,6 +1695,7 @@
       modal.idx = (modal.idx + (a === "mnext" ? 1 : -1) + g.length) % g.length;
       modal.paused = true; renderModal(); return;
     }
+    if (a === "share") { const c = curModal(); if (c) shareProduct(c.p); return; }
     if (a === "rvAdd") { rvDraft = { n: 0, c: "", msg: "" }; renderReviewForm(); return; }
     if (a === "rvCancel") { closeReviewForm(); return; }
     if (a === "rvStar") { const tx = document.getElementById("rvText"); if (tx) rvDraft.c = tx.value; rvDraft.n = Number(ds.n) || 0; rvDraft.msg = ""; renderReviewForm(); return; }
@@ -1866,7 +1887,7 @@
   qEl.addEventListener("input", () => { filt.q = qEl.value; refreshShop(); renderSugg(); });
   qEl.addEventListener("focus", renderSugg);
   qEl.addEventListener("keydown", (e) => { if (e.key === "Enter") { ShowbizUI.pushSearch(qEl.value); document.getElementById("sugg").classList.add("hidden"); } });
-  document.getElementById("sortSel").addEventListener("change", (e) => { filt.sort = e.target.value; refreshShop(); });
+  document.getElementById("sortSel").addEventListener("change", (e) => { filt.sort = e.target.value; refreshShop(); window.scrollTo(0, 0); });
   // تحديث السلة الجانبية وعدّاد الهيدر عند أي تغيير
   document.addEventListener("cartchange", () => render());
   // زر "حسابي" يفتح قائمة منسدلة، وما يرجع لصفحة الدخول إلا إذا ما فيه جلسة
