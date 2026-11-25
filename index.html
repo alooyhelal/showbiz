@@ -345,7 +345,7 @@
   const T = {
     ar: {
       siteName:"Showbiz", welcome:"مرحبًا بك", chooseCountry:"اختر الدولة", chooseLang:"اختر اللغة", go:"متابعة",
-      details:"التفاصيل", detailsTitle:"تفاصيل المنتج", chooseOpt:"اختر اللون / النمط", add:"إضافة للسلة", bannerSub:"تسوّق الآن", shopNow:"تسوّق الآن", specs:"المواصفات", reviews:"التقييمات", noReviews:"لا يوجد تقييمات لحد الآن", addReview:"إضافة تقييم", readMore:"قراءة المزيد", readLess:"إخفاء", sendReview:"إرسال التقييم", reviewOptional:"اكتب تعليقك (اختياري)", reviewPick:"اختر عدد النجوم أولاً", cancelBtn:"إلغاء", you:"أنت", choosePlaceholder:"يرجى الاختيار", outOfStock:"غير متوفر", scaleHint:"5 هو التقييم الأعلى، و1 هو الأدنى",
+      details:"التفاصيل", detailsTitle:"تفاصيل المنتج", chooseOpt:"اختر اللون / النمط", add:"إضافة للسلة", bannerSub:"تسوّق الآن", shopNow:"تسوّق الآن", specs:"المواصفات", reviews:"التقييمات", noReviews:"لا يوجد تقييمات لحد الآن", addReview:"إضافة تقييم", readMore:"قراءة المزيد", readLess:"إخفاء", sendReview:"إرسال التقييم", reviewOptional:"اكتب تعليقك (اختياري)", reviewPick:"اختر عدد النجوم أولاً", cancelBtn:"إلغاء", you:"أنت", choosePlaceholder:"يرجى الاختيار", outOfStock:"غير متوفر", someOut:"بعض المنتجات في سلتك غير متوفرة، أزلها للمتابعة إلى الدفع", scaleHint:"5 هو التقييم الأعلى، و1 هو الأدنى",
       qty:"الكمية", cart:"السلة", cartTitle:"سلة المشتريات", empty:"السلة فارغة", grand:"الإجمالي",
       productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"رسوم التوصيل", shipLater:"تُحدد بعد اختيار العنوان",
       shippingNote:"رسوم التوصيل تُضاف عند تحديد العنوان", coupon:"هل لديك كود خصم؟", apply:"تطبيق",
@@ -373,7 +373,7 @@
     },
     en: {
       siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
-      details:"Details", detailsTitle:"Product details", chooseOpt:"Choose color / style", add:"Add to cart", bannerSub:"Shop now", shopNow:"Shop now", specs:"Specifications", reviews:"Reviews", noReviews:"No reviews yet", addReview:"Add review", readMore:"Read more", readLess:"Show less", sendReview:"Submit review", reviewOptional:"Write your comment (optional)", reviewPick:"Pick a star rating first", cancelBtn:"Cancel", you:"You", choosePlaceholder:"Please choose", outOfStock:"Out of stock", scaleHint:"5 is the highest rating, 1 is the lowest",
+      details:"Details", detailsTitle:"Product details", chooseOpt:"Choose color / style", add:"Add to cart", bannerSub:"Shop now", shopNow:"Shop now", specs:"Specifications", reviews:"Reviews", noReviews:"No reviews yet", addReview:"Add review", readMore:"Read more", readLess:"Show less", sendReview:"Submit review", reviewOptional:"Write your comment (optional)", reviewPick:"Pick a star rating first", cancelBtn:"Cancel", you:"You", choosePlaceholder:"Please choose", outOfStock:"Out of stock", someOut:"Some items in your cart are out of stock. Remove them to continue to checkout", scaleHint:"5 is the highest rating, 1 is the lowest",
       qty:"Quantity", cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty", grand:"Total",
       productsVal:"Products", discount:"Discount", shipping:"Delivery fee", shipLater:"Set after choosing address",
       shippingNote:"Delivery fee is added once you choose an address", coupon:"Have a discount code?", apply:"Apply",
@@ -471,7 +471,8 @@
   const cartCount = () => cartLines().reduce((s, l) => s + l.qty, 0);
   // المنتجات غير المحددة في السلة تبقى فيها لكن ما تدخل في الحساب
   const isSelected = (l) => !(state.unsel || []).includes(l.vid);
-  const selLines = () => cartLines().filter(isSelected);
+  const selLines = () => cartLines().filter(l => isSelected(l) && !l.v.unavailable);
+  const hasOutLines = () => cartLines().some(l => l.v.unavailable);
   const subtotalUSD = () => selLines().reduce((s, l) => s + l.v.price * l.qty, 0);
   const discountUSD = () => subtotalUSD() * (COUPONS[state.coupon] || 0);
 
@@ -1248,9 +1249,14 @@
   function viewShop() {
     return `<div id="shopBody">${shopBodyHTML()}</div>`;
   }
+  // التذييل الكامل في الصفحة الرئيسية فقط (بدون فئة ولا بحث)، وبقية العروض سطر الحقوق
+  function syncFooter() {
+    if (window.ShowbizCore && ShowbizCore.setFooter) ShowbizCore.setFooter(view === "shop" && !filt.cat && !filt.q);
+  }
   function refreshShop() {
     const b = document.getElementById("shopBody");
     if (b) b.innerHTML = shopBodyHTML();
+    syncFooter();
   }
   function setCat(c) {
     filt.cat = c || null;
@@ -1326,22 +1332,24 @@
         <div class="cinfo">
           <div class="pname">${esc(l.p.nameEn)}</div>
           ${l.v.key ? `<div class="muted">${esc(variantLabel(l.v))}</div>` : ""}
-          <div class="price">${fmt(localPrice(l.v.price))}</div>
+          ${l.v.unavailable ? `<div class="sd-oos">${t("outOfStock")}</div>` : `<div class="price">${fmt(localPrice(l.v.price))}</div>
           <div class="qtyctl">
             <button class="ghost" data-action="dec" data-vid="${esc(l.vid)}">−</button>
             ${l.qty}
             <button class="ghost" data-action="inc" data-vid="${esc(l.vid)}">+</button>
-          </div>
+          </div>`}
         </div>
         <button class="ghost" data-action="rm" data-vid="${esc(l.vid)}">✕</button>
       </div>`).join("");
     const disc = discountUSD();
+    const outN = lines.filter(l => l.v.unavailable).length;
     const couponLine = state.coupon
       ? `<div class="row"><span class="muted">${esc(state.coupon)}</span><button class="linkbtn" data-action="removeCoupon">${t("removeCoupon")}</button></div>`
       : `<div class="couponrow"><input id="cpn" placeholder="${t("coupon")}"><button class="ghost" data-action="applyCoupon">${t("apply")}</button></div>
          <p id="cpnMsg" class="muted"></p>`;
     return `
       <h3>${t("cartTitle")}</h3>
+      ${outN ? `<div class="sd-alert">${t("someOut")}</div>` : ""}
       <div class="card pad">${rows}</div>
       <div class="card pad">
         ${couponLine}
@@ -1352,7 +1360,7 @@
       </div>
       <div style="display:flex;gap:8px">
         <button class="ghost" data-action="shop" style="flex:1">${t("keepShopping")}</button>
-        <button data-action="checkout" style="flex:1">${t("checkout")}</button>
+        <button data-action="checkout" style="flex:1" ${outN ? "disabled" : ""}>${t("checkout")}</button>
       </div>`;
   }
   function viewCheckout() {
@@ -1431,7 +1439,7 @@
       localStorage.setItem("showbiz_cart_snap", JSON.stringify(cartLines().map(l => ({
         vid: l.vid,
         p: { pid: l.p.pid, nameEn: l.p.nameEn, nameAr: l.p.nameAr || "", image: l.p.image, weightG: l.p.weightG, dimsCm: l.p.dimsCm, choose: !!l.p.choose },
-        v: { vid: l.vid, key: l.v.key, keyAr: l.v.keyAr || "", sku: l.v.sku, price: l.v.price, image: l.v.image, weightG: l.v.weightG, dimsCm: l.v.dimsCm }
+        v: { vid: l.vid, key: l.v.key, keyAr: l.v.keyAr || "", sku: l.v.sku, price: l.v.price, image: l.v.image, weightG: l.v.weightG, dimsCm: l.v.dimsCm, unavailable: !!l.v.unavailable }
       }))));
     } catch (e) {}
   }
@@ -1472,6 +1480,7 @@
     else if (view === "done") html += `<p>${lastSaveOk ? t("done") : t("doneLocal")}</p><button data-action="shop">${t("back")}</button>`;
     else html += viewShop();
     document.getElementById("view").innerHTML = html;
+    syncFooter();
 
     if (view === "checkout") document.getElementById("summary").innerHTML = summaryHTML();
     fillCountrySelects();
@@ -1618,7 +1627,7 @@
     if (a === "shop") { go("shop", ""); return; }
     if (a === "login") { goLogin(); return; }
     if (a === "checkout") {
-      if (!cartCount()) return;
+      if (!cartCount() || hasOutLines()) return;
       location.href = "cart.html#checkout"; return;
     }
     if (a === "addAddr") {

@@ -128,12 +128,12 @@
       pay: "Payment methods", home: "Home", orders: "My orders", addr: "My addresses", acct: "My account", terms: "Terms and conditions",
       cod: "Cash on delivery", card: "Credit card", copy: "All rights reserved" }
   };
-  function mountFooter() {
-    if (document.getElementById("siteFooter")) return;
+  function buildFooter(full) {
+    var old = document.getElementById("siteFooter"); if (old) old.parentNode.removeChild(old);
     var s = readJSON("showbiz_state", {});
     var L = FT[s.lang === "en" ? "en" : "ar"];
-    // صفحات الشراء (data-lite): سطر نصي بسيط بدل التذييل الكامل
-    if (!document.getElementById("siteName") || (document.body && document.body.hasAttribute("data-lite"))) {
+    // التذييل الكامل في الصفحة الرئيسية فقط، وكل الباقي سطر حقوق واحد
+    if (!full) {
       var line = document.createElement("p");
       line.id = "siteFooter"; line.className = "copyline";
       line.textContent = copyright(s.lang);
@@ -156,6 +156,10 @@
         '<div class="sfoot-copy">© 2026 Showbiz · ' + L.copy + "</div>" +
       "</div>";
     document.body.appendChild(f);
+  }
+  function mountFooter() {
+    if (document.getElementById("siteFooter")) return;
+    buildFooter(!!document.getElementById("siteName") && !(document.body && document.body.hasAttribute("data-lite")));
   }
   // زر العودة للأعلى: شفاف في الزاوية، حلقته تمتلئ مع النزول وتكتمل عند النهاية
   function mountToTop() {
@@ -327,6 +331,7 @@
   })();
 
   window.ShowbizCore = {
+    setFooter: function (full) { buildFooter(!!full); },
     theme: themeNow,
     setTheme: setTheme,
     copyright: copyright,

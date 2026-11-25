@@ -13,6 +13,7 @@
 
   var L = {
     ar: {
+      outOfStock: "غير متوفر", someOut: "بعض المنتجات في سلتك غير متوفرة، أزلها للمتابعة إلى الدفع",
       cart: "السلة", close: "إغلاق", keep: "متابعة التسوق", checkout: "إتمام الطلب", empty: "سلتك فارغة حالياً",
       all: "الكل", selHint: "المنتجات غير المحددة تبقى في السلة ولا تنحذف",
       remaining: "باقي {x} للتوصيل المجاني", freeDone: "وصلت للتوصيل المجاني",
@@ -26,6 +27,7 @@
       mayLike: "منتجات قد تعجبك", bhd: "د.ب", choose: "اختر اللون والمقاس", fromPrice: "يبدأ من"
     },
     en: {
+      outOfStock: "Out of stock", someOut: "Some items in your cart are out of stock. Remove them to continue to checkout",
       cart: "Cart", close: "Close", keep: "Keep shopping", checkout: "Checkout", empty: "Your cart is empty",
       all: "All", selHint: "Unselected items stay in your cart",
       remaining: "{x} more for free delivery", freeDone: "You reached free delivery",
@@ -66,7 +68,7 @@
     return {
       vid: v.vid,
       p: { pid: String(p.pid), nameEn: p.nameEn, nameAr: p.nameAr || "", image: p.image, weightG: p.weightG, dimsCm: p.dimsCm, categoryName: p.categoryName || null, stock: p.stock == null ? null : p.stock, choose: !!p.choose },
-      v: { vid: v.vid, key: v.key, keyAr: v.keyAr || "", sku: v.sku, price: v.price, image: v.image, weightG: v.weightG, dimsCm: v.dimsCm }
+      v: { vid: v.vid, key: v.key, keyAr: v.keyAr || "", sku: v.sku, price: v.price, image: v.image, weightG: v.weightG, dimsCm: v.dimsCm, unavailable: !!v.unavailable }
     };
   }
   var catCache = null;
@@ -340,24 +342,33 @@
     document.getElementById("sd").classList.toggle("hidden", !on);
   }
   // المود: "cart" للسلة، أو "wish" للمفضلة
-  function open(m) { ensureDom(); mode = m === "wish" ? "wish" : "cart"; openState = true; drawRender(); show(true); if (mode === "cart") maybeCelebrate(); }
+  function open(m) {
+    ensureDom(); mode = m === "wish" ? "wish" : "cart"; openState = true; drawRender(); show(true);
+    if (mode === "cart") {
+      // تنبيه عند فتح السلة إذا فيها منتج غير متوفر
+      if (st().cart.some(function (x) { var f = typeof findVariant === "function" ? findVariant(x.vid) : null; return f && f.v && f.v.unavailable; })) flash(tr("someOut"));
+      maybeCelebrate();
+    }
+  }
   function close() { openState = false; if (document.getElementById("sd")) show(false); }
 
   function heartSVG() { return ShowbizCore.icon("heart"); }
   function trashSVG() { return ShowbizCore.icon("trash"); }
 
   function lineHTML(l) {
+    var out = !!l.v.unavailable;
     var on = (st().unsel || []).indexOf(l.vid) < 0;
     var wished = wishedPids().indexOf(String(l.p.pid)) >= 0;
-    return '<div class="sd-line">' +
-      '<input type="checkbox" class="sd-chk" data-ui="sel" data-vid="' + esc(l.vid) + '" ' + (on ? "checked" : "") + '>' +
+    return '<div class="sd-line' + (out ? ' sd-out' : '') + '">' +
+      (out ? '<span class="sd-chk-off" aria-hidden="true"></span>'
+           : '<input type="checkbox" class="sd-chk" data-ui="sel" data-vid="' + esc(l.vid) + '" ' + (on ? "checked" : "") + '>') +
       '<img src="' + esc(l.v.image || l.p.image) + '" alt="">' +
       '<div class="sd-info"><div class="sd-name">' + esc(pName(l.p)) + '</div>' +
       (l.v.key ? '<div class="sd-var">' + esc(variantLabel(l.v)) + '</div>' : '') +
-      '<div class="sd-price">' + fmt(localPrice(l.v.price)) + '</div>' +
-      '<div class="sd-days">' + CFG.days[lang()] + '</div>' +
+      (out ? '<div class="sd-oos">' + tr("outOfStock") + '</div>'
+           : '<div class="sd-price">' + fmt(localPrice(l.v.price)) + '</div><div class="sd-days">' + CFG.days[lang()] + '</div>') +
       '<div class="sd-ctl">' +
-        '<span class="sd-qty"><button data-ui="dec" data-vid="' + esc(l.vid) + '" aria-label="−">−</button><span>' + l.qty + '</span><button data-ui="inc" data-vid="' + esc(l.vid) + '" aria-label="+">+</button></span>' +
+        (out ? '' : '<span class="sd-qty"><button data-ui="dec" data-vid="' + esc(l.vid) + '" aria-label="−">−</button><span>' + l.qty + '</span><button data-ui="inc" data-vid="' + esc(l.vid) + '" aria-label="+">+</button></span>') +
         '<button class="sd-ic sd-heart ' + (wished ? "on" : "") + '" data-ui="wish" data-pid="' + esc(l.p.pid) + '" aria-label="' + tr("wish") + '">' + heartSVG() + '</button>' +
         '<button class="sd-ic" data-ui="rm" data-vid="' + esc(l.vid) + '" aria-label="' + tr("remove") + '">' + trashSVG() + '</button>' +
       '</div></div></div>';
@@ -423,18 +434,21 @@
       '<button class="sd-link" data-ui="close">' + tr("keep") + '</button>' +
       '<button class="sd-x" data-ui="close" aria-label="' + tr("close") + '">✕</button>';
     var body, foot = "";
+    var outN = lines.filter(function (l) { return l.v.unavailable; }).length;
     if (!lines.length) {
       body = '<p class="sd-empty">' + tr("empty") + '</p>' + recentBlock();
     } else {
       var allOn = lines.every(function (l) { return sel.indexOf(l.vid) < 0; });
-      var selCount = lines.filter(function (l) { return sel.indexOf(l.vid) < 0; }).length;
-      body = progressHTML() +
+      var selCount = lines.filter(function (l) { return sel.indexOf(l.vid) < 0 && !l.v.unavailable; }).length;
+      var canGo = selCount > 0 && !outN;
+      body = (outN ? '<div class="sd-alert">' + tr("someOut") + '</div>' : '') + progressHTML() +
         '<label class="sd-all"><input type="checkbox" data-ui="selAll" ' + (allOn ? "checked" : "") + '> ' + tr("all") + ' (' + lines.length + ')</label>' +
         '<p class="sd-hint">' + tr("selHint") + '</p>' +
         lines.map(lineHTML).join("") + couponHTML() + totalsHTML();
       var tv = totalsValue();
       foot = '<div class="sd-tot"><span class="sd-hint">' + tr("grand") + '</span><strong>' + fmt(tv.total) + '</strong></div>' +
-        '<a class="sd-go' + (selCount ? "" : " dis") + '" href="cart.html">' + tr("checkout") + '</a>';
+        (canGo ? '<a class="sd-go" href="cart.html">' + tr("checkout") + '</a>'
+               : '<span class="sd-go dis" aria-disabled="true">' + tr("checkout") + '</span>');
     }
     document.getElementById("sdBody").innerHTML = body;
     document.getElementById("sdFoot").innerHTML = foot;
@@ -553,6 +567,14 @@
   ].join("\n");
   // أنماط الهيدر المشترك (الصفحة الرئيسية وصفحة السلة)
   CSS += "\n" + "/* ===== v37: هيدر جديد، شبكة بدون سكرول يمين ويسار، أسماء بسطرين ===== */\n.hd { position:sticky; top:0; z-index:5; background:rgba(13,23,40,.97); border-bottom:1px solid var(--line); padding:10px 16px; }\n.hd-row { display:flex; align-items:center; gap:10px; max-width:1200px; margin:0 auto; flex-wrap:wrap; }\n.hd-acts { display:flex; align-items:center; gap:4px; margin-inline-start:auto; }\n.logo { font-weight:800; font-size:20px; color:var(--orange); text-decoration:none; white-space:nowrap; }\n.searchbox { position:relative; flex:1; min-width:0; }\n.searchbox input { margin:0; border-radius:999px; padding:10px 14px 10px 40px; height:42px; }\nhtml[dir=rtl] .searchbox input { padding:10px 40px 10px 14px; }\n.s-ico { position:absolute; top:50%; inset-inline-start:14px; transform:translateY(-50%); color:var(--muted); pointer-events:none; display:inline-flex; z-index:1; }\n.s-ico .ico { width:18px; height:18px; }\n.ic-btn { position:relative; width:42px; height:42px; display:inline-flex; align-items:center; justify-content:center; background:transparent; color:var(--fg); border:0; border-radius:12px; padding:0; flex-shrink:0; }\n.ic-btn:hover { background:var(--card2); }\n.ic-btn .ico { width:22px; height:22px; }\n.cartn { position:absolute; top:-6px; inset-inline-end:-6px; min-width:18px; height:18px; border-radius:999px; background:var(--orange); color:#111; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; padding:0 4px; }\n.cartn[hidden] { display:none !important; }\n.pref-btn { padding:9px 12px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--fg); font-size:13px; font-weight:700; white-space:nowrap; cursor:pointer; font-family:inherit; }\n.hd-row2 { display:flex; gap:8px; align-items:center; margin-top:10px; max-width:1200px; margin-inline:auto; flex-wrap:wrap; }\n.hd-row2 select { width:auto; margin:0; }\n.menubtn { display:none; }\n@media (max-width:700px) {\n  .hd { padding:8px 10px; }\n  .menubtn { display:inline-flex; }\n  .catdd { display:none; }\n  .logo { font-size:18px; }\n  .hd-acts { gap:0; }\n  .ic-btn { width:38px; height:38px; }\n  .pref-btn { padding:7px 9px; font-size:12px; }\n}\n.heartbtn { position:absolute; top:10px; inset-inline-end:10px; z-index:2; width:36px; height:36px; border-radius:50%; border:0; background:rgba(255,255,255,.92); color:#333; display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.15); }\n.heartbtn .ico { width:18px; height:18px; }\n.heartbtn.on { color:#e5484d; }\n.heartbtn.on svg { fill:#e5484d; }\n.pref-lbl { font-size:13px; color:var(--muted); margin:14px 0 8px; }\n.pref-langs { display:flex; gap:8px; }\n.pref-langs button { flex:1; }\n.pref-langs button.on { border-color:var(--orange); color:var(--orange); }\n.pref-list { display:flex; flex-direction:column; gap:6px; max-height:52vh; overflow-y:auto; }\n.pref-item { display:flex; justify-content:space-between; align-items:center; gap:10px; width:100%; text-align:start; background:transparent; color:var(--fg); border:1px solid var(--line); border-radius:12px; padding:11px 12px; font-weight:400; font-family:inherit; }\n.pref-item strong { font-weight:700; color:var(--muted); font-size:13px; white-space:nowrap; }\n.pref-item.on { border-color:var(--orange); }\n.pimg { height:auto; aspect-ratio:1 / 1; }\n.pimg img { width:100%; height:100%; object-fit:cover; }\n.grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }\n@media (min-width:860px) { .grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; } }\n.card { min-width:0; }\n.pbody { min-width:0; }\n.pname { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; min-height:3em; }\n.price { font-size:15px; }\n.hov button { padding:8px; font-size:12px; }\n";
+CSS += "\n" + [
+  "/* ===== v34: منتجات غير متوفرة في السلة ===== */",
+  ".sd-out{opacity:.5;filter:grayscale(.6)}",
+  ".sd-oos{display:inline-block;margin-top:4px;padding:3px 10px;border-radius:999px;background:#ff5d6c;color:#fff;font-size:12px;font-weight:800}",
+  ".sd-chk-off{width:18px;height:18px;flex-shrink:0;border:2px solid #3a4a68;border-radius:4px;margin-top:4px;opacity:.5}",
+  ".sd-alert{background:#3b1d24;border:1px solid #ff5d6c;color:#ffd0d6;border-radius:12px;padding:10px 12px;font-size:13px;font-weight:700;margin-bottom:10px}",
+  ".sd-go.dis{opacity:.45;pointer-events:none}"
+].join("\n");
   // أنماط مشتركة لصفحة السلة والمودالات (v41)
   CSS += "\n" + ".req-star{color:#ff5d6c}\n.ui-req::after{content:' *';color:#ff5d6c;font-weight:800}\n";
   // أنماط v42: شريط الإعلان، ترتيب الهيدر، بطاقات بأزرار ثابتة، إعلانات متعددة، كود الخصم
