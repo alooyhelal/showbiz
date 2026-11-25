@@ -159,7 +159,8 @@
   }
   function mountFooter() {
     if (document.getElementById("siteFooter")) return;
-    buildFooter(!!document.getElementById("siteName") && !(document.body && document.body.hasAttribute("data-lite")));
+    // الكامل فقط في الصفحة الرئيسية (فيها حاوية المتجر)، وبقية الصفحات سطر الحقوق
+    buildFooter(!!document.getElementById("shopBody") && !(document.body && document.body.hasAttribute("data-lite")));
   }
   // زر العودة للأعلى: شفاف في الزاوية، حلقته تمتلئ مع النزول وتكتمل عند النهاية
   function mountToTop() {

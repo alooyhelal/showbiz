@@ -1011,9 +1011,8 @@
     document.getElementById("gate").classList.toggle("hidden", state.seen);
   }
   function renderBuild() {
-    const why = loadMsg ? ` · ${loadMsg.slice(0, 120)}` : "";
-    document.getElementById("buildInfo").textContent =
-      `${t("buildLabel")}: ${BUILD.version} · ${t("updatedLabel")}: ${BUILD.updated} · products: ${products.length}/${rawCount} · addr: ${allAddresses().length} · user: ${me ? me.id.slice(0, 6) : "none"}${why}`;
+    // سطر النسخة والتاريخ فقط (بدون معلومات التشخيص)
+    document.getElementById("buildInfo").textContent = `${t("buildLabel")}: ${BUILD.version} · ${t("updatedLabel")}: ${BUILD.updated}`;
   }
   // ===== المتجر: الأقسام (رئيسية وفرعية) والفلاتر والبحث =====
   // مسار المنتج: من catPath (الوهمي) أو من categoryName (الحقيقي، قسم واحد)
