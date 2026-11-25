@@ -231,6 +231,7 @@
   function applyThemeMode(m) {
     document.documentElement.setAttribute("data-theme", m);
     try { sessionStorage.setItem(THEME_KEY, m); } catch (x) {}
+    try { document.dispatchEvent(new Event("sbthemechange")); } catch (x) {}
   }
   (function initTheme() {
     var st = document.createElement("style");
@@ -242,20 +243,49 @@
     document.head.appendChild(st);
     applyThemeMode(navKind() === "reload" ? "dark" : storedMode());
   })();
-  // الدائرة: تنكمش من الشاشة لداخل الزر (عكس الانتقال السابق)
+  // انتقال المظهر: الفاتح يطلع من داخل زر الشمس وينتشر على الشاشة.
+  // الداكن: الفاتح ينكمش من الأسفل إلى الأعلى ويدخل داخل زر القمر.
   function setTheme(next, fromEl) {
     var apply = function () { applyThemeMode(next); };
     var r = fromEl && fromEl.getBoundingClientRect ? fromEl.getBoundingClientRect() : null;
     if (!document.startViewTransition || !r || reduceMotionT()) { apply(); return; }
+    var W = window.innerWidth, H = window.innerHeight;
     var x = r.left + r.width / 2, y = r.top + r.height / 2;
-    var R = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+    var R = Math.hypot(Math.max(x, W - x), Math.max(y, H - y));
     var vt = document.startViewTransition(apply);
     vt.ready.then(function () {
-      document.documentElement.animate(
-        { clipPath: ["circle(" + R + "px at " + x + "px " + y + "px)", "circle(0px at " + x + "px " + y + "px)"] },
-        { duration: 550, easing: "ease-in-out", pseudoElement: "::view-transition-old(root)" });
+      var root = document.documentElement;
+      if (next === "light") {
+        root.animate(
+          { clipPath: ["circle(0px at " + x + "px " + y + "px)", "circle(" + R + "px at " + x + "px " + y + "px)"] },
+          { duration: 600, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" });
+      } else {
+        var by = Math.min(H, y + 18), ty = Math.max(0, y - 18);
+        var lf = Math.max(0, x - 18), rt = Math.max(0, W - (x + 18));
+        root.animate([
+          { clipPath: "inset(0px 0px 0px 0px round 0px)", offset: 0 },
+          { clipPath: "inset(0px 0px " + (H - by) + "px 0px round 0px)", offset: 0.5 },
+          { clipPath: "inset(" + ty + "px " + rt + "px " + (H - by) + "px " + lf + "px round 18px)", offset: 1 }
+        ], { duration: 650, easing: "ease-in-out", pseudoElement: "::view-transition-old(root)" });
+      }
     }).catch(function () {});
   }
+
+  // هيكل تحميل (Skeleton) يُستخدم في صفحات الحساب والطلبات والعناوين وحذف الحساب والسلة
+  (function initSkeleton() {
+    var st = document.createElement("style");
+    st.id = "sbSkel";
+    st.textContent =
+      ".sk-b{background:linear-gradient(90deg,var(--card2,#1d2a44) 25%,var(--line,#26334d) 50%,var(--card2,#1d2a44) 75%);background-size:200% 100%;animation:sbSk 1.3s linear infinite;border-radius:10px}" +
+      ".sk-title{height:26px;width:55%;margin:6px 0 14px}" +
+      ".sk-line{height:12px;width:35%;margin:14px 0 8px}" +
+      ".sk-input{height:44px;width:100%;margin-bottom:6px}" +
+      ".sk-row{height:84px;width:100%;margin-bottom:10px;border-radius:16px}" +
+      ".sk-panel{border:1px solid var(--line,#26334d);border-radius:16px;padding:14px;margin-bottom:12px;background:var(--card,#162033)}" +
+      "@keyframes sbSk{from{background-position:200% 0}to{background-position:-200% 0}}" +
+      "@media (prefers-reduced-motion:reduce){.sk-b{animation:none}}";
+    document.head.appendChild(st);
+  })();
 
   window.ShowbizCore = {
     theme: themeNow,
