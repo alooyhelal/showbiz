@@ -60,10 +60,23 @@
   .msg.info { color:var(--info); background:var(--card2); border:1px solid var(--line); }
   .msg.ok { color:var(--ok); background:var(--okbg); border:1px solid var(--okline); }
   .toast { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--card); color:var(--ok); border:1px solid var(--okline); padding:16px 26px; border-radius:14px; font-size:17px; font-weight:700; box-shadow:0 12px 30px rgba(0,0,0,.4); z-index:50; max-width:90vw; text-align:center; }
+  /* v42: حقل الجوال: الرمز والرقم في سطر واحد، ومؤشر قوة كلمة المرور، وعداد إعادة الإرسال، ورسالة النجاح */
+  .phonerow .fsel-wrap { width:136px; flex:0 0 auto; }
+  .phonerow .fsel-wrap select { width:100% !important; }
+  .strength { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:8px 0 0; direction:ltr; }
+  .strength i { height:6px; border-radius:4px; background:var(--line); transition:background .2s; }
+  .strength i.on { background:#2f8f5f; }
+  .hint { font-size:12px; color:var(--muted); margin-top:6px; line-height:1.6; }
+  .resend-cd { opacity:.6; cursor:default; text-decoration:none; }
+  .okpop { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:min(88vw,340px); background:var(--card); border:1px solid var(--okline); border-radius:20px; box-shadow:0 18px 40px rgba(0,0,0,.45); padding:22px 20px; text-align:center; z-index:50; animation:okIn .35s cubic-bezier(.22,.8,.2,1) both; }
+  .okpop .ok-ic { width:52px; height:52px; margin:0 auto 10px; border-radius:50%; background:#2f8f5f; color:#fff; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:800; }
+  .okpop .ok-t { color:var(--fg); font-weight:800; font-size:17px; line-height:1.6; }
+  @keyframes okIn { from { opacity:0; transform:translate(-50%,-46%) scale(.96); } to { opacity:1; transform:translate(-50%,-50%) scale(1); } }
   .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:18px; direction:ltr; }
 </style>
 <script src="version.js"></script>
 <script src="shared.js"></script>
+<script src="flags.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -100,7 +113,8 @@
       emailBad:"البريد الإلكتروني غير صحيح، لأنه لم يتم كتابته بشكل صحيح", phoneBad:"رقم الجوال غير صحيح",
       first:"الاسم الأول", last:"الاسم الأخير", namesReq:"الاسم الأول والأخير مطلوبين", country:"الدولة",
       password:"كلمة المرور", confirm:"تأكيد كلمة المرور", show:"إظهار كلمة المرور", hide:"إخفاء كلمة المرور",
-      passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر", passMismatch:"كلمتا المرور غير متطابقتين",
+      passShort:"كلمة المرور لازم تكون 8 أحرف أو أكثر", passWeak:"كلمة المرور ضعيفة، لازم تحتوي حرف كبير وحرف صغير ورقم ورمز",
+      phoneLen:(n)=>`رقم الجوال لازم يكون ${n} أرقام بالضبط`, cdIn:(s)=>`إعادة الإرسال بعد ${s}`, pwHint:"حرف كبير، حرف صغير، رقم، ورمز (مثل @)", passMismatch:"كلمتا المرور غير متطابقتين",
       create:"إنشاء الحساب", creating:"جاري إنشاء الحساب...", created:"تم إنشاء الحساب بنجاح",
       sessionLost:"انتهت الجلسة، ابدأ من خطوة البريد من جديد", cancel:"إلغاء", haveAcc:"عندي حساب، سجّل دخول",
       rateLimit:"محاولات كثيرة، انتظر قليلًا ثم حاول مرة ثانية", switchLabel:"English" },
@@ -113,7 +127,8 @@
       emailBad:"The email is not valid, it was not typed correctly", phoneBad:"Invalid mobile number",
       first:"First name", last:"Last name", namesReq:"First and last name are required", country:"Country",
       password:"Password", confirm:"Confirm password", show:"Show password", hide:"Hide password",
-      passShort:"Password must be 8 characters or more", passMismatch:"Passwords do not match",
+      passShort:"Password must be 8 characters or more", passWeak:"Password is weak: use an uppercase letter, a lowercase letter, a number and a symbol",
+      phoneLen:(n)=>`Mobile number must be exactly ${n} digits`, cdIn:(s)=>`Resend in ${s}`, pwHint:"Uppercase, lowercase, number and a symbol (like @)", passMismatch:"Passwords do not match",
       create:"Create account", creating:"Creating account...", created:"Account created successfully",
       sessionLost:"The session has ended, start again from the email step", cancel:"Cancel", haveAcc:"I have an account, log in",
       rateLimit:"Too many attempts, wait a moment and try again", switchLabel:"العربية" }
@@ -133,6 +148,15 @@
     if (COUNTRIES.some(c => c.code === st.country)) preferredCountry = st.country;
   } catch (e) {}
   const t = () => T[lang];
+  // v42: طول الجوال والمثال حسب الدولة، وقوة كلمة المرور
+  const codeByDial = (d) => Object.keys(ShowbizFlags.DIAL).find(c => ShowbizFlags.DIAL[c] === d) || "BH";
+  const lenByDial = (d) => ShowbizFlags.len(codeByDial(d));
+  const EXAMPLE = { BH: "36123456", SA: "512345678", AE: "501234567", KW: "51234567", QA: "33123456", OM: "91234567" };
+  const exampleByDial = (d) => EXAMPLE[codeByDial(d)] || "";
+  const pwChecks = (p) => [/[A-Z]/.test(p), /\d/.test(p), /[a-z]/.test(p), /[^A-Za-z0-9]/.test(p)];
+  const pwStrong = (p) => p.length >= 8 && pwChecks(p).every(Boolean);
+  const cool = { email: 0, sms: 0 };   // نهاية عداد إعادة الإرسال (ميلي ثانية)
+  const COOL_MS = 90000;               // دقيقة ونصف
 
   const S = {
     sEmail:"", sCodeSent:false, sVerified:false, sLoading:false, sMsg:null,
@@ -157,12 +181,26 @@
     n.className = "msg " + kind + (msg ? "" : " hidden");
     n.textContent = msg || "";
   }
+  // رسالة نجاح بتصميم موحد (داكن/فاتح حسب الصفحة)
   function toast(msg) {
+    document.querySelectorAll(".okpop").forEach(x => x.remove());
     const d = document.createElement("div");
-    d.className = "toast"; d.textContent = msg;
+    d.className = "okpop"; d.setAttribute("role", "status");
+    d.innerHTML = `<div class="ok-ic">✓</div><div class="ok-t"></div>`;
+    d.querySelector(".ok-t").textContent = msg;
     document.body.appendChild(d);
-    setTimeout(() => d.remove(), TOAST_MS);
+    setTimeout(() => d.remove(), TOAST_MS + 1200);
   }
+  // عداد إعادة الإرسال: يحدّث زر إعادة الإرسال كل ثانية
+  function tickCooldown() {
+    document.querySelectorAll("[data-resend]").forEach(b => {
+      const p = b.dataset.resend, left = Math.max(0, Math.ceil(((p === "email" ? cool.email : cool.sms) - Date.now()) / 1000));
+      b.disabled = left > 0;
+      b.classList.toggle("resend-cd", left > 0);
+      b.textContent = left > 0 ? t().cdIn(`${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`) : t().resend;
+    });
+  }
+  setInterval(tickCooldown, 1000);
   // الرسالة الحقيقية من Supabase، عدا الحالات المعروفة
   function errMsg(e) {
     const m = String(e?.message || e || "");
@@ -170,7 +208,8 @@
     const extra = [e?.code, e?.status].filter(Boolean).join(" · ");
     return extra ? `${m} (${extra})` : m;
   }
-  const codeErr = (e) => /expired/i.test(String(e?.message || e || "")) ? t().codeExpired : t().codeWrong;
+  // منتهي فقط إذا Supabase رجّع كود انتهاء الرمز؛ أي رمز غلط غير ذلك يظهر "غير صحيح"
+  const codeErr = (e) => (e && e.code === "otp_expired") ? t().codeExpired : t().codeWrong;
   // رسالة تحت خانات الرمز: تتحدث مباشرة بدون ما تمسح الخانات
   function showMsg(p, text, kind) {
     S[p === "email" ? "sMsg" : "pMsg"] = text ? { t: text, k: kind } : null;
@@ -195,7 +234,7 @@
 
   function codeBlock(p) {
     const addr = p === "email" ? S.sEmail : S.pFull;
-    const boxes = [0,1,2,3,4,5].map(i => `<input class="obox" inputmode="numeric" autocomplete="one-time-code" maxlength="1" data-otp="${p}" data-i="${i}" aria-label="${i + 1}">`).join("");
+    const boxes = [0,1,2,3,4,5].map(i => `<input class="obox" inputmode="numeric" autocomplete="one-time-code" maxlength="1" placeholder="${Math.floor(1 + Math.random() * 9)}" data-otp="${p}" data-i="${i}" aria-label="${i + 1}">`).join("");
     const verifyAct = p === "email" ? "verifyEmail" : "verifyPhone";
     const sendAct = p === "email" ? "sendEmailCode" : "sendPhoneCode";
     const changeAct = p === "email" ? "changeEmail" : "changePhone";
@@ -206,7 +245,7 @@
       ${msgHTML(p)}
       <button class="btn btn-main" type="button" data-act="${verifyAct}">${t().verify}</button>
       <div class="linkrow" style="margin-top:6px">
-        <button class="link" type="button" data-act="${sendAct}">${t().resend}</button> ·
+        <button class="link" type="button" data-resend="${p}" data-act="${sendAct}">${t().resend}</button> ·
         <button class="link" type="button" data-act="${changeAct}">${t().change}</button>
       </div>`;
   }
@@ -233,28 +272,31 @@
     else if (S.pVerified) b2 = `<div class="okline"><span dir="ltr">${esc(S.pFull)}</span><button class="link" type="button" data-act="changePhone">${t().change}</button></div>`;
     else if (S.pLoading) b2 = loading(t().sending);
     else if (!S.pCodeSent) {
-      const opts = COUNTRIES.map(c => `<option value="${c.dial}" ${c.dial === S.pDial ? "selected" : ""}>${c.flag} ${c.dial}</option>`).join("");
-      b2 = `<div class="phonerow"><select id="sDial">${opts}</select><input id="sPhone" type="tel" dir="ltr" placeholder="36123456" value="${esc(S.pPhone)}"></div>
+      const opts = COUNTRIES.map(c => `<option value="${c.dial}" ${c.dial === S.pDial ? "selected" : ""}>${c.dial}</option>`).join("");
+      b2 = `<div class="phonerow"><select id="sDial" aria-label="${lang === "ar" ? "رمز الدولة" : "Country code"}">${opts}</select><input id="sPhone" type="tel" dir="ltr" inputmode="numeric" maxlength="${lenByDial(S.pDial)}" placeholder="${exampleByDial(S.pDial)}" value="${esc(S.pPhone)}"></div>
+            <div class="hint">${lang === "ar" ? "اكتب الرقم بدون الرمز" : "Enter the number without the country code"}</div>
             <div class="ferr hidden" id="sPhoneErr"></div>
             ${msgHTML("sms")}
             <button class="btn btn-main" type="button" data-act="sendPhoneCode">${t().sendCode}</button>`;
     } else b2 = codeBlock("sms");
 
-    const countryOpts = COUNTRIES.map(c => `<option value="${c.code}" ${c.code === S.country ? "selected" : ""}>${c.flag} ${lang === "ar" ? c.ar : c.en}</option>`).join("");
+    const countryOpts = COUNTRIES.map(c => `<option value="${c.code}" ${c.code === S.country ? "selected" : ""}>${lang === "ar" ? c.ar : c.en}</option>`).join("");
     const b3 = detailsOpen ? `
         <label for="sFirst" class="req">${t().first}</label>
-        <input id="sFirst" value="${esc(S.first)}">
+        <input id="sFirst" value="${esc(S.first)}" placeholder="Showbiz">
         <div class="ferr hidden" id="sFirstErr"></div>
         <label for="sLast" class="req">${t().last}</label>
-        <input id="sLast" value="${esc(S.last)}">
+        <input id="sLast" value="${esc(S.last)}" placeholder="Showbiz">
         <div class="ferr hidden" id="sLastErr"></div>
         <label for="sCountry" class="req">${t().country}</label>
         <select id="sCountry">${countryOpts}</select>
         <label for="sPass" class="req">${t().password}</label>
-        <div class="pw"><input id="sPass" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("sPass")}</div>
+        <div class="pw"><input id="sPass" type="password" dir="ltr" autocomplete="new-password" placeholder="••••••••">${eyeBtn("sPass")}</div>
+        <div class="strength" id="sStr" aria-label="${lang === "ar" ? "قوة كلمة المرور" : "Password strength"}">${(() => { const c = pwChecks(S.pw || ""); return c.map(x => `<i class="${x ? "on" : ""}"></i>`).join(""); })()}</div>
+        <div class="hint">${t().pwHint}</div>
         <div class="ferr hidden" id="sPassErr"></div>
         <label for="sPass2" class="req">${t().confirm}</label>
-        <div class="pw"><input id="sPass2" type="password" dir="ltr" autocomplete="new-password">${eyeBtn("sPass2")}</div>
+        <div class="pw"><input id="sPass2" type="password" dir="ltr" autocomplete="new-password" placeholder="••••••••">${eyeBtn("sPass2")}</div>
         <div class="ferr hidden" id="sPass2Err"></div>
         <button class="btn btn-main" type="button" data-act="create">${t().create}</button>`
       : `<p class="sub" style="margin:10px 0 0">${t().locked}</p>`;
@@ -283,10 +325,14 @@
       <div id="notice" class="msg hidden"></div>
       <div class="linkrow"><a class="link" href="login.html">${t().haveAcc}</a></div>
       <div class="row2"><a class="btn btn-line" href="index.html" style="margin-top:0">${t().cancel}</a></div>`;
+    ShowbizFlags.attach($("sDial"));
+    ShowbizFlags.attach($("sCountry"));
+    tickCooldown();
   }
 
   // ===== خطوة البريد =====
   async function sendEmailCode() {
+    if (Date.now() < cool.email) return;
     const el = $("sEmail");
     const email = (el ? el.value : S.sEmail).trim();
     S.sEmail = email;
@@ -299,7 +345,7 @@
       .catch((e) => { if (seq === S.sendSeq) showMsg("email", errMsg(e), "err"); });
     await wait(SEND_MS);
     if (seq !== S.sendSeq) return;
-    S.sLoading = false; S.sCodeSent = true; render(); focusBox("email", 0);
+    S.sLoading = false; S.sCodeSent = true; cool.email = Date.now() + COOL_MS; render(); focusBox("email", 0);
   }
   async function verifyEmail() {
     if (S.busy) return;
@@ -325,11 +371,13 @@
 
   // ===== خطوة الجوال =====
   async function sendPhoneCode() {
+    if (Date.now() < cool.sms) return;
     const el = $("sPhone");
     const digits = digitsOnly(el ? el.value : S.pPhone);
     S.pPhone = digits;
     if (el) S.pDial = $("sDial").value;
-    if (!/^\d{6,12}$/.test(digits)) { if (el) setErr("sPhone", t().phoneBad); return; }
+    const need = lenByDial(S.pDial);
+    if (digits.length !== need) { if (el) setErr("sPhone", t().phoneLen(need)); return; }
     S.pFull = S.pDial + digits;
     const seq = ++S.sendSeq;
     S.pLoading = true; S.pCodeSent = false; S.pMsg = null; render();
@@ -338,7 +386,7 @@
       .catch((e) => { if (seq === S.sendSeq) showMsg("sms", errMsg(e), "err"); });
     await wait(SEND_MS);
     if (seq !== S.sendSeq) return;
-    S.pLoading = false; S.pCodeSent = true; render(); focusBox("sms", 0);
+    S.pLoading = false; S.pCodeSent = true; cool.sms = Date.now() + COOL_MS; render(); focusBox("sms", 0);
   }
   async function verifyPhone() {
     if (S.busy) return;
@@ -366,8 +414,9 @@
     if (!first) setErr("sFirst", t().namesReq);
     if (!last) setErr("sLast", t().namesReq);
     if (p1.length < 8) setErr("sPass", t().passShort);
+    else if (!pwStrong(p1)) setErr("sPass", t().passWeak);
     if (p1 !== p2) setErr("sPass2", t().passMismatch);
-    if (!first || !last || p1.length < 8 || p1 !== p2) return;
+    if (!first || !last || !pwStrong(p1) || p1 !== p2) return;
 
     S.busy = true; setNotice(t().creating, "info");
     try {
@@ -426,12 +475,21 @@
       if (getCode(p).length === 6) (p === "email" ? verifyEmail : verifyPhone)();
       return;
     }
+    if (el.id === "sPass") {
+      S.pw = el.value;
+      const bars = document.querySelectorAll("#sStr i");
+      pwChecks(el.value).forEach((ok, k) => bars[k] && bars[k].classList.toggle("on", ok));
+    }
     const MAP = { sEmail: "sEmail", sPhone: "pPhone", sFirst: "first", sLast: "last" };
     if (MAP[el.id]) S[MAP[el.id]] = el.value;
     if (el.id && $(el.id + "Err")) setErr(el.id, "");
   });
   document.addEventListener("change", (e) => {
-    if (e.target.id === "sDial") S.pDial = e.target.value;
+    if (e.target.id === "sDial") {
+      S.pDial = e.target.value;
+      const ph = $("sPhone");
+      if (ph) { ph.maxLength = lenByDial(S.pDial); ph.placeholder = exampleByDial(S.pDial); }
+    }
     if (e.target.id === "sCountry") S.country = e.target.value;
   });
   document.addEventListener("keydown", (e) => {

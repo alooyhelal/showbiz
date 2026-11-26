@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Showbiz تواصل معنا</title>
+<script src="version.js"></script>
+<script src="shared.js"></script>
+<style>
+  :root { --bg:#0c1628; --card:#14213a; --card2:#1a2b4a; --line:#2c4168; --fg:#f2f5fa; --muted:#9aa8bf; --orange:#f59e4b; --orange-d:#e0852f; color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width:520px; margin:0 auto; padding-block:20px 28px; }
+  .hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .brand { font-weight:800; font-size:18px; color:var(--fg); text-decoration:none; }
+  .brand b { color:var(--orange); }
+  h1 { font-size:22px; margin:0 0 6px; }
+  .sub { color:var(--muted); font-size:14px; line-height:1.7; margin:0 0 18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; margin-bottom:14px; }
+  .card h2 { font-size:16px; margin:0 0 6px; }
+  .card p { margin:0; color:var(--muted); font-size:14px; line-height:1.7; }
+  .act { display:flex; align-items:center; justify-content:space-between; gap:10px; text-decoration:none; color:var(--fg); background:var(--card2); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:10px; font-weight:700; }
+  .act:hover { border-color:var(--orange); }
+  .act small { color:var(--muted); font-weight:400; direction:ltr; }
+  .btn { border:1px solid var(--line); background:transparent; color:var(--fg); border-radius:10px; padding:8px 12px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+  .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:16px; direction:ltr; }
+  .copyline { text-align:center; color:#8a97ab; font-size:12px; margin:24px 0 0; padding-bottom:max(28px, env(safe-area-inset-bottom, 0px)); }
+  .social-row { justify-content:flex-start; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <a class="brand" href="index.html">Show<b>biz</b></a>
+    <button class="btn" id="langBtn" type="button"></button>
+  </div>
+  <h1 id="ttl"></h1>
+  <p class="sub" id="sub"></p>
+
+  <div class="card">
+    <h2 id="cWa"></h2>
+    <p id="cWaTxt"></p>
+    <a class="act" id="aWa" href="#" target="_blank" rel="noopener"><span id="aWaTxt"></span><small>WhatsApp</small></a>
+  </div>
+
+  <div class="card">
+    <h2 id="cSoc"></h2>
+    <p id="cSocTxt"></p>
+    <div id="socBox"></div>
+  </div>
+
+  <div class="ver" id="ver"></div>
+</div>
+<script>
+  const CT = {
+    ar: { title: "تواصل معنا", sub: "نسعد بتواصلك معنا، اختر الطريقة اللي تناسبك.", switch: "English",
+      wa: "واتساب", waTxt: "أرسل لنا رسالة مباشرة على واتساب وبنرد عليك في أقرب وقت.", waBtn: "ابدأ المحادثة",
+      soc: "حساباتنا", socTxt: "تابعنا على مواقع التواصل الاجتماعي." },
+    en: { title: "Contact us", sub: "We are happy to hear from you. Choose the way that suits you.", switch: "العربية",
+      wa: "WhatsApp", waTxt: "Send us a direct message on WhatsApp and we will reply as soon as possible.", waBtn: "Start chat",
+      soc: "Our accounts", socTxt: "Follow us on social media." }
+  };
+  let lang = "ar";
+  try { const st = JSON.parse(localStorage.getItem("showbiz_state") || "{}"); if (st.lang === "en" || st.lang === "ar") lang = st.lang; } catch (e) {}
+  const L = () => CT[lang];
+  function apply() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.title = "Showbiz " + L().title;
+    document.getElementById("ttl").textContent = L().title;
+    document.getElementById("sub").textContent = L().sub;
+    document.getElementById("langBtn").textContent = L().switch;
+    document.getElementById("cWa").textContent = L().wa;
+    document.getElementById("cWaTxt").textContent = L().waTxt;
+    document.getElementById("aWaTxt").textContent = L().waBtn;
+    document.getElementById("cSoc").textContent = L().soc;
+    document.getElementById("cSocTxt").textContent = L().socTxt;
+    document.getElementById("aWa").href = ShowbizCore.SOCIAL.whatsapp;
+    document.getElementById("socBox").innerHTML = ShowbizCore.socialHTML("");
+    document.getElementById("ver").textContent = "v" + (window.SHOWBIZ_BUILD ? window.SHOWBIZ_BUILD.version : "");
+  }
+  document.getElementById("langBtn").addEventListener("click", () => {
+    lang = lang === "ar" ? "en" : "ar";
+    try { const st = JSON.parse(localStorage.getItem("showbiz_state") || "{}"); localStorage.setItem("showbiz_state", JSON.stringify({ ...st, lang })); } catch (e) {}
+    apply();
+  });
+  apply();
+</script>
+<div class="copyline" id="cpy"></div>
+<script>document.getElementById("cpy").textContent = ShowbizCore.copyright(lang);</script>
+</body>
+</html>

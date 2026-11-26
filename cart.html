@@ -6,6 +6,7 @@
 <title>Showbiz — السلة والدفع</title>
 <script src="version.js"></script>
 <script src="shared.js"></script>
+<script src="flags.js"></script>
 <script src="ui.js"></script>
 <style>
   :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; color-scheme:dark; }
@@ -119,8 +120,16 @@
   .paddr .ghostbtn { padding:5px 10px; font-size:12px; border-radius:10px; }
   .pay { display:flex; gap:10px; align-items:center; padding:13px 14px; border:1px solid var(--line); border-radius:14px; margin-bottom:8px; cursor:pointer; background:var(--card2); font-weight:700; }
   .pay.on { border-color:var(--orange); }
-  .terms { display:flex; gap:10px; align-items:flex-start; font-size:14px; line-height:1.7; margin:14px 0 6px; }
-  .terms input { margin-top:5px; }
+  .terms { display:flex; gap:8px; align-items:center; font-size:14px; line-height:1.6; margin:14px 0 6px; border-radius:8px; }
+  .terms input { width:15px; height:15px; margin:0; flex:0 0 auto; accent-color:var(--orange); }
+  .terms.bad { color:#ffb4bf; outline:1px solid #ff6b7a; outline-offset:6px; }
+  .terms-err { color:#ffb4bf; font-size:13px; margin:0 0 6px; line-height:1.6; }
+  .phrow2 { display:flex; gap:8px; direction:ltr; align-items:center; }
+  .phrow2 .fsel-wrap { width:136px; flex:0 0 auto; }
+  .phrow2 .fsel-wrap select { width:100% !important; }
+  .phrow2 input { flex:1; min-width:0; }
+  .applepay { background:#000 !important; color:#fff !important; display:inline-flex; align-items:center; justify-content:center; gap:6px; }
+  .applepay svg { width:16px; height:18px; fill:#fff; }
   .terms a { color:var(--orange); }
   .done { text-align:center; padding:34px 12px; }
   .done .big { font-size:44px; }
@@ -188,7 +197,7 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   const WORKER_URL = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
   const RATE_BHD = 0.377;
-  const COUPONS = { TEST10: 0.10 };
+  const COUPONS = { "10": 0.10 };
   const COUNTRIES = {
     BH: { iso:"BHD", flag:"🇧🇭", dial:"+973", name:{ar:"البحرين", en:"Bahrain"}, sym:{ar:"د.ب", en:"BD"}, dec:3, rate:0.377, base:2.2, free:20 },
     SA: { iso:"SAR", flag:"🇸🇦", dial:"+966", name:{ar:"السعودية", en:"Saudi Arabia"}, sym:{ar:"ر.س", en:"SAR"}, dec:2, rate:3.75, base:3.3, free:300 },
@@ -255,7 +264,7 @@
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
 
   let me = null, profile = null, ready = false, step = "cart", busy = false, doneLocal = false, addrs = [];
-  let payMethod = null, termsOk = false, catalogList = [];
+  let payMethod = null, termsOk = false, termsErr = false, catalogList = [];
   let folds = { cpn: false, note: false };
   let am = null; // حالة نافذة إضافة العنوان
 
@@ -263,7 +272,7 @@
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const digits = (s) => String(s || "").replace(/\D/g, "");
-  const flagImg = (code) => (COUNTRIES[code] ? COUNTRIES[code].flag : "");
+  const flagImg = (code) => ShowbizFlags.img(code, "flagimg");
   const localPrice = (usd) => usd * COUNTRIES[state.country].rate;
   const shipLocal = (bhd) => bhd * (COUNTRIES[state.country].rate / RATE_BHD);
   const pName = (p) => ShowbizUI.pName(p);
@@ -361,15 +370,18 @@
   function amCountries() {
     const s = $("amCountry");
     s.innerHTML = "";
-    getCountries().forEach(c => s.appendChild(new Option(c.flag + " " + (state.lang === "en" ? c.en : c.ar), c.code)));
+    getCountries().forEach(c => s.appendChild(new Option(state.lang === "en" ? c.en : c.ar, c.code)));
     s.value = am.country;
+    ShowbizFlags.attach(s);
   }
   function amPhoneCodes() {
     const s = $("amCc");
     s.innerHTML = "";
-    PHONE_CODES.forEach(p => s.appendChild(new Option(p.flag + " " + p.dial, p.dial)));
+    PHONE_CODES.forEach(p => s.appendChild(new Option(p.dial, p.dial)));
     const c = getCountry(am.country);
     s.value = c && PHONE_CODES.some(p => p.dial === c.dial) ? c.dial : "+973";
+    syncAmPhone();
+    ShowbizFlags.attach(s);
   }
   function amRenderChain() {
     const box = $("amChain");
@@ -424,6 +436,8 @@
       inp.id = "amf_" + f.k;
       inp.value = am.vals[f.k] || "";
       if (f.digits) { inp.className = "ltr"; inp.dir = "ltr"; inp.inputMode = "numeric"; }
+      inp.placeholder = AM_EXAMPLE[f.k] || "";
+      inp.addEventListener("input", () => setFieldErr(inp, ""));
       d.append(lab, inp);
       box.appendChild(d);
     });
@@ -439,17 +453,29 @@
       <div id="amChain" class="grid2"></div>
       <div id="amFields" class="grid2"></div>
       <div class="grid2">
-        <div><label for="amCc" class="req">${t("phoneCode")}</label><select id="amCc" class="ltr"></select></div>
-        <div><label for="amNum" class="req">${t("phone")}</label><input id="amNum" class="ltr" dir="ltr" inputmode="numeric"></div>
-        <div class="full"><label for="amRecip">${t("recipient")}</label><input id="amRecip" maxlength="60"></div>
+        <div class="full"><label for="amNum" class="req">${t("phone")}</label><div class="phrow2"><select id="amCc" class="ltr" aria-label="${t("phoneCode")}"></select><input id="amNum" class="ltr" dir="ltr" inputmode="numeric" autocomplete="tel-national"></div></div>
+        <div class="full"><label for="amRecip">${t("recipient")}</label><input id="amRecip" maxlength="60" placeholder="Showbiz"></div>
       </div>
       <div class="btnrow"><button class="ghostbtn" type="button" data-a="closeAddr">${t("cancel")}</button><button class="primary" type="button" data-a="saveAddr">${t("saveAddr")}</button></div>`;
     $("amCountry").addEventListener("change", () => {
       am.country = $("amCountry").value; am.chosen = []; am.vals = {};
       amPhoneCodes(); amRenderChain(); amRenderFields();
     });
-    $("amNum").addEventListener("input", () => { $("amNum").value = digits($("amNum").value); });
+    $("amNum").addEventListener("input", () => { $("amNum").value = digits($("amNum").value); setFieldErr($("amNum"), ""); });
+    $("amCc").addEventListener("change", syncAmPhone);
+    $("amLabel").placeholder = "المنزل";
     amCountries(); amPhoneCodes(); amRenderChain(); amRenderFields();
+    ShowbizCore.scrollHint($("amBody"));
+  }
+  // حد أرقام الجوال والمثال حسب رمز الدولة
+  const AM_EXAMPLE = { building: "123", street: "1234", complex: "456", flat: "12", makani: "1234567890", pobox: "12345" };
+  const AM_PH = { "+973": "36123456", "+966": "512345678", "+971": "501234567", "+965": "51234567", "+974": "33123456", "+968": "91234567" };
+  function syncAmPhone() {
+    const cc = $("amCc"), n = $("amNum");
+    if (!cc || !n) return;
+    const p = PHONE_CODES.find(x => x.dial === cc.value) || PHONE_CODES[0];
+    n.maxLength = p.len;
+    n.placeholder = AM_PH[p.dial] || "";
   }
   function openAddrModal() {
     if (!me) { goLogin(); return; }
@@ -466,20 +492,25 @@
   function amErr(msg) { $("amMsg").textContent = msg; }
   async function saveAddr() {
     amErr("");
+    ShowbizCore.clearFieldErrs($("amBody"));
+    // نجمع كل الأخطاء أولاً، وتظهر تحت كل حقل ناقص، ثم ينتقل المستخدم لأول حقل فيه خلل
+    let bad = false;
     const label = $("amLabel").value.trim();
-    if (!label) return amErr(t("errLabel"));
+    if (!label) { ShowbizCore.setFieldErr($("amLabel"), t("errLabel")); bad = true; }
     const r = amChainResult();
-    if (!r.ok) return amErr(t("errArea"));
+    if (!r.ok) { ShowbizCore.setFieldErr($("amChain"), t("errArea")); bad = true; }
     const fields = {};
     for (const f of (FIELDS[amFieldsKey()] || [])) {
-      let v = ($("amf_" + f.k).value || "").trim();
+      const inp = $("amf_" + f.k);
+      let v = (inp.value || "").trim();
       if (f.digits) v = digits(v);
-      if (f.req && !v) return amErr(t("errField") + (state.lang === "en" ? f.en : f.ar));
+      if (f.req && !v) { ShowbizCore.setFieldErr(inp, t("errField") + (state.lang === "en" ? f.en : f.ar)); bad = true; }
       fields[f.k] = v;
     }
     const pc = PHONE_CODES.find(p => p.dial === $("amCc").value) || PHONE_CODES[0];
     const num = digits($("amNum").value);
-    if (num.length !== pc.len) return amErr(t("errPhone").replace("{n}", pc.len));
+    if (num.length !== pc.len) { ShowbizCore.setFieldErr($("amNum"), t("errPhone").replace("{n}", pc.len)); bad = true; }
+    if (bad) { ShowbizCore.focusFirstErr($("amBody")); return; }
     const entry = {
       id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
       label: label, country: am.country, path: r.path, fields: fields,
@@ -499,7 +530,13 @@
     const addr = selectedAddr();
     if (!addr) { setStep("address"); return; }
     if (!payMethod) { $("payMsg").textContent = t("needPay"); return; }
-    if (!termsOk) { $("payMsg").textContent = t("needTerms"); return; }
+    if (!termsOk) {
+      // خطأ أحمر تحت الشروط، والصفحة تنقل المستخدم له مباشرة
+      termsErr = true; render();
+      const tb = document.querySelector(".terms");
+      if (tb) tb.scrollIntoView({ block: "center", behavior: "smooth" });
+      return;
+    }
     busy = true;
     const btn = $("sendBtn");
     if (btn) { btn.disabled = true; btn.textContent = t("sending"); }
@@ -542,7 +579,7 @@
     const doneVids = lines.map(l => l.vid);
     state.cart = state.cart.filter(i => !doneVids.includes(i.vid));
     state.addrId = null; state.coupon = null; state.note = ""; save();
-    busy = false; payMethod = null; termsOk = false;
+    busy = false; payMethod = null; termsOk = false; termsErr = false;
     setStep("done");
   }
 
@@ -733,11 +770,14 @@
       <div class="panel">
         <div class="sect-title">${t("payTitle")}</div>
         ${opts}
-        <label class="terms"><input type="checkbox" id="termsCb" ${termsOk ? "checked" : ""}>
+        <label class="terms ${termsErr && !termsOk ? "bad" : ""}"><input type="checkbox" id="termsCb" ${termsOk ? "checked" : ""}>
           <span>${t("termsA")} <a href="terms.html" target="_blank" rel="noopener">${t("termsLink")}</a></span></label>
+        ${termsErr && !termsOk ? `<p class="terms-err" id="termsErr">${t("needTerms")}</p>` : ""}
         ${summaryRows(true)}
         <p id="payMsg" class="errmsg"></p>
-        <button class="primary" id="sendBtn" data-a="send" style="width:100%;margin-top:6px">${t("send")}</button>
+        ${payMethod === "apple_pay"
+          ? `<button class="primary applepay" id="sendBtn" data-a="send" style="width:100%;margin-top:6px"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.8-3-.8-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 6.9 1.2 9.2.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7c1.3 0 2.1-1.1 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7 0 0-2.5-1-2.5-3.9zM14.1 5.5c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.7-1.3z"/></svg><span>Pay</span></button>`
+          : `<button class="primary" id="sendBtn" data-a="send" style="width:100%;margin-top:6px">${t("send")}</button>`}
       </div>`;
   }
 
@@ -812,7 +852,7 @@
       return;
     }
     if (tgt.dataset && tgt.dataset.paym) { payMethod = tgt.dataset.paym; render(); return; }
-    if (tgt.id === "termsCb") { termsOk = tgt.checked; const m = $("payMsg"); if (m) m.textContent = ""; }
+    if (tgt.id === "termsCb") { termsOk = tgt.checked; if (termsOk) termsErr = false; const m = $("payMsg"); if (m) m.textContent = ""; render(); }
   });
 
   // الضغط على عنوان محدد مرة ثانية يلغي تحديده
