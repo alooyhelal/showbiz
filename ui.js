@@ -177,7 +177,6 @@
     i.qty = Math.min(99, Math.max(0, i.qty + d));
     if (i.qty <= 0) s.cart = s.cart.filter(function (x) { return x.vid !== vid; });
     save(); emit();
-    if (openState) maybeCelebrate();
   }
   function removeLine(vid) {
     var s = st();
@@ -268,11 +267,7 @@
   // الاحتفال يطلع عند فتح السلة الجانبية (أو تغيير الكمية داخلها) إذا الطلب محقق للتوصيل المجاني
   function maybeCelebrate() {
     if (!isFree()) return;
-    var done = null;
-    try { done = sessionStorage.getItem("showbiz_celebrated"); } catch (e) {}
-    if (done === "1") return;
     celebrate();
-    try { sessionStorage.setItem("showbiz_celebrated", "1"); } catch (e) {}
   }
   function trustHTML() { return ""; }
 

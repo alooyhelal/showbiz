@@ -57,6 +57,7 @@
 </style>
 <script src="version.js"></script>
 <script src="shared.js"></script>
+<script src="flags.js"></script>
 <style>
   .acct-hd { position:relative; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0 14px; margin-bottom:14px; border-bottom:1px solid var(--line, #2c4168); }
   .acct-brand { position:absolute; left:50%; transform:translateX(-50%); font-weight:800; font-size:18px; color:var(--fg, #f2f5fa); text-decoration:none; }
@@ -108,10 +109,10 @@
       <div id="fields" class="grid" style="margin-top:12px;"></div>
 
       <div class="grid" style="margin-top:12px;">
-        <div><label for="pCc" data-k="phoneCode"></label><select id="pCc" class="ltr"></select></div>
-        <div><label for="pNum" class="req" data-k="phone"></label><input id="pNum" class="ltr" dir="ltr" inputmode="numeric" autocomplete="tel-national"></div>
-        <div class="full"><label for="aRecip" data-k="recipient"></label><input id="aRecip" maxlength="60"></div>
+        <div class="full"><label for="pNum" class="req" data-k="phone"></label><div class="phrow2"><select id="pCc" class="ltr" aria-label="Country code"></select><input id="pNum" class="ltr" dir="ltr" inputmode="numeric" autocomplete="tel-national"></div></div>
+        <div class="full"><label for="aRecip" data-k="recipient"></label><input id="aRecip" maxlength="60" placeholder="Showbiz"></div>
       </div>
+      <style>.phrow2{display:flex;gap:8px;direction:ltr;align-items:center}.phrow2 .fsel-wrap{width:136px;flex:0 0 auto}.phrow2 .fsel-wrap select{width:100% !important}.phrow2 input{flex:1;min-width:0}</style>
 
       <div class="actions">
         <button class="btn btn-line" id="cancelBtn" type="button" data-k="cancel"></button>
@@ -200,14 +201,17 @@
   function fillCountries() {
     const s = $("aCountry");
     s.innerHTML = "";
-    getCountries().forEach(c => s.appendChild(new Option(c.flag + " " + countryName(c), c.code)));
+    getCountries().forEach(c => s.appendChild(new Option(countryName(c), c.code)));
     s.value = curCountry;
+    ShowbizFlags.attach(s);
   }
   function fillPhoneCodes(sel) {
     const s = $("pCc");
     s.innerHTML = "";
-    PHONE_CODES.forEach(p => s.appendChild(new Option(p.flag + " " + p.dial, p.dial)));
+    PHONE_CODES.forEach(p => s.appendChild(new Option(p.dial, p.dial)));
     if (sel) s.value = sel;
+    syncPhoneHint();
+    ShowbizFlags.attach(s);
   }
 
   // ===== القوائم المتسلسلة =====
@@ -257,6 +261,16 @@
   }
 
   // ===== حقول التفاصيل حسب الدولة =====
+  // v42: حد أرقام الجوال والمثال حسب رمز الدولة
+  const PH_EX = { "+973": "36123456", "+966": "512345678", "+971": "501234567", "+965": "51234567", "+974": "33123456", "+968": "91234567" };
+  const FIELD_EX = { building: "123", street: "1234", complex: "456", flat: "12", makani: "1234567890", pobox: "12345" };
+  function syncPhoneHint() {
+    const s = $("pCc"), n = $("pNum");
+    if (!s || !n) return;
+    const p = PHONE_CODES.find(x => x.dial === s.value) || PHONE_CODES[0];
+    n.maxLength = p.len;
+    n.placeholder = PH_EX[p.dial] || "";
+  }
   function renderFields() {
     const box = $("fields");
     box.innerHTML = "";
@@ -269,6 +283,8 @@
       const inp = document.createElement("input");
       inp.id = "f_" + f.k;
       inp.value = vals[f.k] || "";
+      inp.placeholder = FIELD_EX[f.k] || "";
+      inp.addEventListener("input", () => ShowbizCore.setFieldErr(inp, ""));
       if (f.digits) {
         inp.className = "ltr";
         inp.dir = "ltr";
@@ -290,7 +306,7 @@
     $("formCard").hidden = !showForm;
     $("addBtn").hidden = !hasAny || showForm;
   }
-  const flagImg = (code) => { const c = getCountry(code); return c ? c.flag : ""; };
+  const flagImg = (code) => ShowbizFlags.img(code, "flagimg");
   function resetForm() {
     formOpen = false;
     editId = null;
@@ -329,24 +345,29 @@
   // ===== الحفظ =====
   async function save() {
     hideMsg();
+    ShowbizCore.clearFieldErrs($("formCard"));
     const wasEdit = editId;
+    // كل الأخطاء تظهر تحت الحقول الناقصة، وبعدين ينتقل المستخدم لأول خلل
+    let bad = false;
     const label = $("aLabel").value.trim();
-    if (!label) return showMsg("err", L().errLabel);
+    if (!label) { ShowbizCore.setFieldErr($("aLabel"), L().errLabel); bad = true; }
 
     const r = chainResult();
-    if (!r.ok) return showMsg("err", L().errArea);
+    if (!r.ok) { ShowbizCore.setFieldErr($("chain"), L().errArea); bad = true; }
 
     const fields = {};
     for (const f of FIELDS[fieldsKey()]) {
+      const inp = $("f_" + f.k);
       let v = (vals[f.k] || "").trim();
       if (f.digits) v = digits(v);
-      if (f.req && !v) return showMsg("err", L().errField + (lang === "en" ? f.en : f.ar));
+      if (f.req && !v) { ShowbizCore.setFieldErr(inp, L().errField + (lang === "en" ? f.en : f.ar)); bad = true; }
       fields[f.k] = v;
     }
 
     const pc = PHONE_CODES.find(p => p.dial === $("pCc").value) || PHONE_CODES[0];
     const num = digits($("pNum").value);
-    if (num.length !== pc.len) return showMsg("err", L().errPhone.replace("{n}", pc.len));
+    if (num.length !== pc.len) { ShowbizCore.setFieldErr($("pNum"), L().errPhone.replace("{n}", pc.len)); bad = true; }
+    if (bad) { ShowbizCore.focusFirstErr($("formCard")); return; }
 
     const entry = {
       id: editId || uid(),
@@ -402,7 +423,7 @@
       const c = getCountry(a.country);
       const flag = document.createElement("span");
       flag.className = "flagc";
-      flag.textContent = flagImg(a.country);
+      flag.innerHTML = flagImg(a.country);
       card.appendChild(flag);
 
       const main = document.createElement("div");
@@ -505,10 +526,12 @@
     vals = {};
     const c = getCountry(curCountry);
     if (c && PHONE_CODES.some(p => p.dial === c.dial)) $("pCc").value = c.dial;
+    syncPhoneHint();
     renderChain();
     renderFields();
   });
-  $("pNum").addEventListener("input", () => { $("pNum").value = digits($("pNum").value); });
+  $("pCc").addEventListener("change", syncPhoneHint);
+  $("pNum").addEventListener("input", () => { $("pNum").value = digits($("pNum").value); ShowbizCore.setFieldErr($("pNum"), ""); });
   $("saveBtn").addEventListener("click", save);
   $("cancelBtn").addEventListener("click", () => { hideMsg(); resetForm(); syncForm(); });
   $("addBtn").addEventListener("click", () => { hideMsg(); resetForm(); formOpen = true; syncForm(); $("formCard").scrollIntoView({ behavior: "smooth", block: "start" }); });

@@ -54,7 +54,7 @@
       <p class="sub" data-k="forgotSub"></p>
       <div id="sendForm">
         <label for="fEmail" class="req" data-k="email"></label>
-        <input id="fEmail" type="email" dir="ltr" autocomplete="email">
+        <input id="fEmail" type="email" dir="ltr" autocomplete="email" placeholder="showbiz@gmail.com">
         <div class="ferr hidden" id="fEmailErr"></div>
         <button class="btn btn-main" id="sendBtn" type="button"></button>
       </div>
@@ -68,10 +68,10 @@
       <h1 data-k="resetTitle"></h1>
       <p class="sub" data-k="resetSub"></p>
       <label for="nPass" class="req" data-k="newPass"></label>
-      <div class="pw"><input id="nPass" type="password" dir="ltr" autocomplete="new-password"><button class="eye" type="button" data-t="nPass" aria-label=""></button></div>
+      <div class="pw"><input id="nPass" type="password" dir="ltr" autocomplete="new-password" placeholder="••••••••"><button class="eye" type="button" data-t="nPass" aria-label=""></button></div>
       <div class="ferr hidden" id="nPassErr"></div>
       <label for="nPass2" class="req" data-k="newPass2"></label>
-      <div class="pw"><input id="nPass2" type="password" dir="ltr" autocomplete="new-password"><button class="eye" type="button" data-t="nPass2" aria-label=""></button></div>
+      <div class="pw"><input id="nPass2" type="password" dir="ltr" autocomplete="new-password" placeholder="••••••••"><button class="eye" type="button" data-t="nPass2" aria-label=""></button></div>
       <div class="ferr hidden" id="nPass2Err"></div>
       <button class="btn btn-main" id="saveBtn" type="button"></button>
     </div>
@@ -147,6 +147,16 @@
     const n = $("notice");
     n.textContent = msg || ""; n.classList.toggle("hidden", !msg);
   }
+  // رسالة فيها رابط (مثل: البريد غير مسجّل + سجّل حساب الآن)
+  function setNoticeLink(text, linkText, href) {
+    const n = $("notice");
+    n.innerHTML = "";
+    n.appendChild(document.createTextNode(text + " "));
+    const a = document.createElement("a");
+    a.href = href; a.className = "link"; a.textContent = linkText;
+    n.appendChild(a);
+    n.classList.remove("hidden");
+  }
   // الرسالة الحقيقية من Supabase مع الكود، عدا الحالات المعروفة
   function errMsg(e) {
     const m = String(e?.message || e || "");
@@ -186,6 +196,11 @@
     if (!isEmail(email)) return setErr("fEmail", L().emailBad);
     busy = true; apply();
     try {
+      // تحقق من وجود الحساب قبل الإرسال (دالة email_registered في Supabase، انظر supabase/email_registered.sql)
+      const { data: reg, error: regErr } = await sb.rpc("email_registered", { p_email: email });
+      if (!regErr && reg === false) {
+        return setNoticeLink(lang === "ar" ? "هذا البريد غير مسجّل." : "This email is not registered.", lang === "ar" ? "سجّل حساب الآن" : "Create an account now", "signup.html");
+      }
       // Supabase ما يكشف إذا البريد مسجل أو لا، لذلك الرسالة وحدة للجميع
       const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
       if (error) return setNotice(errMsg(error));

@@ -120,6 +120,28 @@
   // ===== التذييل: يظهر في أسفل كل الصفحات =====
   // املأ القيم هنا وتظهر تلقائياً. الفارغ ما يظهر
   var CONTACT = { phone: "", whatsapp: "", hours: "", email: "" };
+  // روابط التواصل الاجتماعي: غيّر الروابط هنا لحساباتك الفعلية (الإنستجرام، التيك توك، رقم الواتساب بدون +)
+  var SOCIAL = { instagram: "https://www.instagram.com/showbiz", tiktok: "https://www.tiktok.com/@showbiz", whatsapp: "https://wa.me/97300000000" };
+  var SOCIAL_ICO = {
+    instagram: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>',
+    tiktok: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.6 3h-3.2v12.4a2.6 2.6 0 1 1-2.6-2.6c.2 0 .4 0 .6.1V9.6a5.8 5.8 0 1 0 5.2 5.8V9a7.4 7.4 0 0 0 4.3 1.4V7.2A4.4 4.4 0 0 1 16.6 3z"/></svg>',
+    whatsapp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c0 2.8 2.7 5.5 5.5 5.5l1-1.2-2-1-.8.8c-1-.4-2-1.4-2.4-2.4l.8-.8-1-2z"/></svg>'
+  };
+  var SOCIAL_LBL = { instagram: "Instagram", tiktok: "TikTok", whatsapp: "WhatsApp" };
+  // صف أيقونات التواصل: إنستجرام وتيك توك وواتساب فقط، كل أيقونة تفتح رابطها مباشرة
+  function socialHTML(cls) {
+    return '<div class="social-row ' + (cls || "") + '">' + ["instagram", "tiktok", "whatsapp"].map(function (k) {
+      return '<a href="' + SOCIAL[k] + '" target="_blank" rel="noopener" aria-label="' + SOCIAL_LBL[k] + '" title="' + SOCIAL_LBL[k] + '">' + SOCIAL_ICO[k] + "</a>";
+    }).join("") + "</div>";
+  }
+  (function injectSocialCss() {
+    var css = ".social-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin:12px 0 4px}" +
+      ".social-row a{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line,#2c3b5a);color:inherit;text-decoration:none;background:var(--card2,#1d2a44)}" +
+      ".social-row a svg{width:20px;height:20px}" +
+      ".social-row a:hover{border-color:var(--orange,#f59e4b);color:var(--orange,#f59e4b)}";
+    try { var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st); } catch (e) {}
+  })();
+
   var FT = {
     ar: { about: "متجر إلكتروني لمنتجات منزلية وإلكترونيات وأكثر.", links: "روابط", support: "دعم العملاء",
       pay: "طرق الدفع", home: "الصفحة الرئيسية", orders: "طلباتي", addr: "عناويني", acct: "حسابي", terms: "الشروط والأحكام",
@@ -151,7 +173,7 @@
       '<div class="sfoot-in">' +
         '<div><strong class="sfoot-brand">Showbiz</strong><p>' + L.about + "</p></div>" +
         '<div><h5>' + L.links + '</h5><a href="index.html">' + L.home + '</a><a href="orders.html">' + L.orders + '</a><a href="addresses.html">' + L.addr + '</a><a href="account.html">' + L.acct + '</a><a href="terms.html">' + L.terms + "</a></div>" +
-        '<div><h5>' + L.support + "</h5>" + (sup.length ? sup.join("") : "") + "</div>" +
+        '<div><h5>' + L.support + "</h5>" + (sup.length ? sup.join("") : "") + socialHTML("sfoot-social") + "</div>" +
         '<div><h5>' + L.pay + '</h5><span>Apple Pay</span><span>Benefit</span><span>' + L.cod + "</span><span>" + L.card + "</span></div>" +
         '<div class="sfoot-copy">© 2026 Showbiz · ' + L.copy + "</div>" +
       "</div>";
@@ -253,7 +275,7 @@
     ".sfoot-brand{color:#f59e4b;font-size:18px}",
     ".sfoot-copy{grid-column:1/-1;text-align:center;border-top:1px solid #26334d;padding-top:14px;margin-top:4px}",
     "label.req::after{content:\" *\";color:#ff5d6c;font-weight:800}",
-    ".copyline{text-align:center;color:#6b7a94;font-size:12px;margin:18px 0 0;padding:0 16px}",
+    ".copyline{text-align:center;color:#8a97ab;font-size:12px;margin:32px 0 0;padding:0 16px max(28px, env(safe-area-inset-bottom, 0px))}",
     "@media (max-width:700px){.sfoot-in{grid-template-columns:1fr;gap:18px}}"
   ].join("\n");
   var sharedStyle = document.createElement("style");
@@ -373,11 +395,70 @@
     document.head.appendChild(st);
   })();
 
+
+  // ===== v42: أخطاء الحقول، وسهم النزول في القوائم الطويلة =====
+  (function injectV42Css() {
+    var css = ".fe{color:#ffb4bf;font-size:13px;line-height:1.6;margin-top:6px}" +
+      ".bad{border-color:#ff6b7a !important;box-shadow:0 0 0 1px #ff6b7a}" +
+      ".sc-hint{position:sticky;bottom:6px;display:flex;justify-content:center;height:0;overflow:visible;pointer-events:none;z-index:3}" +
+      ".sc-hint button{pointer-events:auto;width:38px;height:38px;margin-top:-46px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(20,30,50,.92);color:#fff;font-size:18px;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center}" +
+      ".sc-hint.off{display:none}" +
+      "@media (prefers-color-scheme: light){.sc-hint button{background:rgba(255,255,255,.95);color:#1a2540;border-color:rgba(0,0,0,.12)}}" +
+      ".sc-hint.lt button{background:rgba(255,255,255,.95);color:#1a2540;border-color:rgba(0,0,0,.12)}";
+    try { var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st); } catch (e) {}
+  })();
+  // يعرض خطأ تحت الحقل (أو تحت الحاوية) ويعلّم الحقل بالأحمر
+  function setFieldErr(el, msg) {
+    if (!el) return;
+    var host = el.closest ? (el.closest(".fwrap") || el.parentNode) : el.parentNode;
+    var e = host.querySelector(":scope > .fe");
+    if (!msg) { if (e) e.remove(); el.classList.remove("bad"); return; }
+    if (!e) { e = document.createElement("div"); e.className = "fe"; e.setAttribute("role", "alert"); host.appendChild(e); }
+    e.textContent = msg;
+    el.classList.add("bad");
+  }
+  function clearFieldErrs(root) {
+    if (!root) return;
+    root.querySelectorAll(".fe").forEach(function (x) { x.remove(); });
+    root.querySelectorAll(".bad").forEach(function (x) { x.classList.remove("bad"); });
+  }
+  // ينقل المستخدم لأول حقل فيه خطأ
+  function focusFirstErr(root) {
+    var b = root && root.querySelector(".bad");
+    if (!b) return false;
+    b.scrollIntoView({ block: "center", behavior: "smooth" });
+    setTimeout(function () { try { b.focus({ preventScroll: true }); } catch (e) {} }, 250);
+    return true;
+  }
+  // سهم أسفل داخل قائمة قابلة للسكرول: يختفي إذا وصل المستخدم للآخر
+  function scrollHint(sc, lightBtn) {
+    if (!sc) return;
+    var wrap = sc.querySelector(":scope > .sc-hint");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.className = "sc-hint";
+      wrap.innerHTML = '<button type="button" aria-label="' + "↓" + '">⌄</button>';
+      sc.appendChild(wrap);
+      wrap.querySelector("button").addEventListener("click", function () {
+        sc.scrollTo({ top: sc.scrollHeight, behavior: "smooth" });
+      });
+      sc.addEventListener("scroll", function () { upd(); }, { passive: true });
+    }
+    if (lightBtn) wrap.classList.add("lt");
+    function upd() {
+      var more = sc.scrollHeight - sc.clientHeight - sc.scrollTop > 12;
+      wrap.classList.toggle("off", !more);
+    }
+    setTimeout(upd, 0);
+  }
+
   window.ShowbizCore = {
     setFooter: function (full) { buildFooter(!!full); },
     theme: themeNow,
     setTheme: setTheme,
     copyright: copyright,
+    socialHTML: socialHTML,
+    SOCIAL: SOCIAL,
     confirmDel: confirmDel,
     icon: icon,
     fillIcons: fillIcons,
@@ -390,6 +471,7 @@
     cachedAddresses: cachedAddresses,
     fetchAddresses: fetchAddresses,
     upsertAddress: upsertAddress,
-    deleteAddress: deleteAddress
+    deleteAddress: deleteAddress,
+    setFieldErr: setFieldErr, clearFieldErrs: clearFieldErrs, focusFirstErr: focusFirstErr, scrollHint: scrollHint
   };
 })();

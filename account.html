@@ -47,9 +47,18 @@
   .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:22px; direction:ltr; }
   .loading { padding:8px 0; }
   .hidden { display:none !important; }
+  /* v42 */
+  .phrow { display:flex; gap:8px; align-items:center; direction:ltr; }
+  .phrow .fsel-wrap { width:140px; flex:0 0 auto; }
+  .phrow .fsel-wrap select { width:100% !important; }
+  .phrow input { flex:1; min-width:0; }
+  .strength { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:8px; direction:ltr; }
+  .strength i { height:6px; border-radius:4px; background:var(--line); transition:background .2s; }
+  .strength i.on { background:#2f8f5f; }
 </style>
 <script src="version.js"></script>
 <script src="shared.js"></script>
+<script src="flags.js"></script>
 <style>
   .acct-hd { position:relative; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0 14px; margin-bottom:14px; border-bottom:1px solid var(--line, #2c4168); }
   .acct-brand { position:absolute; left:50%; transform:translateX(-50%); font-weight:800; font-size:18px; color:var(--fg, #f2f5fa); text-decoration:none; }
@@ -129,10 +138,10 @@
     <div class="card" id="pwCard">
       <h2 id="pwTitle" style="font-size:17px;margin:0 0 12px"></h2>
       <div id="pwMsg" class="msg hidden"></div>
-      <div class="full"><label for="pwCur" id="pwCurL"></label><input id="pwCur" type="password" autocomplete="current-password"></div>
+      <div class="full"><label for="pwCur" id="pwCurL"></label><input id="pwCur" type="password" autocomplete="current-password" placeholder="••••••••"></div>
       <div class="actions"><button class="btn btn-main" id="pwVerify" type="button" disabled></button></div>
       <div id="pwNewBox" class="hidden">
-        <div class="full"><label for="pwNew" id="pwNewL"></label><input id="pwNew" type="password" autocomplete="new-password"></div>
+        <div class="full"><label for="pwNew" id="pwNewL"></label><input id="pwNew" type="password" autocomplete="new-password" placeholder="••••••••"><div class="strength" id="pwStr"><i></i><i></i><i></i><i></i></div></div>
         <div class="full" style="margin-top:12px"><label for="pwConfirm" id="pwConfirmL"></label><input id="pwConfirm" type="password" autocomplete="new-password"></div>
         <div class="actions"><button class="btn btn-main" id="pwSave" type="button" disabled></button></div>
       </div>
@@ -211,11 +220,28 @@
       const s = $(id), cur = s.value;
       s.innerHTML = "";
       COUNTRIES.forEach(c => {
-        const text = id === "country" ? `${c.flag} ${lang === "ar" ? c.ar : c.en}` : `${c.flag} ${c.dial}`;
+        const text = id === "country" ? (lang === "ar" ? c.ar : c.en) : c.dial;
         s.appendChild(new Option(text, c.code));
       });
       if (cur) s.value = cur;
+      ShowbizFlags.attach(s);
     });
+    syncPhoneHint();
+  }
+  // v42: حد أرقام الجوال والمثال حسب الدولة المختارة
+  const PH_EXAMPLE = { BH: "36123456", SA: "512345678", AE: "501234567", KW: "51234567", QA: "33123456", OM: "91234567" };
+  function syncPhoneHint() {
+    const sel = $("phCc"), num = $("phNum");
+    if (!sel || !num) return;
+    const c = COUNTRIES.find(x => x.code === sel.value) || COUNTRIES[0];
+    num.maxLength = c.len;
+    num.placeholder = PH_EXAMPLE[c.code] || "";
+  }
+  // قوة كلمة المرور: 4 خطوات (حرف كبير، رقم، حرف صغير، رمز)
+  const pwChecks = (p) => [/[A-Z]/.test(p), /\d/.test(p), /[a-z]/.test(p), /[^A-Za-z0-9]/.test(p)];
+  function syncStrength() {
+    const v = $("pwNew").value, bars = document.querySelectorAll("#pwStr i");
+    pwChecks(v).forEach((ok, k) => bars[k] && bars[k].classList.toggle("on", ok));
   }
 
   function dirty() {
@@ -234,9 +260,9 @@
 
   const PWT = {
     ar: { pwTitle: "تغيير كلمة المرور", pwCur: "كلمة المرور الحالية", pwVerify: "تحقق", pwNew: "كلمة المرور الجديدة", pwConfirm: "تأكيد كلمة المرور", pwSave: "حفظ كلمة المرور",
-          pwBad: "كلمة المرور الحالية غير صحيحة", pwShort: "كلمة المرور لازم تكون 6 أحرف على الأقل", pwMismatch: "كلمة المرور الجديدة غير متطابقة", pwOk: "تم تغيير كلمة المرور" },
+          pwBad: "كلمة المرور الحالية غير صحيحة", pwShort: "كلمة المرور لازم تكون 8 أحرف على الأقل", pwWeak: "كلمة المرور لازم تحتوي حرف كبير وحرف صغير ورقم ورمز", pwMismatch: "كلمة المرور الجديدة غير متطابقة", pwOk: "تم تغيير كلمة المرور" },
     en: { pwTitle: "Change password", pwCur: "Current password", pwVerify: "Verify", pwNew: "New password", pwConfirm: "Confirm new password", pwSave: "Save password",
-          pwBad: "Current password is incorrect", pwShort: "Password must be at least 6 characters", pwMismatch: "New passwords do not match", pwOk: "Password changed" }
+          pwBad: "Current password is incorrect", pwShort: "Password must be at least 8 characters", pwWeak: "Use an uppercase letter, a lowercase letter, a number and a symbol", pwMismatch: "New passwords do not match", pwOk: "Password changed" }
   };
   function pwL() { return PWT[lang] || PWT.ar; }
   function applyPw() {
@@ -263,7 +289,8 @@
   });
   $("pwSave").addEventListener("click", async () => {
     const a = $("pwNew").value, b = $("pwConfirm").value;
-    if (a.length < 6) { showPwMsg(pwL().pwShort, true); return; }
+    if (a.length < 8) { showPwMsg(pwL().pwShort, true); return; }
+    if (!pwChecks(a).every(Boolean)) { showPwMsg(pwL().pwWeak, true); return; }
     if (a !== b) { showPwMsg(pwL().pwMismatch, true); return; }
     try {
       const { error } = await sb.auth.updateUser({ password: a });
@@ -425,6 +452,8 @@
   $("phSend").addEventListener("click", sendPhoneCode);
   $("phVerify").addEventListener("click", verifyPhoneCode);
   $("phNum").addEventListener("input", () => { $("phNum").value = digits($("phNum").value); });
+  $("phCc").addEventListener("change", syncPhoneHint);
+  $("pwNew").addEventListener("input", syncStrength);
   $("phCode").addEventListener("input", () => { $("phCode").value = digits($("phCode").value).slice(0, 6); });
   $("langBtn").addEventListener("click", () => {
     lang = lang === "ar" ? "en" : "ar";
