@@ -60,7 +60,7 @@
 
   <section class="sec" id="popSec">
     <div class="sec-h"><h2 id="hP">الرائج الآن</h2><a href="popular.html" id="aP">عرض الكل</a></div>
-    <div class="sg-grid" id="pop"></div>
+    <div class="sg-row" id="pop"></div>
   </section>
 
   <section class="sec">
@@ -77,8 +77,8 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
   const T = {
-    ar: { title:"البحث", ph:"ابحث عن منتج", s:"آخر عمليات البحث", p:"الرائج الآن", r:"سجل مشاهدة المنتجات", all:"عرض الكل", noS:"ما فيه عمليات بحث بعد", noR:"ما شفت منتجات مؤخراً", noP:"ما فيه منتجات الحين", confirm:"هل تريد حذف سجل البحث بالكامل؟", yes:"نعم", no:"لا", del:"حذف سجل البحث", dir:"rtl" },
-    en: { title:"Search", ph:"Search products", s:"Recent searches", p:"Trending now", r:"Product viewing history", all:"View all", noS:"No searches yet", noR:"No recently viewed products", noP:"No products yet", confirm:"Delete the whole search history?", yes:"Yes", no:"No", del:"Delete search history", dir:"ltr" }
+    ar: { title:"البحث", ph:"ابحث عن منتج", s:"آخر عمليات البحث", p:"الرائج الآن", r:"سجل مشاهدة المنتجات", all:"عرض الكل", noS:"ما فيه عمليات بحث بعد", noR:"ما رأيت منتجات لحد الآن", noP:"ما في منتجات رائجة الآن", confirm:"هل تريد حذف سجل البحث بالكامل؟", yes:"نعم", no:"لا", del:"حذف سجل البحث", dir:"rtl" },
+    en: { title:"Search", ph:"Search products", s:"Recent searches", p:"Trending now", r:"Product viewing history", all:"View all", noS:"No searches yet", noR:"No products viewed yet", noP:"No trending products right now", confirm:"Delete the whole search history?", yes:"Yes", no:"No", del:"Delete search history", dir:"ltr" }
   };
   const lang = readState().lang === "en" ? "en" : "ar";
   const L = T[lang];
@@ -121,6 +121,8 @@
   // الرائج الآن (من popular.js، وإلا البديل التجريبي)
   const pop = window.SHOWBIZ_POPULAR_LIST().slice(0, 7);
   document.getElementById("pop").innerHTML = pop.length ? pop.map(card).join("") : `<p class="empty">${L.noP}</p>`;
+
+  document.getElementById("aP").hidden = !pop.length;
 
   // سجل المشاهدة: آخر 15 يوم
   const cutoff = Date.now() - 15 * 864e5;
