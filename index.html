@@ -37,6 +37,7 @@
   .sugg .sg-card img { width:100%; height:auto; aspect-ratio:1/1; object-fit:cover; border-radius:0; display:block; }
   .sugg .sg-card span { display:-webkit-box; padding:5px 7px 7px; line-height:1.35; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   #sortSel { display:none; }
+  .cjnote { background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:10px 0; font-size:13px; line-height:1.6; }
   .sortwrap { position:relative; display:inline-block; max-width:48vw; flex:0 0 auto; }
   .sortbox { display:block; max-width:48vw; height:42px; padding:0 14px; border-radius:999px; border:1px solid var(--line); background:var(--card2); color:var(--fg); font-size:13px; font-weight:600; overflow-x:auto; overflow-y:hidden; white-space:nowrap; scrollbar-width:none; cursor:pointer; box-sizing:border-box; -webkit-overflow-scrolling:touch; }
   .sortbox::-webkit-scrollbar { display:none; }
@@ -444,7 +445,7 @@
 
   const T = {
     ar: {
-      siteName:"Showbiz", welcome:"مرحبًا بك", chooseCountry:"اختر الدولة", chooseLang:"اختر اللغة", go:"متابعة",
+      siteName:"Showbiz", welcome:"مرحبًا بك", cjLbl:"تجربة (منتجات CJ)", cjNote:"منتجات حقيقية من CJ للتجربة. الشحن يُحسب فعلياً، ولا يُرسل أي طلب إلى CJ.", cjLoading:"جاري تحميل منتجات CJ...", cjEmpty:"تعذر تحميل منتجات CJ الآن",chooseCountry:"اختر الدولة", chooseLang:"اختر اللغة", go:"متابعة",
       details:"التفاصيل", detailsTitle:"تفاصيل المنتج", chooseOpt:"اختر اللون / النمط", add:"إضافة للسلة", bannerSub:"تسوّق الآن", shopNow:"تسوّق الآن", specs:"المواصفات", reviews:"التقييمات", noReviews:"لا يوجد تقييمات لحد الآن", addReview:"إضافة تقييم", readMore:"قراءة المزيد", readLess:"إخفاء", sendReview:"إرسال التقييم", reviewOptional:"اكتب تعليقك (اختياري)", reviewPick:"اختر عدد النجوم أولاً", cancelBtn:"إلغاء", you:"أنت", choosePlaceholder:"يرجى الاختيار", outOfStock:"غير متوفر", someOut:"بعض المنتجات في سلتك غير متوفرة، أزلها للمتابعة إلى الدفع", scaleHint:"5 هو التقييم الأعلى، و1 هو الأدنى",
       qty:"الكمية", cart:"السلة", cartTitle:"سلة المشتريات", empty:"السلة فارغة", grand:"الإجمالي",
       productsVal:"قيمة المنتجات", discount:"الخصم", shipping:"رسوم التوصيل", shipLater:"تُحدد بعد اختيار العنوان",
@@ -472,7 +473,7 @@
       fromPrice:"يبدأ من", adTag:"عروض مختارة", adTitle2:"وصل جديد في الإلكترونيات", adSub2:"أحدث الأجهزة بخيارات الألوان والمقاسات", adTitle3:"الأكثر مبيعاً", adSub3:"منتجات يختارها زبائننا كثيراً", adTitle:"خصومات مختارة هذا الأسبوع", adSub:"تشكيلة من المنتجات بأسعار مميزة", adBtn:"تسوّق الآن"
     },
     en: {
-      siteName:"Showbiz", welcome:"Welcome", chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
+      siteName:"Showbiz", welcome:"Welcome", cjLbl:"Trial (CJ products)", cjNote:"Real CJ products for trial. Shipping is calculated for real, and no order is sent to CJ.", cjLoading:"Loading CJ products...", cjEmpty:"Could not load CJ products now",chooseCountry:"Choose country", chooseLang:"Choose language", go:"Continue",
       details:"Details", detailsTitle:"Product details", chooseOpt:"Choose color / style", add:"Add to cart", bannerSub:"Shop now", shopNow:"Shop now", specs:"Specifications", reviews:"Reviews", noReviews:"No reviews yet", addReview:"Add review", readMore:"Read more", readLess:"Show less", sendReview:"Submit review", reviewOptional:"Write your comment (optional)", reviewPick:"Pick a star rating first", cancelBtn:"Cancel", you:"You", choosePlaceholder:"Please choose", outOfStock:"Out of stock", someOut:"Some items in your cart are out of stock. Remove them to continue to checkout", scaleHint:"5 is the highest rating, 1 is the lowest",
       qty:"Quantity", cart:"Cart", cartTitle:"Shopping cart", empty:"Your cart is empty", grand:"Total",
       productsVal:"Products", discount:"Discount", shipping:"Delivery fee", shipLater:"Set after choosing address",
@@ -511,6 +512,9 @@
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
 
   let products = [], loaded = false, loadError = false, rawCount = 0, loadMsg = "";
+  // منتجات CJ للتجربة: قسم منفصل، والمنتجات الوهمية تبقى كما هي
+  const CJ_WORKER = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
+  let mainProducts = null, cjProducts = null, cjLoading = false, cjMode = false;
   let view = "shop", notice = "";
   let modal = null, cardIdx = {};
   let modalPushed = false; // هل فتحنا المنتج كحالة في سجل المتصفح؟
@@ -558,7 +562,7 @@
     return (doc.body.textContent || "").replace(/\s+/g, " ").trim();
   }
   function findVariant(vid) {
-    for (const p of products) {
+    for (const p of [...products, ...(mainProducts || []), ...(cjProducts || [])]) {
       const v = p.variants.find(x => x.vid === vid);
       if (v) return { p, v };
     }
@@ -1335,6 +1339,7 @@
   }
 
   const SALE = "__sale__";
+  const CJ_CAT = "__cj__";
   let catsGrid = false;
   const saleList = () => products.filter(p => cmpUSD(p) > 0);
   // إعلانات متعددة تتنقل تلقائياً كل 7 ثواني، مع أسهم ونقاط
@@ -1387,6 +1392,11 @@
   function shopBodyHTML() {
     if (!loaded) return `<div class="sk-grid" aria-label="${esc(t("loading"))}">${Array.from({ length: 6 }, () => `<div class="sk-card"><div class="sk-img"></div><div class="sk-l w"></div><div class="sk-l s"></div></div>`).join("")}</div>`;
     if (loadError) return `<p>${t("loadErr")}</p>`;
+    if (cjMode) {
+      if (cjLoading) return `<p class="muted">${esc(t("cjLoading"))}</p>`;
+      if (!cjProducts || !cjProducts.length) return `<p>${esc(t("cjEmpty"))}</p>`;
+      return `<div class="cjnote">${esc(t("cjNote"))}</div><div class="grid">${sortItems(cjProducts).map(p => cardHTML(p)).join("")}</div>`;
+    }
     if (!products.length) return `<p>${t("noProducts")}</p>${loadMsg ? `<p class="muted">${esc(loadMsg)}</p>` : ""}`;
     const filtered = filt.cat || filt.q.trim();
     if (filtered) {
@@ -1479,7 +1489,31 @@
     syncFooter();
     syncNav();
   }
+  // منتجات CJ للتجربة: تحميل أول مرة، ثم تبقى في الذاكرة
+  async function enterCj() {
+    if (!cjMode) mainProducts = products;
+    cjMode = true; filt.cat = null; catsGrid = false;
+    if (!cjProducts) {
+      cjLoading = true; buildCatRoot(); refreshShop();
+      try {
+        const res = await fetch(CJ_WORKER + "?action=list", { cache: "no-store" });
+        const d = await res.json();
+        const list = Array.isArray(d.products) ? d.products : [];
+        cjProducts = list.map(normalizeProduct).filter(p => p.variants.length > 0).map(p => ({ ...p, test: true }));
+      } catch (e) { cjProducts = []; }
+      cjLoading = false;
+    }
+    products = cjProducts;
+    buildCatRoot(); refreshShop(); window.scrollTo(0, 0);
+  }
+  function leaveCj() {
+    cjMode = false;
+    if (mainProducts) products = mainProducts;
+    buildCatRoot();
+  }
   function setCat(c) {
+    if (c === CJ_CAT) { closeMenus(); enterCj(); return; }
+    if (cjMode) leaveCj();
     filt.cat = c || null;
     catsGrid = false;
     closeMenus();
@@ -1573,6 +1607,7 @@
     return `<button class="ct-name ${!filt.cat && !catsGrid ? "on" : ""}" data-home="1">${catIcon("home")}<span>${t("homeLbl")}</span></button>` +
       `<button class="ct-name ${catsGrid ? "on" : ""}" data-cats="all">${catIcon("tag")}<span>${t("allCats")}</span></button>` +
       `<button class="ct-name ${filt.cat === ALL ? "on" : ""}" data-cat="${ALL}">${catIcon("tag")}<span>${t("allProductsLbl")}</span></button>` +
+      `<button class="ct-name ${cjMode ? "on" : ""}" data-cat="${CJ_CAT}">${catIcon("tag")}<span>${t("cjLbl")}</span></button>` +
       sale + catTreeHTML(catRoot.kids, 0) +
       `<div class="ct-sep"></div><a class="ct-name ct-contact" href="contact.html">${catIcon("tag")}<span>${t("contactLbl")}</span></a>`;
   }
