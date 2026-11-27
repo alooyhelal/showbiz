@@ -7,6 +7,7 @@
 <script src="version.js"></script>
 <script src="shared.js"></script>
 <script src="flags.js"></script>
+<script src="shipping.js"></script>
 <script src="ui.js"></script>
 <style>
   :root { --bg:#0b1220; --fg:#eef2f7; --card:#162033; --card2:#1d2a44; --line:#26334d; --muted:#9aa7bd; --blue:#5b9cff; --orange:#f59e4b; --orange-d:#e0852f; --dot:#3a4a68; --ok:#7ee2a8; --err:#ffb4bf; color-scheme:dark; }
@@ -212,7 +213,7 @@
       goLogin:"تسجيل الدخول", cartEmpty:"سلتك فارغة حالياً", snapMissing:"افتح الصفحة الرئيسية مرة وحدة عشان تتحدث السلة", emptyHint:"أضف منتجات من الموقع وترجع لها هنا", goStore:"تصفح المنتجات",
       s1:"السلة", s2:"العنوان", s3:"الدفع والتأكيد",
       productsVal:"قيمة المنتجات", outOfStock:"غير متوفر", someOut:"بعض المنتجات في سلتك غير متوفرة، أزلها للمتابعة إلى الدفع", discount:"الخصم", shipping:"الشحن", shipLater:"يُحسب بعد اختيار العنوان",
-      freeMsg:"مبروك، شحنك مجاني لهذا الطلب", grand:"الإجمالي", coupon:"عندي كود خصم", apply:"تطبيق", removeCoupon:"إزالة",
+      freeMsg:"مبروك، شحنك مجاني لهذا الطلب", needShip:"اختر طريقة الشحن أولاً", grand:"الإجمالي", coupon:"عندي كود خصم", apply:"تطبيق", removeCoupon:"إزالة",
       badCoupon:"الكود غير صحيح", toAddr:"متابعة للعنوان", toPay:"متابعة للدفع", keep:"متابعة التسوق", back2:"رجوع",
       addrTitle:"عنوان التوصيل", addrSelected:"دولة الطلب", addrOther:"عناوين دول أخرى",
       noAddr:"ما عندك عناوين محفوظة بعد", addAddr:"إضافة عنوان جديد", manageAddr:"إدارة العناوين",
@@ -234,7 +235,7 @@
       goLogin:"Sign in", cartEmpty:"Your cart is empty", snapMissing:"Open the home page once so the cart can refresh", emptyHint:"Add products from the store and come back here", goStore:"Browse products",
       s1:"Cart", s2:"Address", s3:"Payment & confirm",
       productsVal:"Products", outOfStock:"Out of stock", someOut:"Some items in your cart are out of stock. Remove them to continue to checkout", discount:"Discount", shipping:"Shipping", shipLater:"Calculated after choosing an address",
-      freeMsg:"Congrats, your shipping is free on this order", grand:"Total", coupon:"Have a discount code?", apply:"Apply", removeCoupon:"Remove",
+      freeMsg:"Congrats, your shipping is free on this order", needShip:"Choose a shipping method first", grand:"Total", coupon:"Have a discount code?", apply:"Apply", removeCoupon:"Remove",
       badCoupon:"Invalid code", toAddr:"Continue to address", toPay:"Continue to payment", keep:"Keep shopping", back2:"Back",
       addrTitle:"Delivery address", addrSelected:"Order country", addrOther:"Other countries",
       noAddr:"You have no saved addresses yet", addAddr:"Add new address", manageAddr:"Manage addresses",
@@ -542,10 +543,17 @@
     if (btn) { btn.disabled = true; btn.textContent = t("sending"); }
     const lines = selLines();
     if (!lines.length) { busy = false; setStep("cart"); return; }
-    const s = shippingCalc();
+    const free = ShowbizUI.isFree();
+    const shipPick = ShowbizShip.status(state.country, shipLines()).pick;
+    if (!free && !shipPick) {
+      busy = false;
+      if (btn) { btn.disabled = false; btn.textContent = t("send"); }
+      $("payMsg").textContent = t("needShip");
+      return;
+    }
     const subtotal = localPrice(subtotalUSD());
     const discount = localPrice(discountUSD());
-    const ship = shipLocal(s.shipBHD);
+    const ship = free ? 0 : shipPick.price;
     const row = {
       user_id: me.id, country: state.country, status: "test-not-sent-to-cj",
       items: lines.map(l => ({ pid: l.p.pid, vid: l.vid, sku: l.v.sku, name: l.p.nameEn, variant: l.v.key, qty: l.qty, unitUSD: l.v.price })),
@@ -557,10 +565,11 @@
         name: `${profile?.first_name || ""} ${profile?.last_name || ""}`.trim(),
         phone: profile?.phone || null,
         payment: { method: payMethod },
-        note: state.note || ""
+        note: state.note || "",
+        shipping_method: free || !shipPick ? null : { carrier: shipPick.carrier, aging: shipPick.aging, price: shipPick.price, currency: shipPick.currency }
       },
       coupon: state.coupon, subtotal, discount, shipping: ship,
-      total: subtotal - discount + ship, internal_risk_bhd: s.riskBHD
+      total: subtotal - discount + ship
     };
     let saved = false;
     try {
@@ -602,6 +611,11 @@
     }).join("")}</div>`;
   }
 
+  // الشحن من CJ: الطرق تظهر تحت الإجمالي، والمختار يدخل في الإجمالي
+  const shipLines = () => selLines().map(l => ({ vid: l.vid, qty: l.qty }));
+  ShowbizShip.setSource(() => state.country, shipLines);
+  ShowbizShip.listen(() => render());
+
   function summaryRows(withShip) {
     const sub = localPrice(subtotalUSD());
     const disc = localPrice(discountUSD());
@@ -611,15 +625,14 @@
     let total = sub - disc;
     if (free) {
       rows += `<div class="row ok"><span>${t("shipping")}</span><span>${t("freeMsg")}</span></div>`;
-    } else if (withShip) {
-      const ship = shipLocal(shippingCalc().shipBHD);
-      rows += `<div class="row"><span>${t("shipping")}</span><span>${fmt(ship)}</span></div>`;
-      total += ship;
     } else {
-      rows += `<div class="row"><span>${t("shipping")}</span><span class="muted">${t("shipLater")}</span></div>`;
+      const ship = ShowbizShip.amount(state.country, shipLines());
+      rows += `<div class="row"><span>${t("shipping")}</span><span>${ship == null ? t("shipLater") : fmt(ship)}</span></div>`;
+      if (ship != null) total += ship;
     }
     rows += `<div class="row grand"><span>${t("grand")}</span><span>${fmt(total)}</span></div>`;
-    return `<div class="totals">${rows}</div>`;
+    const methods = free ? "" : ShowbizShip.html(state.country, shipLines());
+    return `<div class="totals">${rows}</div>${methods}`;
   }
 
   const catalogPool = () => catalogList.filter(e => !state.cart.some(i => i.vid === e.vid));
