@@ -15,7 +15,7 @@
     ar: {
       outOfStock: "غير متوفر", someOut: "بعض المنتجات في سلتك غير متوفرة، أزلها للمتابعة إلى الدفع",
       cart: "السلة", close: "إغلاق", keep: "متابعة التسوق", checkout: "إتمام الطلب", empty: "سلتك فارغة حالياً",
-      all: "الكل", selHint: "المنتجات غير المحددة تبقى في السلة ولا تنحذف",
+      all: "الكل", otherItems:"منتجات أخرى لم يتم اختيارها", selHint: "المنتجات غير المحددة تبقى في السلة ولا تنحذف",
       remaining: "باقي {x} للتوصيل المجاني", freeDone: "وصلت للتوصيل المجاني",
       freeMsg: "مبروك، شحنك مجاني لهذا الطلب", freeIn: "التوصيل المجاني",
       tierLeft: "باقي {x} لمستوى الخصم", tierDone: "وصلت لمستوى الخصم",
@@ -29,7 +29,7 @@
     en: {
       outOfStock: "Out of stock", someOut: "Some items in your cart are out of stock. Remove them to continue to checkout",
       cart: "Cart", close: "Close", keep: "Keep shopping", checkout: "Checkout", empty: "Your cart is empty",
-      all: "All", selHint: "Unselected items stay in your cart",
+      all: "All", otherItems:"Other items (not selected)", selHint: "Unselected items stay in your cart",
       remaining: "{x} more for free delivery", freeDone: "You reached free delivery",
       freeMsg: "Congrats, your shipping is free on this order", freeIn: "Free delivery",
       tierLeft: "{x} more to reach the next tier", tierDone: "You reached the next tier",
@@ -107,8 +107,12 @@
       .catch(function () { return []; });
   }
   function recentList() { return jget("showbiz_recent", []); }
+  var RECENT_DAYS = 15 * 24 * 3600 * 1000;
+  // آخر المنتجات المشاهدة خلال 15 يوم فقط
+  function recentFresh() { var now = Date.now(); return recentList().filter(function (x) { return x && x.p && x.at && now - x.at <= RECENT_DAYS; }); }
   function pushRecent(entry) {
     var r = recentList().filter(function (x) { return x.p.pid !== entry.p.pid; });
+    entry.at = Date.now();
     r.unshift(entry);
     jset("showbiz_recent", r.slice(0, 8));
   }
@@ -350,6 +354,14 @@
   function heartSVG() { return ShowbizCore.icon("heart"); }
   function trashSVG() { return ShowbizCore.icon("trash"); }
 
+  // المنتجات المحددة فوق، وغير المحددة (وغير المتوفرة) تحتها بعنوان
+  function groupHTML(lines) {
+    var sel = st().unsel || [];
+    var on = lines.filter(function (l) { return !l.v.unavailable && sel.indexOf(l.vid) < 0; });
+    var off = lines.filter(function (l) { return l.v.unavailable || sel.indexOf(l.vid) >= 0; });
+    return on.map(lineHTML).join("") +
+      (off.length ? '<div style="margin:14px 0 6px;font-size:13px;color:var(--muted);font-weight:700">' + tr("otherItems") + '</div>' + off.map(lineHTML).join("") : "");
+  }
   function lineHTML(l) {
     var out = !!l.v.unavailable;
     var on = (st().unsel || []).indexOf(l.vid) < 0;
@@ -439,7 +451,7 @@
       body = (outN ? '<div class="sd-alert">' + tr("someOut") + '</div>' : '') + progressHTML() +
         '<label class="sd-all"><input type="checkbox" data-ui="selAll" ' + (allOn ? "checked" : "") + '> ' + tr("all") + ' (' + lines.length + ')</label>' +
         '<p class="sd-hint">' + tr("selHint") + '</p>' +
-        lines.map(lineHTML).join("") + couponHTML() + totalsHTML();
+        groupHTML(lines) + couponHTML() + totalsHTML();
       var tv = totalsValue();
       foot = '<div class="sd-tot"><span class="sd-hint">' + tr("grand") + '</span><strong>' + fmt(tv.total) + '</strong></div>' +
         (canGo ? '<a class="sd-go" href="cart.html">' + tr("checkout") + '</a>'
@@ -628,6 +640,7 @@ html[dir=rtl] #sortSel{padding:0 12px 0 26px;background-position:left 10px cente
   document.head.appendChild(styleEl);
 
   window.ShowbizUI = {
+    recentFresh: recentFresh,
     flash: flash,
     cfg: CFG,
     tr: tr,

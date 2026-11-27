@@ -51,9 +51,9 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
   const T = {
-    ar: { title:"سجل التصفح", sub:"آخر منتجات شاهدتها", prod:"آخر منتجات شاهدتها",
+    ar: { title:"سجل التصفح", sub:"آخر منتجات شاهدتها خلال 15 يوم", prod:"آخر منتجات شاهدتها",
           noP:"ما شفت أي منتج بعد", clear:"مسح السجل", dir:"rtl" },
-    en: { title:"Browsing history", sub:"Recently viewed products", prod:"Recently viewed",
+    en: { title:"Browsing history", sub:"Products viewed in the last 15 days", prod:"Recently viewed",
           noP:"You haven't viewed any products yet", clear:"Clear history", dir:"ltr" }
   };
 
@@ -70,7 +70,8 @@
     document.getElementById("hProd").textContent = L.prod;
     document.getElementById("clr").textContent = L.clear;
 
-    const recent = readList("showbiz_recent").filter(r => r && r.p && r.p.pid != null).slice(0, 8);
+    const cutoff = Date.now() - 15 * 864e5;
+    const recent = readList("showbiz_recent").filter(r => r && r.p && r.p.pid != null && r.at && r.at >= cutoff).slice(0, 8);
     const pEl = document.getElementById("pGrid");
     pEl.innerHTML = recent.length
       ? recent.map(r => {

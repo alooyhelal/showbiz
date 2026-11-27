@@ -223,7 +223,7 @@
       myOrders:"طلباتي", home:"الصفحة الرئيسية", savedLocal:"تم حفظ الطلب على هذا الجهاز مؤقتاً لأن الحفظ على السيرفر تعذر.",
       pickAddrErr:"اختر عنوان أولاً", loading:"جاري التحميل...", needLogin:"سجّل دخولك عشان تكمل الطلب",
       defaultVariant:"افتراضي", buildLabel:"النسخة", updatedLabel:"آخر تحديث", qty:"الكمية",
-      selAll:"تحديد الكل", selHint:"المنتجات غير المحددة تبقى في السلة ولا تنحذف", note:"أضف ملاحظة",
+      selAll:"تحديد الكل", selHint:"المنتجات غير المحددة تبقى في السلة ولا تنحذف", note:"أضف ملاحظة", otherItems:"منتجات أخرى لم يتم اختيارها", orderFail:"ما تم إتمام الطلب، والمنتجات باقية في السلة. حاول مرة ثانية",
       notePh:"مثال: اتصل قبل التوصيل", shipInfo:"رسوم التوصيل تُحسب حسب الوزن والدولة", mayLike:"منتجات قد تعجبك",
       addrName:"اسم العنوان", country:"الدولة", phoneCode:"رمز الدولة", phone:"رقم الهاتف", recipient:"الاسم (اختياري)",
       saveAddr:"حفظ العنوان", cancel:"إلغاء", choose:"اختر...", errLabel:"اكتب اسم العنوان", errArea:"أكمل اختيار الموقع حتى آخر مستوى",
@@ -245,7 +245,7 @@
       myOrders:"My orders", home:"Home page", savedLocal:"The order was saved on this device for now because the server could not be reached.",
       pickAddrErr:"Choose an address first", loading:"Loading...", needLogin:"Sign in to complete your order",
       defaultVariant:"Default", buildLabel:"Version", updatedLabel:"Last update", qty:"Quantity",
-      selAll:"Select all", selHint:"Unselected items stay in your cart", note:"Add a note",
+      selAll:"Select all", selHint:"Unselected items stay in your cart", note:"Add a note", otherItems:"Other items (not selected)", orderFail:"Order not placed. Your items are still in the cart. Please try again",
       notePh:"e.g. call before delivery", shipInfo:"Delivery fee depends on weight and country", mayLike:"You may also like",
       addrName:"Address name", country:"Country", phoneCode:"Country code", phone:"Phone number", recipient:"Recipient name (optional)",
       saveAddr:"Save address", cancel:"Cancel", choose:"Select...", errLabel:"Enter an address name", errArea:"Complete the location down to the last level",
@@ -263,7 +263,7 @@
   if (!COUNTRIES[state.country]) state.country = "BH";
   function save() { try { localStorage.setItem("showbiz_state", JSON.stringify(state)); } catch (e) {} }
 
-  let me = null, profile = null, ready = false, step = "cart", busy = false, doneLocal = false, addrs = [];
+  let me = null, profile = null, ready = false, step = "cart", busy = false, doneLocal = false, orderErr = false, addrs = [];
   let payMethod = null, termsOk = false, termsErr = false, catalogList = [];
   let folds = { cpn: false, note: false };
   let am = null; // حالة نافذة إضافة العنوان
@@ -537,7 +537,7 @@
       if (tb) tb.scrollIntoView({ block: "center", behavior: "smooth" });
       return;
     }
-    busy = true;
+    busy = true; orderErr = false;
     const btn = $("sendBtn");
     if (btn) { btn.disabled = true; btn.textContent = t("sending"); }
     const lines = selLines();
@@ -568,17 +568,14 @@
       if (!error) saved = true; else console.warn(error);
     } catch (e) { console.warn(e); }
     if (!saved) {
-      try {
-        const arr = JSON.parse(localStorage.getItem("showbiz_orders") || "[]");
-        arr.push({ ...row, created: new Date().toISOString() });
-        localStorage.setItem("showbiz_orders", JSON.stringify(arr));
-      } catch (e) {}
+      // ما ينحذف شي من السلة قبل ما يتأكد الطلب، وكل المنتجات تبقى
+      busy = false; orderErr = true; setStep("payment"); return;
     }
-    doneLocal = !saved;
-    // نحذف المنتجات اللي انطلبت بس، وغير المحددة تبقى في السلة
+    // الطلب تم بنجاح: نحذف المنتجات اللي انطلبت بس، وغير المحددة تبقى في السلة
     const doneVids = lines.map(l => l.vid);
     state.cart = state.cart.filter(i => !doneVids.includes(i.vid));
     state.addrId = null; state.coupon = null; state.note = ""; save();
+    doneLocal = false;
     busy = false; payMethod = null; termsOk = false; termsErr = false;
     setStep("done");
   }
@@ -627,6 +624,13 @@
 
   const catalogPool = () => catalogList.filter(e => !state.cart.some(i => i.vid === e.vid));
 
+  // المنتجات المحددة فوق، وغير المحددة (وغير المتوفرة) تحتها بعنوان
+  function linesGroupHTML(lines) {
+    const on = lines.filter(l => !l.v.unavailable && isSelected(l));
+    const off = lines.filter(l => l.v.unavailable || !isSelected(l));
+    return on.map(lineHTML).join("") +
+      (off.length ? `<div class="selhint" style="margin-top:14px;font-weight:700">${t("otherItems")}</div>` + off.map(lineHTML).join("") : "");
+  }
   function lineHTML(l) {
     const out = !!l.v.unavailable;
     const on = isSelected(l) && !out;
@@ -683,7 +687,7 @@
       <div class="panel">
         <label class="selall"><input type="checkbox" data-ui="selAll" ${allOn ? "checked" : ""}> ${t("selAll")} (${lines.length})</label>
         <p class="selhint">${t("selHint")}</p>
-        ${lines.map(lineHTML).join("")}
+        ${linesGroupHTML(lines)}
       </div>
       <div class="panel">
         ${noteBox}
@@ -798,6 +802,7 @@
     else if (step === "address") v.innerHTML = addressHTML();
     else if (step === "payment") v.innerHTML = payHTML();
     else v.innerHTML = cartHTML();
+    if (orderErr && step === "payment") v.insertAdjacentHTML("afterbegin", `<div class="sd-alert">${t("orderFail")}</div>`);
     $("verLine").textContent = `${t("buildLabel")}: ${window.SHOWBIZ_BUILD.version} · ${t("updatedLabel")}: ${window.SHOWBIZ_BUILD.updated}`;
     ShowbizUI.syncFree();
   }
