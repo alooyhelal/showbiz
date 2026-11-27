@@ -2,13 +2,14 @@
 // المفاتيح السرية تنحط في إعدادات Cloudflare (Secrets)، ما تنحط في الكود:
 //   CJ_API_KEY   (إلزامي)
 //   CJ_ORIGIN    (اختياري، بلد الانطلاق، الافتراضي CN)
-//   BHD_PER_USD  (اختياري، الافتراضي 0.376 لأن الدينار مربوط بالدولار)
 //
 // الأوامر:
 //   GET  ?action=list            منتجات CJ (مخزنة 5 دقايق)
 //   GET  ?pid=...                تفاصيل منتج واحد
-//   POST ?action=freight         طرق الشحن وأسعارها بالدينار البحريني
+//   POST ?action=freight         طرق الشحن وأسعارها بعملة الدولة
 //        body: { "country": "BH", "items": [ { "vid": "...", "qty": 2 } ] }
+//
+// أسعار الصرف من open.er-api.com (تتحدث يومياً، والمصدر يطلب ذكره في الموقع).
 
 const ALLOWED_ORIGIN = "https://alooyhelal.github.io";
 const CJ_BASE = "https://developers.cjdropshipping.com/api2.0/v1";
@@ -21,6 +22,7 @@ const FREIGHT_CACHE_MAX = 500;
 //   المخاطرة = أكبر قيمة بين 15% من تكلفة CJ و0.300 دينار
 const RISK_PCT = 0.15;
 const RISK_MIN_BHD = 0.3;
+// الحد الأدنى بالدينار البحريني، ويتحول لعملة الدولة بسعر الصرف اليوم
 const MIN_FEE_BHD = {
   BH: 2.2,
   SA: 3.3,
@@ -29,11 +31,37 @@ const MIN_FEE_BHD = {
   QA: 3.3,
   OM: 3.3,
 };
+const COUNTRY_CURRENCY = { BH: "BHD", SA: "SAR", AE: "AED", KW: "KWD", QA: "QAR", OM: "OMR" };
+const CURRENCY_DECIMALS = { BHD: 3, KWD: 3, OMR: 3 };
+const FX_TTL = 60 * 60 * 1000;
+const FX_URL = "https://open.er-api.com/v6/latest/USD";
 
 let cachedToken = null;
 let tokenExpiresAt = 0;
 let listCache = { at: 0, body: null };
+let fxCache = { at: 0, rates: null, date: null };
 const freightCache = new Map();
+
+// أسعار الصرف: ساعة في الذاكرة، وإذا فشل التحديث نستخدم آخر سعر معروف
+async function getRates() {
+  if (fxCache.rates && Date.now() - fxCache.at < FX_TTL) return fxCache;
+  try {
+    const res = await fetch(FX_URL);
+    const d = await res.json();
+    if (d.result === "success" && d.rates) {
+      fxCache = { at: Date.now(), rates: d.rates, date: d.time_last_update_utc || null };
+      return fxCache;
+    }
+  } catch (e) {}
+  if (fxCache.rates) return fxCache;
+  throw new Error("fx rates unavailable");
+}
+
+// نقرب للأعلى حتى ما ننزل تحت التكلفة بسبب التقريب
+const ceilTo = (n, dec) => {
+  const f = 10 ** dec;
+  return Math.ceil(n * f - 1e-9) / f;
+};
 
 function corsHeaders() {
   return {
@@ -50,7 +78,6 @@ function jsonResponse(obj, status = 200) {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const round3 = (n) => Math.round(n * 1000) / 1000;
 
 async function getToken(env, force = false) {
   if (!force && cachedToken && Date.now() < tokenExpiresAt) return cachedToken;
@@ -207,8 +234,8 @@ async function handleFreight(request, env) {
   }
 
   const country = String(body.country || "").toUpperCase();
-  const minFee = MIN_FEE_BHD[country];
-  if (minFee === undefined) return jsonResponse({ error: "unsupported country" }, 400);
+  const currency = COUNTRY_CURRENCY[country];
+  if (!currency) return jsonResponse({ error: "unsupported country" }, 400);
 
   const items = Array.isArray(body.items) ? body.items : [];
   if (!items.length || items.length > 50) return jsonResponse({ error: "bad items" }, 400);
@@ -226,8 +253,23 @@ async function handleFreight(request, env) {
   const hit = freightCache.get(key);
   if (hit && Date.now() - hit.at < FREIGHT_TTL) return jsonResponse(hit.body);
 
+  let fx;
+  try {
+    fx = await getRates();
+  } catch (e) {
+    return jsonResponse({ error: "rates unavailable" }, 503);
+  }
+  const rate = fx.rates[currency];
+  const rateBHD = fx.rates.BHD;
+  if (!rate || !rateBHD) return jsonResponse({ error: "rate missing" }, 503);
+
+  // كل المبالغ نحولها من الدولار لعملة الدولة بسعر اليوم
+  const dec = CURRENCY_DECIMALS[currency] ?? 2;
+  const bhdToLocal = rate / rateBHD;
+  const minFee = MIN_FEE_BHD[country] * bhdToLocal;
+  const riskMin = RISK_MIN_BHD * bhdToLocal;
+
   const origin = env.CJ_ORIGIN || "CN";
-  const bhdPerUsd = Number(env.BHD_PER_USD) || 0.376;
   const d = await cjPost(env, "/logistic/freightCalculate", {
     startCountryCode: origin,
     endCountryCode: country,
@@ -240,18 +282,18 @@ async function handleFreight(request, env) {
   // التكلفة الداخلية ما تنرجع للعميل، ينرجع السعر النهائي بس
   const methods = d.data
     .map((m) => {
-      const costBHD = (Number(m.logisticPrice) || 0) * bhdPerUsd;
-      const risk = Math.max(RISK_PCT * costBHD, RISK_MIN_BHD);
-      const price = Math.max(minFee, costBHD + risk);
+      const cost = (Number(m.logisticPrice) || 0) * rate;
+      const risk = Math.max(RISK_PCT * cost, riskMin);
+      const price = Math.max(minFee, cost + risk);
       return {
         carrier: m.logisticName || "",
         aging: m.logisticAging || "",
-        priceBHD: round3(price),
+        price: ceilTo(price, dec),
       };
     })
-    .sort((a, b) => a.priceBHD - b.priceBHD);
+    .sort((a, b) => a.price - b.price);
 
-  const result = { country, currency: "BHD", methods, at: Date.now() };
+  const result = { country, currency, decimals: dec, methods, rateDate: fx.date, at: Date.now() };
   if (freightCache.size >= FREIGHT_CACHE_MAX) freightCache.clear();
   freightCache.set(key, { at: Date.now(), body: result });
   return jsonResponse(result);
