@@ -7,6 +7,7 @@
 <title>Showbiz</title>
 <script src="version.js"></script>
 <script src="shared.js"></script>
+<script src="demo-catalog.js"></script>
 <style>
   :root { --bg:#0c1628; --card:#14213a; --card2:#1a2b4a; --line:#2c4168; --fg:#f2f5fa; --muted:#9aa8bf; --orange:#f59e4b; --teal:#2ec4b6; color-scheme:dark; }
   * { box-sizing:border-box; }
@@ -33,6 +34,23 @@
   .btn.main { background:var(--orange); color:#111; box-shadow:0 12px 28px rgba(245,158,75,.25); }
   .btn.sec { background:var(--card); color:var(--fg); border:1px solid var(--line); }
   .btn.sec:hover, .btn.main:hover { filter:brightness(1.05); }
+  .sh { display:flex; justify-content:space-between; align-items:center; margin:26px 0 10px; }
+  .sh h2 { margin:0; font-size:18px; font-weight:800; font-family:'Cairo',system-ui,sans-serif; }
+  .psearch { display:flex; gap:8px; margin-bottom:12px; }
+  .psearch input { flex:1; min-width:0; height:44px; border-radius:999px; border:1px solid var(--line); background:var(--card2); color:var(--fg); padding:0 16px; font:inherit; font-size:15px; }
+  .psearch input::placeholder { color:var(--muted); }
+  .psearch button { height:44px; border-radius:999px; padding:0 18px; background:var(--card2); color:var(--fg); border:1px solid var(--line); font:inherit; font-weight:700; cursor:pointer; }
+  .pgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .pc { display:block; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; text-decoration:none; color:var(--fg); }
+  .pc .im { aspect-ratio:1/1; background:var(--card2); }
+  .pc .im img { width:100%; height:100%; object-fit:cover; display:block; }
+  .pc .tx { padding:10px 10px 12px; }
+  .pc .nm { font-size:14px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.9em; }
+  .pc .pr { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 8px; margin-top:4px; }
+  .pc .pr b { color:var(--orange); font-weight:800; font-size:15px; white-space:nowrap; font-family:'Inter',system-ui,sans-serif; }
+  .pc .pr s { color:var(--muted); font-size:12px; white-space:nowrap; }
+  .allbtn { display:block; text-align:center; margin-top:12px; padding:14px; border-radius:14px; border:1px solid var(--line); color:var(--fg); text-decoration:none; font-weight:800; }
+  .allbtn:hover, .pc:hover { border-color:var(--orange); }
   .copy { text-align:center; color:var(--muted); font-size:12px; margin-top:24px; }
 </style>
 </head>
@@ -62,14 +80,26 @@
     <span id="contactTxt"></span><span class="arr" aria-hidden="true">›</span>
   </a>
 
+  <section>
+    <div class="sh"><h2 id="pTtl"></h2></div>
+    <form class="psearch" id="pForm">
+      <input id="pQ" type="search" autocomplete="off">
+      <button type="submit" id="pGo"></button>
+    </form>
+    <div class="pgrid" id="pGrid"></div>
+    <a class="allbtn" id="allBtn" href="index.html"></a>
+  </section>
+
   <div class="copy" id="ver"></div>
 </main>
 <script>
   const CT = {
     ar: { tag: "متجر إلكتروني لمنتجات منزلية وإلكترونيات وأكثر.", hTtl: "أوقات العمل", open: "مفتوح الآن", closed: "مغلق الآن",
-      shop: "تسوّق الآن", contact: "التواصل معنا", lang: "English", theme: "تغيير المظهر" },
+      shop: "تسوّق الآن", contact: "التواصل معنا", lang: "English", theme: "تغيير المظهر",
+      pTtl: "منتجات مختارة", search: "ابحث عن منتج...", go: "بحث", all: "عرض كل المنتجات" },
     en: { tag: "An online store for home goods, electronics and more.", hTtl: "Working hours", open: "Open now", closed: "Closed now",
-      shop: "Shop now", contact: "Contact us", lang: "العربية", theme: "Change theme" }
+      shop: "Shop now", contact: "Contact us", lang: "العربية", theme: "Change theme",
+      pTtl: "Selected products", search: "Search products...", go: "Search", all: "View all products" }
   };
   const C = ShowbizCore.CONTACT;
   const readState = () => { try { return JSON.parse(localStorage.getItem("showbiz_state") || "{}"); } catch (e) { return {}; } };
@@ -84,6 +114,34 @@
     return { open: h >= C.hours.open && h < C.hours.close, text: h12(C.hours.open) + " – " + h12(C.hours.close) };
   }
 
+  // منتجات مقترحة: المخفّضة أولاً، وتفتح في الموقع عند الضغط
+  const RATE = 0.377;
+  const bhd = usd => (usd * RATE).toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  function featured() {
+    const list = (window.SHOWBIZ_DEMO && window.SHOWBIZ_DEMO.products) || [];
+    const min = p => Math.min(...p.variants.map(v => Number(v.price)));
+    const cmp = p => Math.max(0, ...p.variants.map(v => Number(v.compareAt || p.compareAt) || 0));
+    const sale = list.filter(p => cmp(p) > min(p));
+    return (sale.length >= 4 ? sale : sale.concat(list.filter(p => !sale.includes(p)))).slice(0, 4);
+  }
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  function renderProducts() {
+    document.getElementById("pGrid").innerHTML = featured().map(p => {
+      const name = (lang === "ar" && p.nameAr) ? p.nameAr : (p.nameEn || "");
+      const min = Math.min(...p.variants.map(v => Number(v.price)));
+      const cmp = Math.max(0, ...p.variants.map(v => Number(v.compareAt || p.compareAt) || 0));
+      const pre = p.choose ? (lang === "ar" ? "يبدأ من " : "From ") : "";
+      return `<a class="pc" href="index.html?q=${encodeURIComponent(name)}">
+        <div class="im">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : ""}</div>
+        <div class="tx"><div class="nm">${esc(name)}</div><div class="pr">${esc(pre)}<b>BHD ${bhd(min)}</b>${cmp > min ? `<s>BHD ${bhd(cmp)}</s>` : ""}</div></div></a>`;
+    }).join("");
+  }
+  document.getElementById("pForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const q = document.getElementById("pQ").value.trim();
+    location.href = "index.html" + (q ? "?q=" + encodeURIComponent(q) : "");
+  });
+
   function apply() {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
@@ -92,12 +150,18 @@
     document.getElementById("hTtl").textContent = L().hTtl;
     const hs = hoursState();
     document.getElementById("hTxt").textContent = hs.text;
+    document.getElementById("hTxt").style.direction = lang === "ar" ? "rtl" : "ltr";
     const st = document.getElementById("hStat");
     st.textContent = hs.open ? L().open : L().closed;
     st.className = "status " + (hs.open ? "open" : "closed");
     document.getElementById("shopTxt").textContent = L().shop;
     document.getElementById("contactTxt").textContent = L().contact;
     document.getElementById("langBtn").textContent = L().lang;
+    document.getElementById("pTtl").textContent = L().pTtl;
+    document.getElementById("pQ").placeholder = L().search;
+    document.getElementById("pGo").textContent = L().go;
+    document.getElementById("allBtn").textContent = L().all;
+    renderProducts();
     document.getElementById("ver").textContent = window.SHOWBIZ_BUILD ? window.SHOWBIZ_BUILD.version : "";
     syncTheme();
   }
