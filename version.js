@@ -1,1 +1,1 @@
-window.SHOWBIZ_BUILD = { version: "v61", updated: "2026-11-28 00:10" };
+window.SHOWBIZ_BUILD = { version: "v62", updated: "2026-11-28 00:20" };
