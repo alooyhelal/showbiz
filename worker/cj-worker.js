@@ -6,7 +6,7 @@
 // الأوامر:
 //   GET  ?action=list            منتجات CJ (مخزنة 5 دقايق)
 //   GET  ?pid=...                تفاصيل منتج واحد
-//   POST ?action=freight         طرق الشحن وأسعارها بعملة الدولة
+//   POST ?action=freight         طرق الشحن وأسعارها بعملة الدولة (تكلفة CJ، بدون مخاطرة)
 //        body: { "country": "BH", "items": [ { "vid": "...", "qty": 2 } ] }
 //
 // أسعار الصرف من open.er-api.com (تتحدث يومياً، والمصدر يطلب ذكره في الموقع).
@@ -18,10 +18,7 @@ const FREIGHT_TTL = 10 * 60 * 1000;
 const FREIGHT_CACHE_MAX = 500;
 
 // قواعد السعر (متفق عليها):
-//   السعر النهائي = أكبر قيمة بين (الحد الأدنى للدولة) و(تكلفة CJ + المخاطرة)
-//   المخاطرة = أكبر قيمة بين 15% من تكلفة CJ و0.300 دينار
-const RISK_PCT = 0.15;
-const RISK_MIN_BHD = 0.3;
+//   السعر النهائي = أكبر قيمة بين (الحد الأدنى للدولة) و(تكلفة CJ)، بدون أي هامش مخاطرة
 // الحد الأدنى بالدينار البحريني، ويتحول لعملة الدولة بسعر الصرف اليوم
 const MIN_FEE_BHD = {
   BH: 2.2,
@@ -267,7 +264,6 @@ async function handleFreight(request, env) {
   const dec = CURRENCY_DECIMALS[currency] ?? 2;
   const bhdToLocal = rate / rateBHD;
   const minFee = MIN_FEE_BHD[country] * bhdToLocal;
-  const riskMin = RISK_MIN_BHD * bhdToLocal;
 
   const origin = env.CJ_ORIGIN || "CN";
   const d = await cjPost(env, "/logistic/freightCalculate", {
@@ -283,8 +279,7 @@ async function handleFreight(request, env) {
   const methods = d.data
     .map((m) => {
       const cost = (Number(m.logisticPrice) || 0) * rate;
-      const risk = Math.max(RISK_PCT * cost, riskMin);
-      const price = Math.max(minFee, cost + risk);
+      const price = Math.max(minFee, cost);
       return {
         carrier: m.logisticName || "",
         aging: m.logisticAging || "",
