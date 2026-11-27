@@ -224,7 +224,10 @@
 
   // ===== الشريط العلوي للصفحات الخارجية: رجوع + شعار في النص + زر اللغة =====
   // العربي: الرجوع يمين، واللغة يسار. الإنجليزي: معكوس. الهيدر القديم لكل صفحة يُخفى بـ data-xhide
-  var BAR_T = { ar: { back: "رجوع", lang: "English" }, en: { back: "Back", lang: "العربية" } };
+  var BAR_T = {
+    ar: { back: "رجوع", lang: "English", menu: "القائمة", mStore: "المتجر", mAcct: "معلومات الحساب", mOrders: "طلباتي", mAddr: "عناويني", mDel: "حذف الحساب", mLogout: "تسجيل الخروج" },
+    en: { back: "Back", lang: "العربية", menu: "Menu", mStore: "Store", mAcct: "Account details", mOrders: "My orders", mAddr: "My addresses", mDel: "Delete account", mLogout: "Log out" }
+  };
   function uiLang() { return readJSON("showbiz_state", {}).lang === "en" ? "en" : "ar"; }
   function mountBar() {
     var b = document.body;
@@ -237,14 +240,47 @@
         .map(function (x) { return "body[data-xbar] " + x + "{display:none !important}"; }).join("");
       document.head.appendChild(hs);
     }
+    // الشريط يغطي عرض الشاشة كامل: الهامش السالب يساوي الحشوة الجانبية للصفحة نفسها
+    var cs = getComputedStyle(b);
     var bar = document.createElement("header");
     bar.id = "xbar"; bar.className = "xbar"; bar.dir = en ? "ltr" : "rtl";
+    bar.style.marginLeft = "-" + (parseFloat(cs.paddingLeft) || 0) + "px";
+    bar.style.marginRight = "-" + (parseFloat(cs.paddingRight) || 0) + "px";
     var arrow = en ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6";
     bar.innerHTML =
       '<button type="button" class="xb-back" aria-label="' + T.back + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + arrow + '"/></svg></button>' +
       '<a class="xb-logo" href="index.html" aria-label="Showbiz"><span class="xb-a">Show</span><span class="xb-b">biz</span></a>' +
-      '<button type="button" class="xb-lang">' + T.lang + "</button>";
+      '<div class="xb-end"><button type="button" class="xb-lang">' + T.lang + '</button>' +
+      '<button type="button" class="xb-menu" aria-label="' + T.menu + '" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>';
     b.insertBefore(bar, b.firstChild);
+
+    // القائمة: إذا الصفحة فيها قائمة الحساب (navMenu) تنقل لهنا، وإلا تنبني قائمة افتراضية
+    var panel = document.getElementById("navMenu");
+    if (!panel) {
+      panel = document.createElement("div");
+      panel.id = "xbMenu";
+      var items = [["index.html", T.mStore], ["account.html", T.mAcct], ["orders.html", T.mOrders], ["addresses.html", T.mAddr], ["delete-account.html", T.mDel]];
+      panel.innerHTML = items.map(function (x) { return '<a href="' + x[0] + '">' + x[1] + "</a>"; }).join("") +
+        '<a href="account.html" class="xb-out">' + T.mLogout + "</a>";
+    }
+    panel.classList.add("hidden");
+    b.appendChild(panel);
+    var here = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+    panel.querySelectorAll("a[href]").forEach(function (a) {
+      if ((a.getAttribute("href") || "").toLowerCase() === here) a.classList.add("cur");
+    });
+    var mBtn = bar.querySelector(".xb-menu");
+    mBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var open = panel.classList.toggle("hidden") === false;
+      mBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+    document.addEventListener("click", function (e) {
+      if (!panel.classList.contains("hidden") && !panel.contains(e.target)) {
+        panel.classList.add("hidden"); mBtn.setAttribute("aria-expanded", "false");
+      }
+    });
+
     bar.querySelector(".xb-back").addEventListener("click", function () {
       if (history.length > 1) history.back(); else location.href = "index.html";
     });
@@ -254,14 +290,21 @@
     });
   }
   (function injectBarCss() {
-    var css = ".xbar{position:sticky;top:0;z-index:20;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#0c1628;border-bottom:1px solid #26334d;margin:0 -16px 14px}" +
-      ".xb-back,.xb-lang{position:relative;z-index:1;border:0;background:transparent;color:#eef2f7;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}" +
-      ".xb-back{width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;padding:0}" +
-      ".xb-back:hover{background:rgba(255,255,255,.06)}" +
-      ".xb-back svg{width:24px;height:24px}" +
+    var css = ".xbar{position:sticky;top:0;z-index:20;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#0c1628;border-bottom:1px solid #26334d;margin-bottom:14px}" +
+      ".xb-back,.xb-lang,.xb-menu{position:relative;z-index:1;border:0;background:transparent;color:#eef2f7;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}" +
+      ".xb-back,.xb-menu{width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;padding:0}" +
+      ".xb-back:hover,.xb-menu:hover{background:rgba(255,255,255,.06)}" +
+      ".xb-back svg,.xb-menu svg{width:24px;height:24px}" +
+      ".xb-end{position:relative;z-index:1;display:flex;align-items:center;gap:6px;white-space:nowrap}" +
       ".xb-lang{padding:7px 12px;border:1px solid #2c4168;border-radius:999px;font-size:13px;font-weight:700}" +
       ".xb-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Cairo','Tajawal',system-ui,sans-serif;font-weight:800;font-size:22px;text-decoration:none;white-space:nowrap;direction:ltr;letter-spacing:.2px}" +
-      ".xb-a{color:#f59e4b}.xb-b{color:#2ec4b6}";
+      ".xb-a{color:#f59e4b}.xb-b{color:#2ec4b6}" +
+      "#navMenu,#xbMenu{position:fixed !important;top:66px !important;left:12px !important;right:auto !important;inset-inline-start:auto !important;min-width:0 !important;width:min(240px,calc(100vw - 24px));background:#14213a;border:1px solid #2c4168;border-radius:12px;padding:6px;z-index:40;box-shadow:0 12px 30px rgba(0,0,0,.5)}" +
+      "#navMenu.hidden,#xbMenu.hidden{display:none !important}" +
+      "#navMenu a,#xbMenu a{display:block;padding:10px 12px;border-radius:8px;color:#f2f5fa;text-decoration:none;font-size:14px;text-align:start}" +
+      "#navMenu a:hover,#xbMenu a:hover{background:#1a2b4a}" +
+      "#navMenu a.cur,#xbMenu a.cur{color:#f59e4b;font-weight:700}" +
+      "#navMenu .btn{width:100%;margin-top:4px}";
     try { var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st); } catch (e) {}
   })();
 
