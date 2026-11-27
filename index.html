@@ -155,6 +155,11 @@
   @keyframes sbMarq { to { transform:translateX(-50%); } }
   @media (prefers-reduced-motion: reduce) { .marq-in { animation:none; } }
   .cat-badge { position:absolute; top:10px; inset-inline-start:10px; z-index:1; background:#e11d48; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:6px; max-width:calc(100% - 16px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rv-row { gap:10px; }
+  .rv { flex:0 0 116px; scroll-snap-align:start; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:0 0 8px; overflow:hidden; color:var(--fg); font:inherit; font-size:12px; text-align:start; cursor:pointer; }
+  .rv img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; background:var(--card2); }
+  .rv span { display:block; padding:6px 8px 0; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .rv-all { font-size:13px; color:var(--orange); font-weight:800; text-decoration:none; }
   .price.sale { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; }
   .price.sale .now { display:inline; color:var(--orange,#f59e4b); font-weight:800; font-size:17px; }
   .price.sale .old { display:inline; font-size:12px; color:var(--muted); }
@@ -442,7 +447,7 @@
       buildLabel:"النسخة", updatedLabel:"آخر تحديث",
       menuInfo:"معلومات حسابي", menuOrders:"طلباتي", menuAddr:"عناويني", menuDel:"حذف الحساب",
       cats:"الأقسام", allCats:"كل الفئات", allProductsLbl:"كل المنتجات", contactLbl:"تواصل معنا", shareBtn:"مشاركة", shareDone:"تم نسخ الرابط", other:"منتجات أخرى", seeAll:"عرض الكل", clearFilter:"مسح الفلاتر",
-      noResults:"ما لقينا نتائج", searchPh:"ابحث عن منتج", recentSearch:"آخر البحوث", 
+      noResults:"ما لقينا نتائج", searchPh:"ابحث عن منتج", recentSearch:"آخر البحوث", recentlyHead:"آخر ما شفته", historyLink:"سجل التصفح", 
       sortDef:"الترتيب الافتراضي", sortAsc:"السعر: من الأقل إلى الأعلى", sortDesc:"السعر: من الأعلى إلى الأقل", sortName:"الاسم: من A إلى Z", sortNameDesc:"الاسم: من Z إلى A",
       isNew:"جديد", isBest:"الأكثر مبيعاً", menu:"القائمة", homeLbl:"الصفحة الرئيسية", allProducts:"كل المنتجات", resetSite:"تصفير الموقع",
       saleTitle:"الخصومات", catsHead:"الفئات", chooseColor:"اختر اللون", chooseSize:"اختر المقاس / السعة", chooseBoth:"اختر اللون والمقاس أولاً",
@@ -470,7 +475,7 @@
       buildLabel:"Build", updatedLabel:"Last update",
       menuInfo:"My details", menuOrders:"My orders", menuAddr:"My addresses", menuDel:"Delete account",
       cats:"Categories", allCats:"All categories", allProductsLbl:"All products", contactLbl:"Contact us", shareBtn:"Share", shareDone:"Link copied", other:"Other products", seeAll:"See all", clearFilter:"Clear filters",
-      noResults:"No results", searchPh:"Search products", recentSearch:"Recent searches", 
+      noResults:"No results", searchPh:"Search products", recentSearch:"Recent searches", recentlyHead:"Recently viewed", historyLink:"Browsing history", 
       sortDef:"Default order", sortAsc:"Price: low to high", sortDesc:"Price: high to low", sortName:"Name: A to Z", sortNameDesc:"Name: Z to A",
       isNew:"New", isBest:"Best seller", menu:"Menu", homeLbl:"Home", allProducts:"All products", resetSite:"Reset site",
       saleTitle:"Discounts", catsHead:"Categories", chooseColor:"Choose color", chooseSize:"Choose size / capacity", chooseBoth:"Choose color and size first",
@@ -646,7 +651,7 @@
       loadMsg = "وضع تجريبي (منتجات وهمية)";
       buildCatRoot();
       loaded = true;
-      applyHash(); render(); window.scrollTo(0, 0);
+      applyHash(); render(); window.scrollTo(0, 0); openFromQuery();
       openFromUrl();
       return;
     }
@@ -684,7 +689,7 @@
     }
     buildCatRoot();
     loaded = true;
-    applyHash(); render(); window.scrollTo(0, 0);
+    applyHash(); render(); window.scrollTo(0, 0); openFromQuery();
     openFromUrl();
   }
   function openFromUrl() {
@@ -825,6 +830,26 @@
     const v = p.variants.length === 1 ? p.variants[0] : (p.variants.find(x => x.vid === modal.vid) || null);
     return { p, v };
   }
+  // من صفحة سجل التصفح: index.html?open=PID يفتح المنتج مباشرة
+  function openFromQuery() {
+    const op = new URLSearchParams(location.search).get("open");
+    if (!op) return;
+    history.replaceState(null, "", "index.html");
+    openProduct(op);
+  }
+  // آخر المنتجات اللي شافها الزائر، تظهر في الرئيسية
+  function recentRowHTML() {
+    let rec = [];
+    try { rec = JSON.parse(localStorage.getItem("showbiz_recent") || "[]"); } catch (e) {}
+    rec = (Array.isArray(rec) ? rec : []).filter(r => r && r.p && products.some(x => String(x.pid) === String(r.p.pid)));
+    if (!rec.length) return "";
+    const cards = rec.slice(0, 8).map(r => {
+      const name = state.lang === "en" ? (r.p.nameEn || r.p.nameAr) : (r.p.nameAr || r.p.nameEn);
+      return `<button class="rv" data-openp="${esc(r.p.pid)}"><img src="${esc(r.p.image || "")}" alt=""><span>${esc(name || "")}</span></button>`;
+    }).join("");
+    return `<div class="sec-h"><h3>${t("recentlyHead")}</h3><a class="rv-all" href="history.html">${t("historyLink")}</a></div><div class="hs rv-row">${cards}</div>`;
+  }
+
   function openProduct(pid) {
     const p = products.find(x => x.pid === pid);
     if (!p) return;
@@ -1354,7 +1379,7 @@
     }
     if (!tops.length) return adHTML() + `<div class="grid">${sortItems(products).map(p => cardHTML(p)).join("")}</div>`;
     // الإعلان، ثم الفئات (شريط يتسحب)، ثم الخصومات أول قسم، وبعدها الأقسام
-    let html = marqueeHTML() + adHTML();
+    let html = marqueeHTML() + adHTML() + recentRowHTML();
     html += `<div class="sec-h"><h3>${t("catsHead")}</h3><button class="linkbtn" data-cats="all">${t("seeAll")}</button></div>`;
     html += `<div class="tiles">${saleTile}${tops.map(n => tileHTML(n.key, n.id, catLabel(n.id), false)).join("")}</div>`;
     let secIdx = 0;
