@@ -1436,18 +1436,28 @@
   function startDrift() {
     clearInterval(driftTimer);
     // لا يوقف بسبب تقليل الحركة في الجهاز: الحركة بطيئة وتقف عند اللمس
-    let held = false, pausedUntil = 0, bound = null;
+    let held = false, pausedUntil = 0, bound = null, sgn = 1;
     driftTimer = setInterval(() => {
       // نعيد البحث عن الصف في كل خطوة، لأن الصفحة قد تنعاد رسمها
       const el = document.querySelector("#shopBody .hs.drift");
       if (!el) return;
       if (bound !== el) {
         bound = el; held = false;
+        // نعرف اتجاه الإزاحة مرة وحدة للصف: بعض المتصفحات تستخدم أرقام سالبة للصف العربي وبعضها موجبة
+        sgn = 1;
+        if (getComputedStyle(el).direction === "rtl") {
+          const keep = el.scrollLeft;
+          el.scrollLeft = -5;
+          sgn = el.scrollLeft < 0 ? -1 : 1;
+          el.scrollLeft = keep;
+        }
         const hold = () => { held = true; };
         const release = () => { held = false; pausedUntil = Date.now() + 3000; };
         el.addEventListener("pointerdown", hold);
         el.addEventListener("pointerup", release);
         el.addEventListener("pointerleave", release);
+        el.addEventListener("pointercancel", release);
+        el.addEventListener("touchcancel", release, { passive: true });
         el.addEventListener("touchstart", hold, { passive: true });
         el.addEventListener("touchend", release, { passive: true });
         el.addEventListener("wheel", () => { pausedUntil = Date.now() + 3000; }, { passive: true });
@@ -1455,7 +1465,6 @@
       if (held || document.hidden || Date.now() < pausedUntil) return;
       const max = el.scrollWidth - el.clientWidth;
       if (max <= 0) return;
-      const sgn = getComputedStyle(el).direction === "rtl" ? -1 : 1;
       if (Math.abs(el.scrollLeft) >= max - 1) el.scrollLeft = 0; else el.scrollLeft += sgn;
     }, 180);
   }
