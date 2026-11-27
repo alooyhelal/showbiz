@@ -144,7 +144,21 @@
   .tile { flex:0 0 92px; width:92px; height:84px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:6px; background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:14px; font-size:12px; font-weight:600; line-height:1.3; text-align:center; cursor:pointer; }
   .tile.on { border-color:var(--orange); color:var(--orange); }
   .tile span { overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-  .hs { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; }
+  .hs { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none; scroll-snap-type:x proximity; }
+  .hs > .card { scroll-snap-align:start; }
+  .pimg { position:relative; }
+  .marq { overflow:hidden; background:linear-gradient(90deg,#f59e4b,#ef4444); color:#111; border-radius:14px; margin:4px 0 16px; }
+  .marq-in { display:flex; width:max-content; animation:sbMarq 28s linear infinite; }
+  .marq-in span { padding:12px 14px; font-weight:800; font-size:15px; white-space:nowrap; font-family:'Cairo',system-ui,sans-serif; }
+  .marq-in span:nth-child(even) { position:relative; padding-inline-end:26px; margin-inline-end:6px; }
+  .marq-in span:nth-child(even)::after { content:"%"; position:absolute; inset-inline-end:-2px; top:50%; transform:translateY(-50%); width:20px; height:20px; line-height:20px; border-radius:50%; background:#111; color:#f59e4b; font-size:11px; text-align:center; }
+  @keyframes sbMarq { to { transform:translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) { .marq-in { animation:none; } }
+  .cat-badge { position:absolute; top:10px; inset-inline-start:10px; z-index:1; background:#e11d48; color:#fff; font-size:12px; font-weight:700; padding:4px 10px; border-radius:6px; max-width:calc(100% - 16px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .price.sale { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; }
+  .price.sale .now { display:inline; color:var(--orange,#f59e4b); font-weight:800; font-size:17px; }
+  .price.sale .old { display:inline; font-size:12px; color:var(--muted); }
+  .price .pct { background:rgba(239,68,68,.15); color:#ff6b7a; font-size:11px; font-weight:800; padding:2px 7px; border-radius:999px; }
   .hs > .card { flex:0 0 150px; }
   .cico { width:24px; height:24px; fill:none; stroke:#fff; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
   .tile .cico { width:26px; height:26px; }
@@ -1201,7 +1215,7 @@
     const c = Math.max(0, ...p.variants.map(v => Number(v.compareAt ?? p.compareAt) || 0));
     return c > min ? c : 0;
   }
-  function cardHTML(p) {
+  function cardHTML(p, sale) {
     const idx = cardIdx[p.pid] || 0;
     const img = p.images[idx] || p.image || "";
     const dots = p.images.length > 1
@@ -1209,18 +1223,24 @@
       : "";
     const min = minUSD(p), cmp = cmpUSD(p);
     const pct = cmp ? Math.round((1 - min / cmp) * 100) : 0;
-    const badges = (pct ? `<span class="badge">-${pct}%</span>` : "")
+    const badges = (!sale && pct ? `<span class="badge">-${pct}%</span>` : "")
       + (p.isNew ? `<span class="badge alt">${t("isNew")}</span>` : "")
       + (p.bestseller ? `<span class="badge alt">${t("isBest")}</span>` : "");
+    const catName = sale ? (catOf(p) ? catLabel(catOf(p)) : "") : "";
+    const catBadge = catName ? `<span class="cat-badge">${esc(catName)}</span>` : "";
+    const nowHTML = p.choose ? `<span class="from">${t("fromPrice")}</span><span class="now">${fmt(localPrice(cheapOf(p)))}</span>` : `<span class="now">${priceRange(p)}</span>`;
+    const priceHTML = sale
+      ? `<div class="price sale">${nowHTML}${cmp ? `<s class="old">${fmt(localPrice(cmp))}</s>` : ""}${pct ? `<span class="pct">-${pct}%</span>` : ""}</div>`
+      : `<div class="price">${cmp ? `<s class="old">${fmt(localPrice(cmp))}</s>` : ""}${nowHTML}</div>`;
     return `
       <div class="card">
-        <div class="pimg">${img ? `<img id="c-${esc(p.pid)}" src="${esc(img)}" alt="" loading="lazy">` : ""}${badges}
+        <div class="pimg">${img ? `<img id="c-${esc(p.pid)}" src="${esc(img)}" alt="" loading="lazy">` : ""}${badges}${catBadge}
           <button class="heartbtn ${ShowbizUI.wishedPids().includes(String(p.pid)) ? "on" : ""}" data-action="wish" data-pid="${esc(p.pid)}" aria-label="wishlist">${ShowbizCore.icon("heart")}</button>
         </div>
         ${dots}
         <div class="pbody">
           <div class="pname">${esc(pName(p))}</div>
-          <div class="price">${cmp ? `<s class="old">${fmt(localPrice(cmp))}</s>` : ""}${p.choose ? `<span class="from">${t("fromPrice")}</span><span class="now">${fmt(localPrice(cheapOf(p)))}</span>` : `<span class="now">${priceRange(p)}</span>`}</div>
+          ${priceHTML}
           <div class="row2">
             <button data-action="quickAdd" data-pid="${esc(p.pid)}">${t("add")}</button>
             <button class="ghost" data-action="open" data-pid="${esc(p.pid)}">${t("details")}</button>
@@ -1231,7 +1251,7 @@
   function sectionHTML(title, list, total, cat) {
     const more = cat && total > list.length
       ? `<button class="linkbtn" data-cat="${esc(cat)}">${t("seeAll")}</button>` : "";
-    return `<div class="sec-h"><h3>${esc(title)}</h3>${more}</div><div class="grid">${list.map(cardHTML).join("")}</div>`;
+    return `<div class="sec-h"><h3>${esc(title)}</h3>${more}</div><div class="grid">${list.map(p => cardHTML(p)).join("")}</div>`;
   }
   const ALL = "__all__";
   const ICON_PATHS = {
@@ -1322,7 +1342,7 @@
       const title = isSale ? t("saleTitle")
         : (topWithKids ? catLabel(node.id) : (filt.cat && filt.cat !== ALL ? crumbs(filt.cat) : t("allProductsLbl")));
       const head = `<div class="sec-h"><h3>${esc(title)}</h3><button class="linkbtn" data-clear="1">${t("clearFilter")}</button></div>`;
-      return (topWithKids ? subStripHTML(node) : "") + head + (list.length ? `<div class="grid">${list.map(cardHTML).join("")}</div>` : `<p class="muted">${t("noResults")}</p>`);
+      return (topWithKids ? subStripHTML(node) : "") + head + (list.length ? `<div class="grid">${list.map(p => cardHTML(p, isSale)).join("")}</div>` : `<p class="muted">${t("noResults")}</p>`);
     }
     const tops = catRoot.kids;
     const sale = saleList();
@@ -1332,25 +1352,57 @@
       return `<div class="sec-h"><h3>${t("catsHead")}</h3><button class="linkbtn" data-cats="back">${t("back")}</button></div>` +
         `<div class="cat-grid2">${saleTile}${tops.map(n => tileHTML(n.key, n.id, catLabel(n.id), false)).join("")}</div>`;
     }
-    if (!tops.length) return adHTML() + `<div class="grid">${sortItems(products).map(cardHTML).join("")}</div>`;
+    if (!tops.length) return adHTML() + `<div class="grid">${sortItems(products).map(p => cardHTML(p)).join("")}</div>`;
     // الإعلان، ثم الفئات (شريط يتسحب)، ثم الخصومات أول قسم، وبعدها الأقسام
-    let html = adHTML();
+    let html = marqueeHTML() + adHTML();
     html += `<div class="sec-h"><h3>${t("catsHead")}</h3><button class="linkbtn" data-cats="all">${t("seeAll")}</button></div>`;
     html += `<div class="tiles">${saleTile}${tops.map(n => tileHTML(n.key, n.id, catLabel(n.id), false)).join("")}</div>`;
     let secIdx = 0;
     if (sale.length) {
-      html += `<div class="sec-h"><h3>${t("saleTitle")}</h3><button class="linkbtn" data-cat="${SALE}">${t("seeAll")}</button></div><div class="hs">${sortItems(sale).map(cardHTML).join("")}</div>`;
+      html += `<div class="sec-h"><h3>${t("saleTitle")}</h3><button class="linkbtn" data-cat="${SALE}">${t("seeAll")}</button></div><div class="hs drift">${sortItems(sale).map(p => cardHTML(p, true)).join("")}</div>`;
       html += bannersHTML(SALE, t("saleTitle"), secIdx++);
     }
     tops.forEach(n => {
-      html += `<div class="sec-h"><h3>${esc(catLabel(n.id))}</h3><button class="linkbtn" data-cat="${esc(n.key)}">${t("seeAll")}</button></div><div class="hs">${sortItems(allItems(n)).map(cardHTML).join("")}</div>`;
+      html += `<div class="sec-h"><h3>${esc(catLabel(n.id))}</h3><button class="linkbtn" data-cat="${esc(n.key)}">${t("seeAll")}</button></div><div class="hs">${sortItems(allItems(n)).map(p => cardHTML(p)).join("")}</div>`;
       html += bannersHTML(n.key, catLabel(n.id), secIdx++);
     });
-    if (catRoot.uncat.length) html += `<div class="sec-h"><h3>${esc(t("other"))}</h3></div><div class="hs">${sortItems(catRoot.uncat).map(cardHTML).join("")}</div>`;
+    if (catRoot.uncat.length) html += `<div class="sec-h"><h3>${esc(t("other"))}</h3></div><div class="hs">${sortItems(catRoot.uncat).map(p => cardHTML(p)).join("")}</div>`;
     return html;
   }
   function viewShop() {
+    setTimeout(startDrift, 0);
     return `<div id="shopBody">${shopBodyHTML()}</div>`;
+  }
+  // شريط عروض متحرك (يتكرر لحركة مستمرة)، والحركة تقف لمن يفضّل تقليل الحركة
+  function marqueeHTML() {
+    const txt = state.lang === "en" ? "Today's offers" : "عروض اليوم";
+    const tail = state.lang === "en" ? "Don't miss out" : "لا يفوتك";
+    const set = Array.from({ length: 4 }, () => `<span>${txt}</span><span>${tail}</span>`).join("");
+    return `<div class="marq" aria-label="${esc(txt)} ${esc(tail)}"><div class="marq-in">${set}${set}</div></div>`;
+  }
+  // تحريك بطيء لصف الخصومات: يتوقف عند اللمس أو السحب، ويرجع بعد ثلاث ثوانٍ
+  let driftTimer = 0;
+  function startDrift() {
+    clearInterval(driftTimer);
+    const el = document.querySelector("#shopBody .hs.drift");
+    if (!el || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+    let held = false, pausedUntil = 0;
+    const hold = () => { held = true; };
+    const release = () => { held = false; pausedUntil = Date.now() + 3000; };
+    el.addEventListener("pointerdown", hold);
+    el.addEventListener("pointerup", release);
+    el.addEventListener("pointerleave", release);
+    el.addEventListener("touchstart", hold, { passive: true });
+    el.addEventListener("touchend", release, { passive: true });
+    el.addEventListener("wheel", () => { pausedUntil = Date.now() + 3000; }, { passive: true });
+    const sgn = getComputedStyle(el).direction === "rtl" ? -1 : 1;
+    driftTimer = setInterval(() => {
+      if (!el.isConnected) { clearInterval(driftTimer); return; }
+      if (held || document.hidden || Date.now() < pausedUntil) return;
+      const max = el.scrollWidth - el.clientWidth;
+      if (max <= 0) return;
+      if (Math.abs(el.scrollLeft) >= max - 1) el.scrollLeft = 0; else el.scrollLeft += sgn;
+    }, 50);
   }
   // التذييل الكامل في الصفحة الرئيسية فقط (بدون فئة ولا بحث)، وبقية العروض سطر الحقوق
   function syncFooter() {
@@ -1457,7 +1509,7 @@
       `<button class="ct-name ${catsGrid ? "on" : ""}" data-cats="all">${catIcon("tag")}<span>${t("allCats")}</span></button>` +
       `<button class="ct-name ${filt.cat === ALL ? "on" : ""}" data-cat="${ALL}">${catIcon("tag")}<span>${t("allProductsLbl")}</span></button>` +
       sale + catTreeHTML(catRoot.kids, 0) +
-      `<div class="ct-sep"></div><a class="ct-name ct-contact" href="contact.html">${catIcon("tag")}<span>${t("contactLbl")}</span></a>` + ShowbizCore.socialHTML("side-social");
+      `<div class="ct-sep"></div><a class="ct-name ct-contact" href="contact.html">${catIcon("tag")}<span>${t("contactLbl")}</span></a>`;
   }
   function fillFilters() {
     const s = document.getElementById("sortSel");
@@ -1938,6 +1990,7 @@
   document.getElementById("sideX").addEventListener("click", closeMenus);
   document.getElementById("sideOv").addEventListener("click", closeMenus);
   const qEl = document.getElementById("q");
+  { const qp = new URLSearchParams(location.search).get("q"); if (qp) { filt.q = qp; qEl.value = qp; } }
   qEl.addEventListener("input", () => { filt.q = qEl.value; refreshShop(); renderSugg(); });
   qEl.addEventListener("focus", renderSugg);
   qEl.addEventListener("keydown", (e) => { if (e.key === "Enter") { ShowbizUI.pushSearch(qEl.value); document.getElementById("sugg").classList.add("hidden"); } });

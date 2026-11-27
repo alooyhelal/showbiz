@@ -118,37 +118,17 @@
   }
 
   // ===== التذييل: يظهر في أسفل كل الصفحات =====
-  // املأ القيم هنا وتظهر تلقائياً. الفارغ ما يظهر
-  var CONTACT = { phone: "", whatsapp: "", hours: "", email: "" };
-  // روابط التواصل الاجتماعي: غيّر الروابط هنا لحساباتك الفعلية (الإنستجرام، التيك توك، رقم الواتساب بدون +)
-  var SOCIAL = { instagram: "https://www.instagram.com/showbiz", tiktok: "https://www.tiktok.com/@showbiz", whatsapp: "https://wa.me/97300000000" };
-  var SOCIAL_ICO = {
-    instagram: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>',
-    tiktok: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.6 3h-3.2v12.4a2.6 2.6 0 1 1-2.6-2.6c.2 0 .4 0 .6.1V9.6a5.8 5.8 0 1 0 5.2 5.8V9a7.4 7.4 0 0 0 4.3 1.4V7.2A4.4 4.4 0 0 1 16.6 3z"/></svg>',
-    whatsapp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c0 2.8 2.7 5.5 5.5 5.5l1-1.2-2-1-.8.8c-1-.4-2-1.4-2.4-2.4l.8-.8-1-2z"/></svg>'
-  };
-  var SOCIAL_LBL = { instagram: "Instagram", tiktok: "TikTok", whatsapp: "WhatsApp" };
-  // صف أيقونات التواصل: إنستجرام وتيك توك وواتساب فقط، كل أيقونة تفتح رابطها مباشرة
-  function socialHTML(cls) {
-    return '<div class="social-row ' + (cls || "") + '">' + ["instagram", "tiktok", "whatsapp"].map(function (k) {
-      return '<a href="' + SOCIAL[k] + '" target="_blank" rel="noopener" aria-label="' + SOCIAL_LBL[k] + '" title="' + SOCIAL_LBL[k] + '">' + SOCIAL_ICO[k] + "</a>";
-    }).join("") + "</div>";
-  }
-  (function injectSocialCss() {
-    var css = ".social-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin:12px 0 4px}" +
-      ".social-row a{width:40px;height:40px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line,#2c3b5a);color:inherit;text-decoration:none;background:var(--card2,#1d2a44)}" +
-      ".social-row a svg{width:20px;height:20px}" +
-      ".social-row a:hover{border-color:var(--orange,#f59e4b);color:var(--orange,#f59e4b)}";
-    try { var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st); } catch (e) {}
-  })();
+  // بيانات التواصل: عدّلها هنا لما تتوفر. الواتساب والاتصال بالأرقام الفعلية، والساعات بتوقيت البحرين
+  var CONTACT = { whatsapp: "97300000000", call: "+97300000000", hours: { open: 9, close: 22 } };
+  // قنوات التواصل الاجتماعي مخفية حالياً (ما فيه روابط حقيقية)، ما فيه أيقونات لها
 
   var FT = {
     ar: { about: "متجر إلكتروني لمنتجات منزلية وإلكترونيات وأكثر.", links: "روابط", support: "دعم العملاء",
       pay: "طرق الدفع", home: "الصفحة الرئيسية", orders: "طلباتي", addr: "عناويني", acct: "حسابي", terms: "الشروط والأحكام",
-      cod: "الدفع عند الاستلام", card: "بطاقة ائتمان", copy: "جميع الحقوق محفوظة" },
+      cod: "الدفع عند الاستلام", card: "بطاقة ائتمان", copy: "جميع الحقوق محفوظة", contact: "تواصل معنا" },
     en: { about: "An online store for home goods, electronics and more.", links: "Links", support: "Customer support",
       pay: "Payment methods", home: "Home", orders: "My orders", addr: "My addresses", acct: "My account", terms: "Terms and conditions",
-      cod: "Cash on delivery", card: "Credit card", copy: "All rights reserved" }
+      cod: "Cash on delivery", card: "Credit card", copy: "All rights reserved", contact: "Contact us" }
   };
   function buildFooter(full) {
     var old = document.getElementById("siteFooter"); if (old) old.parentNode.removeChild(old);
@@ -162,18 +142,15 @@
       document.body.appendChild(line);
       return;
     }
-    var sup = [];
-    if (CONTACT.phone) sup.push('<a dir="ltr" href="tel:' + CONTACT.phone + '">' + CONTACT.phone + "</a>");
-    if (CONTACT.whatsapp) sup.push('<a href="https://wa.me/' + CONTACT.whatsapp + '" target="_blank" rel="noopener">WhatsApp</a>');
-    if (CONTACT.email) sup.push('<a dir="ltr" href="mailto:' + CONTACT.email + '">' + CONTACT.email + "</a>");
-    if (CONTACT.hours) sup.push("<span>" + CONTACT.hours + "</span>");
+    var sup = ['<a href="contact.html">' + L.contact + "</a>",
+      '<a href="https://wa.me/' + CONTACT.whatsapp + '" target="_blank" rel="noopener">WhatsApp</a>'];
     var f = document.createElement("footer");
     f.id = "siteFooter"; f.className = "sfoot";
     f.innerHTML =
       '<div class="sfoot-in">' +
-        '<div><strong class="sfoot-brand">Showbiz</strong><p>' + L.about + "</p></div>" +
+        '<div><strong class="sfoot-brand">Show<b>biz</b></strong><p>' + L.about + "</p></div>" +
         '<div><h5>' + L.links + '</h5><a href="index.html">' + L.home + '</a><a href="orders.html">' + L.orders + '</a><a href="addresses.html">' + L.addr + '</a><a href="account.html">' + L.acct + '</a><a href="terms.html">' + L.terms + "</a></div>" +
-        '<div><h5>' + L.support + "</h5>" + (sup.length ? sup.join("") : "") + socialHTML("sfoot-social") + "</div>" +
+        '<div class="sfoot-c"><h5>' + L.support + "</h5>" + sup.join("") + "</div>" +
         '<div><h5>' + L.pay + '</h5><span>Apple Pay</span><span>Benefit</span><span>' + L.cod + "</span><span>" + L.card + "</span></div>" +
         '<div class="sfoot-copy">© 2026 Showbiz · ' + L.copy + "</div>" +
       "</div>";
@@ -191,7 +168,7 @@
     b.id = "toTop"; b.type = "button"; b.className = "totop";
     b.setAttribute("aria-label", "Back to top");
     b.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true"><circle class="trk" cx="24" cy="24" r="21" fill="none" stroke-width="3"/><circle class="prg" cx="24" cy="24" r="21" fill="none" stroke-width="3" stroke-linecap="round"/></svg><span class="arr">&#8593;</span>';
-    if (document.querySelector(".stickyfoot, .build")) b.classList.add("lift");
+    if (document.querySelector(".stickyfoot, .build") || document.getElementById("sbDock")) b.classList.add("lift");
     document.body.appendChild(b);
     var prg = b.querySelector(".prg"), C = 2 * Math.PI * 21;
     prg.style.strokeDasharray = C + "";
@@ -245,7 +222,118 @@
     lastTouchEnd = now;
   }, { passive: false });
 
-  document.addEventListener("DOMContentLoaded", function () { fillIcons(); mountFooter(); mountToTop(); guardContent(); });
+  // ===== الشريط العلوي للصفحات الخارجية: رجوع + شعار في النص + زر اللغة =====
+  // العربي: الرجوع يمين، واللغة يسار. الإنجليزي: معكوس. الهيدر القديم لكل صفحة يُخفى بـ data-xhide
+  var BAR_T = { ar: { back: "رجوع", lang: "English" }, en: { back: "Back", lang: "العربية" } };
+  function uiLang() { return readJSON("showbiz_state", {}).lang === "en" ? "en" : "ar"; }
+  function mountBar() {
+    var b = document.body;
+    if (!b || !b.hasAttribute("data-xbar") || document.getElementById("xbar")) return;
+    var lang = uiLang(), T = BAR_T[lang], en = lang === "en";
+    var hide = b.getAttribute("data-xhide");
+    if (hide) {
+      var hs = document.createElement("style");
+      hs.textContent = hide.split(",").map(function (x) { return x.trim(); }).filter(Boolean)
+        .map(function (x) { return "body[data-xbar] " + x + "{display:none !important}"; }).join("");
+      document.head.appendChild(hs);
+    }
+    var bar = document.createElement("header");
+    bar.id = "xbar"; bar.className = "xbar"; bar.dir = en ? "ltr" : "rtl";
+    var arrow = en ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6";
+    bar.innerHTML =
+      '<button type="button" class="xb-back" aria-label="' + T.back + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + arrow + '"/></svg></button>' +
+      '<a class="xb-logo" href="index.html" aria-label="Showbiz"><span class="xb-a">Show</span><span class="xb-b">biz</span></a>' +
+      '<button type="button" class="xb-lang">' + T.lang + "</button>";
+    b.insertBefore(bar, b.firstChild);
+    bar.querySelector(".xb-back").addEventListener("click", function () {
+      if (history.length > 1) history.back(); else location.href = "index.html";
+    });
+    bar.querySelector(".xb-lang").addEventListener("click", function () {
+      var st = readJSON("showbiz_state", {}); st.lang = en ? "ar" : "en"; writeJSON("showbiz_state", st);
+      location.reload();
+    });
+  }
+  (function injectBarCss() {
+    var css = ".xbar{position:sticky;top:0;z-index:20;height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:#0c1628;border-bottom:1px solid #26334d;margin:0 -16px 14px}" +
+      ".xb-back,.xb-lang{position:relative;z-index:1;border:0;background:transparent;color:#eef2f7;cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent}" +
+      ".xb-back{width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;padding:0}" +
+      ".xb-back:hover{background:rgba(255,255,255,.06)}" +
+      ".xb-back svg{width:24px;height:24px}" +
+      ".xb-lang{padding:7px 12px;border:1px solid #2c4168;border-radius:999px;font-size:13px;font-weight:700}" +
+      ".xb-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:'Cairo','Tajawal',system-ui,sans-serif;font-weight:800;font-size:22px;text-decoration:none;white-space:nowrap;direction:ltr;letter-spacing:.2px}" +
+      ".xb-a{color:#f59e4b}.xb-b{color:#2ec4b6}";
+    try { var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st); } catch (e) {}
+  })();
+
+  // ===== الشريط السفلي العائم في كل الصفحات: يختفي عند النزول ويرجع عند الرفعة =====
+  // data-nodock على الصفحة يلغيه. data-dock="contact" يعرض: تسوّق، واتساب، اتصال
+  var DOCK_SVG = {
+    home: '<path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z"/>',
+    tag: '<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
+    cart: '<path d="M3 4.5h2.2l2.3 11.2h10.4l2.1-7.6H6.6"/><circle cx="9.3" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5c1.4-3.6 4.2-5.5 7.5-5.5s6.1 1.9 7.5 5.5"/>',
+    chat: '<path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/>',
+    phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/>'
+  };
+  var DOCK_T = {
+    ar: { home: "الرئيسية", offers: "العروض", cart: "السلة", acct: "حسابي", wa: "واتساب", call: "اتصال", shop: "تسوّق" },
+    en: { home: "Home", offers: "Offers", cart: "Cart", acct: "Account", wa: "WhatsApp", call: "Call", shop: "Shop" }
+  };
+  function mountDock() {
+    var b = document.body;
+    if (!b || b.hasAttribute("data-nodock") || document.getElementById("sbDock")) return;
+    var T = DOCK_T[uiLang()];
+    var page = (location.pathname.split("/").pop() || "index.html").toLowerCase();
+    var contact = b.getAttribute("data-dock") === "contact";
+    var items = contact
+      ? [{ href: "index.html", ic: "cart", label: T.shop, key: "shop" },
+         { href: "https://wa.me/" + CONTACT.whatsapp, ic: "chat", label: T.wa, key: "wa", ext: true },
+         { href: "tel:" + CONTACT.call, ic: "phone", label: T.call, key: "call" }]
+      : [{ href: "index.html", ic: "home", label: T.home, key: "home" },
+         { href: "index.html#discounts", ic: "tag", label: T.offers, key: "offers" },
+         { href: "cart.html", ic: "cart", label: T.cart, key: "cart" },
+         { href: "account.html", ic: "user", label: T.acct, key: "acct" }];
+    var onKey = page === "index.html" ? "home"
+      : (/^(account|addresses|orders|delete-account)\.html$/.test(page) ? "acct" : (page === "cart.html" ? "cart" : ""));
+    var st = readJSON("showbiz_state", {});
+    var n = Array.isArray(st.cart) ? st.cart.reduce(function (a, l) { return a + (Number(l.qty) || 0); }, 0) : 0;
+    var nav = document.createElement("nav");
+    nav.id = "sbDock"; nav.className = "sbdock"; nav.setAttribute("aria-label", "Navigation");
+    nav.innerHTML = items.map(function (it) {
+      var cls = (!contact && it.key === onKey) ? "on" : "";
+      var badge = it.key === "cart" && n > 0 ? '<span class="bd">' + n + "</span>" : "";
+      return '<a href="' + it.href + '" class="' + cls + '"' + (it.ext ? ' target="_blank" rel="noopener"' : "") + ">" +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + DOCK_SVG[it.ic] + "</svg>" +
+        badge + "<span>" + it.label + "</span></a>";
+    }).join("");
+    b.appendChild(nav);
+    b.classList.add("has-dock");
+    var last = window.scrollY || 0, tick = false;
+    window.addEventListener("scroll", function () {
+      if (tick) return; tick = true;
+      requestAnimationFrame(function () {
+        var y = window.scrollY || 0, d = y - last;
+        if (y < 60 || d < -6) nav.classList.remove("off");
+        else if (d > 6) nav.classList.add("off");
+        if (Math.abs(d) > 6) last = y;
+        tick = false;
+      });
+    }, { passive: true });
+  }
+  (function injectDockCss() {
+    var css = ".sbdock{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;width:min(calc(100% - 28px),440px);display:flex;align-items:center;gap:4px;padding:6px;border-radius:999px;background:rgba(14,24,42,.94);border:1px solid rgba(255,255,255,.08);box-shadow:0 12px 32px rgba(0,0,0,.4);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);transition:transform .35s ease,opacity .35s ease}" +
+      ".sbdock.off{transform:translate(-50%,160%);opacity:0;pointer-events:none}" +
+      ".sbdock a{position:relative;flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 2px;border-radius:999px;color:#9aa8bf;text-decoration:none;font-size:11px;font-weight:700;transition:background .3s ease,color .3s ease}" +
+      ".sbdock a svg{width:20px;height:20px}" +
+      ".sbdock a.on{background:#f59e4b;color:#111}" +
+      ".sbdock a > span:last-child{white-space:nowrap}" +
+      ".sbdock .bd{position:absolute;top:3px;inset-inline-start:calc(50% + 6px);min-width:17px;height:17px;border-radius:999px;background:#2ec4b6;color:#06201d;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px}" +
+      "body.has-dock{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))}" +
+      "@media (prefers-reduced-motion:reduce){.sbdock{transition:none}}";
+    try { var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st); } catch (e) {}
+  })();
+
+  document.addEventListener("DOMContentLoaded", function () { fillIcons(); mountBar(); mountDock(); mountFooter(); mountToTop(); guardContent(); });
 
   // ===== أنماط مشتركة: بدون سكرول يمين ويسار، وتذييل في كل الصفحات =====
   var SHARED_CSS = [
@@ -273,6 +361,10 @@
     ".sfoot span{display:block}",
     ".sfoot p{margin:0}",
     ".sfoot-brand{color:#f59e4b;font-size:18px}",
+    ".sfoot-brand b{color:#2ec4b6;font-weight:800}",
+    ".sfoot-c{text-align:center}",
+    ".sfoot-c h5{margin-bottom:10px}",
+    ".sfoot-c a{display:inline-block;margin:3px 10px}",
     ".sfoot-copy{grid-column:1/-1;text-align:center;border-top:1px solid #26334d;padding-top:14px;margin-top:4px}",
     "label.req::after{content:\" *\";color:#ff5d6c;font-weight:800}",
     ".copyline{text-align:center;color:#8a97ab;font-size:12px;margin:32px 0 0;padding:0 16px max(28px, env(safe-area-inset-bottom, 0px))}",
@@ -457,8 +549,7 @@
     theme: themeNow,
     setTheme: setTheme,
     copyright: copyright,
-    socialHTML: socialHTML,
-    SOCIAL: SOCIAL,
+    CONTACT: CONTACT,
     confirmDel: confirmDel,
     icon: icon,
     fillIcons: fillIcons,
