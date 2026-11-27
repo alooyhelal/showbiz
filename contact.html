@@ -7,218 +7,75 @@
 <title>Showbiz تواصل معنا</title>
 <script src="version.js"></script>
 <script src="shared.js"></script>
-<script src="demo-catalog.js"></script>
 <style>
-  :root { --bg:#0c1628; --card:#14213a; --card2:#1a2b4a; --line:#2c4168; --fg:#f2f5fa; --muted:#9aa8bf; --orange:#f59e4b; --teal:#2ec4b6; color-scheme:dark; }
+  :root { --bg:#0c1628; --card:#14213a; --card2:#1a2b4a; --line:#2c4168; --fg:#f2f5fa; --muted:#9aa8bf; --orange:#f59e4b; --orange-d:#e0852f; color-scheme:dark; }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font-family:'Tajawal',system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
-  .wrap { max-width:520px; margin:0 auto; padding-block:18px 24px; }
-  h1, h2, h3 { font-family:'Cairo',system-ui,sans-serif; margin:0; }
-  .hero { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; }
-  .hero h1 { font-size:24px; font-weight:800; }
-  .hero p { margin:6px 0 0; color:var(--muted); font-size:14px; line-height:1.7; }
-  .themebtn { flex-shrink:0; width:44px; height:44px; border-radius:50%; border:1px solid var(--line); background:var(--card); color:var(--fg); display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
-  .themebtn svg { width:20px; height:20px; }
-  .shopbtn { display:flex; align-items:center; gap:14px; padding:18px; border-radius:18px; background:var(--orange); color:#111; text-decoration:none; font-weight:800; font-size:18px; box-shadow:0 12px 28px rgba(245,158,75,.25); margin-bottom:14px; }
-  .shopbtn .arr { margin-inline-start:auto; font-size:22px; }
-  .ic { width:44px; height:44px; flex-shrink:0; border-radius:50%; background:rgba(255,255,255,.06); color:var(--orange); display:flex; align-items:center; justify-content:center; }
-  .ic svg { width:22px; height:22px; }
-  .card { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px; margin-bottom:14px; }
-  .card .grow { flex:1; min-width:0; }
-  .card h2 { font-size:16px; font-weight:700; }
-  .card p { margin:4px 0 0; color:var(--muted); font-size:13px; line-height:1.6; }
-  .status { font-size:12px; font-weight:800; padding:5px 10px; border-radius:999px; white-space:nowrap; }
-  .status.open { background:rgba(34,197,94,.15); color:#4ade80; }
-  .status.closed { background:rgba(248,113,113,.15); color:#fca5a5; }
-  .sec { margin-top:22px; }
-  .sh { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-  .sh h2 { font-size:18px; font-weight:800; }
-  .psearch { display:flex; gap:8px; margin-bottom:12px; }
-  .psearch input { flex:1; min-width:0; height:44px; border-radius:999px; border:1px solid var(--line); background:var(--card2); color:var(--fg); padding:0 16px; font:inherit; font-size:15px; }
-  .psearch input::placeholder { color:var(--muted); }
-  .psearch button { height:44px; border:0; border-radius:999px; padding:0 18px; background:var(--card2); color:var(--fg); border:1px solid var(--line); font:inherit; font-weight:700; cursor:pointer; }
-  .pgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-  .pc { display:block; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; text-decoration:none; color:var(--fg); }
-  .pc .im { aspect-ratio:1/1; background:var(--card2); }
-  .pc .im img { width:100%; height:100%; object-fit:cover; display:block; }
-  .pc .tx { padding:10px 10px 12px; }
-  .pc .nm { font-size:14px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:2.9em; }
-  .pc .pr { display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 8px; margin-top:4px; font-family:'Inter',system-ui,sans-serif; }
-  .pc .pr b { color:var(--orange); font-weight:800; font-size:15px; white-space:nowrap; }
-  .pc .pr s { color:var(--muted); font-size:12px; white-space:nowrap; }
-  .allbtn { display:block; text-align:center; margin-top:12px; padding:14px; border-radius:14px; border:1px solid var(--line); background:transparent; color:var(--fg); text-decoration:none; font-weight:800; }
-  .allbtn:hover, .act:hover { border-color:var(--orange); }
-  .act { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:10px; color:var(--fg); text-decoration:none; }
-  .act .tx { flex:1; min-width:0; }
-  .act .tx b { display:block; font-size:16px; font-weight:800; }
-  .act .tx small { display:block; color:var(--muted); font-size:13px; margin-top:3px; line-height:1.5; }
-  .act .chev { color:var(--muted); font-size:22px; }
-  .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:18px; direction:ltr; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width:520px; margin:0 auto; padding-block:20px 28px; }
+  .hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+  .brand { font-weight:800; font-size:18px; color:var(--fg); text-decoration:none; }
+  .brand b { color:var(--orange); }
+  h1 { font-size:22px; margin:0 0 6px; }
+  .sub { color:var(--muted); font-size:14px; line-height:1.7; margin:0 0 18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; margin-bottom:14px; }
+  .card h2 { font-size:16px; margin:0 0 6px; }
+  .card p { margin:0; color:var(--muted); font-size:14px; line-height:1.7; }
+  .act { display:flex; align-items:center; justify-content:space-between; gap:10px; text-decoration:none; color:var(--fg); background:var(--card2); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:10px; font-weight:700; }
+  .act:hover { border-color:var(--orange); }
+  .act small { color:var(--muted); font-weight:400; direction:ltr; }
+  .btn { border:1px solid var(--line); background:transparent; color:var(--fg); border-radius:10px; padding:8px 12px; font-family:inherit; font-size:13px; font-weight:700; cursor:pointer; }
+  .ver { text-align:center; color:var(--muted); font-size:12px; margin-top:16px; direction:ltr; }
+  .copyline { text-align:center; color:#8a97ab; font-size:12px; margin:24px 0 0; padding-bottom:max(28px, env(safe-area-inset-bottom, 0px)); }
 </style>
 </head>
-<body data-xbar data-dock="contact">
-<main class="wrap">
-  <section class="hero">
-    <div>
-      <h1 id="ttl"></h1>
-      <p id="sub"></p>
-    </div>
-    <button class="themebtn" id="themeBtn" type="button"></button>
-  </section>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <a class="brand" href="index.html">Show<b>biz</b></a>
+    <button class="btn" id="langBtn" type="button"></button>
+  </div>
+  <h1 id="ttl"></h1>
+  <p class="sub" id="sub"></p>
 
-  <a class="shopbtn" href="index.html">
-    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5h2.2l2.3 11.2h10.4l2.1-7.6H6.6"/><circle cx="9.3" cy="19.5" r="1.4"/><circle cx="17" cy="19.5" r="1.4"/></svg></span>
-    <span id="shopTxt"></span><span class="arr" aria-hidden="true">›</span>
-  </a>
-
-  <section class="card">
-    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span>
-    <div class="grow"><h2 id="hTtl"></h2><p id="hTxt"></p></div>
-    <span class="status" id="hStat"></span>
-  </section>
-
-  <section class="sec">
-    <div class="sh"><h2 id="pTtl"></h2></div>
-    <form class="psearch" id="pForm">
-      <input id="pQ" type="search" autocomplete="off">
-      <button type="submit" id="pGo"></button>
-    </form>
-    <div class="pgrid" id="pGrid"></div>
-    <a class="allbtn" id="allBtn" href="index.html"></a>
-  </section>
-
-  <section class="sec">
-    <div class="sh"><h2 id="hlpTtl"></h2></div>
-    <a class="act" id="actSales" target="_blank" rel="noopener">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5L5.5 4h13L20 9.5M4 9.5h16M5 9.5V20h14V9.5M9.5 20v-5h5v5"/></svg></span>
-      <span class="tx"><b id="sLbl"></b><small id="sSub"></small></span><span class="chev" aria-hidden="true">›</span>
-    </a>
-    <a class="act" id="actCare" target="_blank" rel="noopener">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 13a8 8 0 0 1 16 0"/><rect x="3" y="13" width="4" height="6" rx="1.5"/><rect x="17" y="13" width="4" height="6" rx="1.5"/><path d="M19 19c0 1.5-2 2-5 2"/></svg></span>
-      <span class="tx"><b id="cLbl"></b><small id="cSub"></small></span><span class="chev" aria-hidden="true">›</span>
-    </a>
-    <a class="act" id="actCall" href="#">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg></span>
-      <span class="tx"><b id="callLbl"></b><small id="callSub" dir="ltr"></small></span><span class="chev" aria-hidden="true">›</span>
-    </a>
-  </section>
+  <div class="card">
+    <h2 id="cWa"></h2>
+    <p id="cWaTxt"></p>
+    <a class="act" id="aWa" href="#" target="_blank" rel="noopener"><span id="aWaTxt"></span><small>WhatsApp</small></a>
+  </div>
 
   <div class="ver" id="ver"></div>
-</main>
+</div>
 <script>
   const CT = {
-    ar: { title: "تواصل معنا", sub: "تسوّق منتجاتنا، أو كلمنا مباشرة وبنرد عليك.", shop: "تسوّق أونلاين",
-      hTtl: "ساعات الرد", open: "مفتوح الآن", closed: "مغلق الآن",
-      pTtl: "منتجات مختارة", search: "ابحث عن منتج...", go: "بحث", all: "عرض كل المنتجات",
-      hlp: "كيف نقدر نساعدك؟",
-      sales: "الاستفسارات والمبيعات", salesSub: "معلومات المنتجات والطلبات", 
-      care: "خدمة العملاء بعد البيع", careSub: "الإرجاع والاستبدال والمتابعة",
-      call: "اتصل بنا", theme: "تغيير المظهر" },
-    en: { title: "Contact us", sub: "Shop our products, or message us directly and we will reply.", shop: "Shop online",
-      hTtl: "Reply hours", open: "Open now", closed: "Closed now",
-      pTtl: "Selected products", search: "Search products...", go: "Search", all: "View all products",
-      hlp: "How can we help?",
-      sales: "Sales and enquiries", salesSub: "Product info and orders",
-      care: "After-sales support", careSub: "Returns, exchanges and follow-up",
-      call: "Call us", theme: "Change theme" }
+    ar: { title: "تواصل معنا", sub: "نسعد بتواصلك معنا، اختر الطريقة اللي تناسبك.", switch: "English",
+      wa: "واتساب", waTxt: "أرسل لنا رسالة مباشرة على واتساب وبنرد عليك في أقرب وقت.", waBtn: "ابدأ المحادثة",},
+    en: { title: "Contact us", sub: "We are happy to hear from you. Choose the way that suits you.", switch: "العربية",
+      wa: "WhatsApp", waTxt: "Send us a direct message on WhatsApp and we will reply as soon as possible.", waBtn: "Start chat",}
   };
-  const C = ShowbizCore.CONTACT;
-  const RATE = 0.377; // سعر الصرف التقريبي من الدولار للدينار (نفس الموقع)
   let lang = "ar";
-  try { const st = JSON.parse(localStorage.getItem("showbiz_state") || "{}"); if (st.lang === "en") lang = "en"; } catch (e) {}
+  try { const st = JSON.parse(localStorage.getItem("showbiz_state") || "{}"); if (st.lang === "en" || st.lang === "ar") lang = st.lang; } catch (e) {}
   const L = () => CT[lang];
-  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const hour12 = h => { const x = h % 12 || 12; return x + ":00 " + (h < 12 ? (lang === "ar" ? "ص" : "AM") : (lang === "ar" ? "م" : "PM")); };
-
-  // الساعات بتوقيت البحرين
-  function hoursState() {
-    const now = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Bahrain" }));
-    const h = now.getHours() + now.getMinutes() / 60;
-    const open = h >= C.hours.open && h < C.hours.close;
-    return { open, text: hour12(C.hours.open) + " – " + hour12(C.hours.close) };
-  }
-
-  // منتجات مختارة: المخفّضة أولاً، ثم أي منتجات
-  function featured() {
-    const list = (window.SHOWBIZ_DEMO && window.SHOWBIZ_DEMO.products) || [];
-    const min = p => Math.min(...p.variants.map(v => Number(v.price)));
-    const cmp = p => Math.max(0, ...p.variants.map(v => Number(v.compareAt || p.compareAt) || 0));
-    const sale = list.filter(p => cmp(p) > min(p));
-    return (sale.length >= 4 ? sale : sale.concat(list.filter(p => !sale.includes(p)))).slice(0, 4);
-  }
-  const bhd = usd => (usd * RATE).toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
-
-  function renderProducts() {
-    const grid = document.getElementById("pGrid");
-    grid.innerHTML = featured().map(p => {
-      const name = (lang === "ar" && p.nameAr) ? p.nameAr : (p.nameEn || "");
-      const min = Math.min(...p.variants.map(v => Number(v.price)));
-      const cmp = Math.max(0, ...p.variants.map(v => Number(v.compareAt || p.compareAt) || 0));
-      const oldP = cmp > min ? `<s>BHD ${bhd(cmp)}</s>` : "";
-      const pre = p.choose ? (lang === "ar" ? "يبدأ من " : "From ") : "";
-      return `<a class="pc" href="index.html?q=${encodeURIComponent(name)}">
-        <div class="im">${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy">` : ""}</div>
-        <div class="tx"><div class="nm">${esc(name)}</div><div class="pr">${esc(pre)}<b>BHD ${bhd(min)}</b>${oldP}</div></div></a>`;
-    }).join("");
-  }
-
   function apply() {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
     document.title = "Showbiz " + L().title;
     document.getElementById("ttl").textContent = L().title;
     document.getElementById("sub").textContent = L().sub;
-    document.getElementById("shopTxt").textContent = L().shop;
-    document.getElementById("hTtl").textContent = L().hTtl;
-    const hs = hoursState();
-    document.getElementById("hTxt").textContent = hs.text;
-    const st = document.getElementById("hStat");
-    st.textContent = hs.open ? L().open : L().closed;
-    st.className = "status " + (hs.open ? "open" : "closed");
-    document.getElementById("pTtl").textContent = L().pTtl;
-    document.getElementById("pQ").placeholder = L().search;
-    document.getElementById("pGo").textContent = L().go;
-    document.getElementById("allBtn").textContent = L().all;
-    document.getElementById("hlpTtl").textContent = L().hlp;
-    document.getElementById("sLbl").textContent = L().sales;
-    document.getElementById("sSub").textContent = L().salesSub;
-    document.getElementById("cLbl").textContent = L().care;
-    document.getElementById("cSub").textContent = L().careSub;
-    document.getElementById("callLbl").textContent = L().call;
-    document.getElementById("callSub").textContent = "+" + C.call.replace(/^\+/, "");
-    const wa = "https://wa.me/" + C.whatsapp;
-    const text = encodeURIComponent(lang === "ar" ? "مرحباً، عندي استفسار" : "Hello, I have a question");
-    document.getElementById("actSales").href = wa + "?text=" + text;
-    document.getElementById("actCare").href = wa + "?text=" + encodeURIComponent(lang === "ar" ? "مرحباً، أحتاج خدمة ما بعد البيع" : "Hello, I need after-sales support");
-    document.getElementById("actCall").href = "tel:" + C.call;
+    document.getElementById("langBtn").textContent = L().switch;
+    document.getElementById("cWa").textContent = L().wa;
+    document.getElementById("cWaTxt").textContent = L().waTxt;
+    document.getElementById("aWaTxt").textContent = L().waBtn;
+    document.getElementById("aWa").href = "https://wa.me/" + ShowbizCore.CONTACT.whatsapp;
     document.getElementById("ver").textContent = window.SHOWBIZ_BUILD ? window.SHOWBIZ_BUILD.version : "";
-    renderProducts();
   }
-
-  // المظهر: يبدأ داكن دائماً، والتبديل من الأيقونة نفسها بالانتقال الدائري
-  const themeBtn = document.getElementById("themeBtn");
-  const SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>';
-  const MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
-  function syncThemeIcon() {
-    const light = ShowbizCore.theme() === "light";
-    themeBtn.innerHTML = light ? MOON : SUN;
-    themeBtn.setAttribute("aria-label", L().theme);
-    themeBtn.title = L().theme;
-  }
-  if (ShowbizCore.theme() === "light") ShowbizCore.setTheme("dark");
-  themeBtn.addEventListener("click", () => {
-    ShowbizCore.setTheme(ShowbizCore.theme() === "light" ? "dark" : "light", themeBtn);
+  document.getElementById("langBtn").addEventListener("click", () => {
+    lang = lang === "ar" ? "en" : "ar";
+    try { const st = JSON.parse(localStorage.getItem("showbiz_state") || "{}"); localStorage.setItem("showbiz_state", JSON.stringify({ ...st, lang })); } catch (e) {}
+    apply();
   });
-  document.addEventListener("sbthemechange", syncThemeIcon);
-
-  document.getElementById("pForm").addEventListener("submit", e => {
-    e.preventDefault();
-    const q = document.getElementById("pQ").value.trim();
-    location.href = "index.html" + (q ? "?q=" + encodeURIComponent(q) : "");
-  });
-
   apply();
-  syncThemeIcon();
 </script>
+<div class="copyline" id="cpy"></div>
+<script>document.getElementById("cpy").textContent = ShowbizCore.copyright(lang);</script>
 </body>
 </html>
