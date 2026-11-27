@@ -866,6 +866,11 @@
     return `<div class="sec-h"><h3>${t("recentlyHead")}</h3><a class="rv-all" href="history.html">${t("historyLink")}</a></div><div class="hs rv-row">${rv.map(p => `<button class="rv" data-openp="${esc(p.pid)}"><img src="${esc(p.image || "")}" alt=""><span>${esc(pName(p) || "")}</span></button>`).join("")}</div>`;
   }
 
+  // يحدّث صف "شفتها مؤخراً" بعد ما يسكر المنتج، بدون ريفرش
+  function refreshRecent() {
+    const el = document.getElementById("recentRow");
+    if (el) el.innerHTML = recentRowHTML();
+  }
   function openProduct(pid) {
     const p = products.find(x => x.pid === pid);
     if (!p) return;
@@ -1018,6 +1023,7 @@
 
   // صفحة المنتج كاملة: الصورة والوصف القصير والشراء، ثم الوصف الطويل والمواصفات والتقييمات
   function renderModal(keepScroll) {
+    if (!modal) refreshRecent();
     const box = document.getElementById("pmodal");
     const prevTop = box.scrollTop;
     const c = curModal();
@@ -1395,7 +1401,7 @@
     }
     if (!tops.length) return adHTML() + `<div class="grid">${sortItems(products).map(p => cardHTML(p)).join("")}</div>`;
     // الإعلان، ثم الفئات (شريط يتسحب)، ثم الخصومات أول قسم، وبعدها الأقسام
-    let html = marqueeHTML() + adHTML() + recentRowHTML();
+    let html = marqueeHTML() + adHTML() + `<div id="recentRow">${recentRowHTML()}</div>`;
     html += `<div class="sec-h"><h3>${t("catsHead")}</h3><button class="linkbtn" data-cats="all">${t("seeAll")}</button></div>`;
     html += `<div class="tiles">${saleTile}${tops.map(n => tileHTML(n.key, n.id, catLabel(n.id), false)).join("")}</div>`;
     let secIdx = 0;

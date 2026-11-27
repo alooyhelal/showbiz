@@ -442,7 +442,7 @@
     var s = st(), lines = cartLines(), sel = s.unsel || [];
     var n = lines.reduce(function (a, l) { return a + l.qty; }, 0);
     document.getElementById("sdHead").innerHTML =
-      '<strong>' + tr("cart") + ' · ' + n + '</strong>' +
+      '<strong>' + tr("cart") + ' : ' + n + '</strong>' +
       '<button class="sd-link" data-ui="close">' + tr("keep") + '</button>' +
       '<button class="sd-x" data-ui="close" aria-label="' + tr("close") + '">✕</button>';
     var body, foot = "";
