@@ -544,7 +544,7 @@
     const lines = selLines();
     if (!lines.length) { busy = false; setStep("cart"); return; }
     const free = ShowbizUI.isFree();
-    const shipPick = ShowbizShip.status(state.country, shipLines()).pick;
+    const shipPick = ShowbizShip.status(addr.country, shipLines()).pick;
     if (!free && !shipPick) {
       busy = false;
       if (btn) { btn.disabled = false; btn.textContent = t("send"); }
@@ -613,7 +613,9 @@
 
   // الشحن من CJ: الطرق تظهر تحت الإجمالي، والمختار يدخل في الإجمالي
   const shipLines = () => selLines().map(l => ({ vid: l.vid, qty: l.qty }));
-  ShowbizShip.setSource(() => state.country, shipLines);
+  // الشحن يظهر بعد اختيار العنوان فقط، وعلى دولة العنوان المختار
+  const shipCountry = () => { const a = selectedAddr(); return a ? a.country : null; };
+  ShowbizShip.setSource(shipCountry, shipLines);
   ShowbizShip.listen(() => render());
 
   function summaryRows(withShip) {
@@ -625,13 +627,16 @@
     let total = sub - disc;
     if (free) {
       rows += `<div class="row ok"><span>${t("shipping")}</span><span>${t("freeMsg")}</span></div>`;
-    } else {
-      const ship = ShowbizShip.amount(state.country, shipLines());
+    }
+    // بدون عنوان ما نحسب الشحن: نعرض "يُحسب بعد اختيار العنوان"
+    const ctry = (!free && withShip) ? shipCountry() : null;
+    if (!free) {
+      const ship = ctry ? ShowbizShip.amount(ctry, shipLines()) : null;
       rows += `<div class="row"><span>${t("shipping")}</span><span>${ship == null ? t("shipLater") : fmt(ship)}</span></div>`;
       if (ship != null) total += ship;
     }
     rows += `<div class="row grand"><span>${t("grand")}</span><span>${fmt(total)}</span></div>`;
-    const methods = free ? "" : ShowbizShip.html(state.country, shipLines());
+    const methods = ctry ? ShowbizShip.html(ctry, shipLines()) : "";
     return `<div class="totals">${rows}</div>${methods}`;
   }
 
