@@ -7,52 +7,64 @@
 <title>البحث</title>
 <script src="version.js"></script>
 <script src="shared.js"></script>
+<script src="demo-catalog.js"></script>
 <script src="popular.js"></script>
 <style>
   :root { --bg:#0c1628; --card:#14213a; --card2:#1a2b4a; --line:#2c4168; --fg:#f2f5fa; --muted:#9aa8bf; --orange:#f59e4b; color-scheme:dark; }
   * { box-sizing:border-box; }
   body { margin:0; min-height:100vh; background:var(--bg); color:var(--fg); font-family:'Tajawal',system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding:0 max(16px, env(safe-area-inset-left, 0px)) 110px max(16px, env(safe-area-inset-right, 0px)); }
-  h2 { font-family:'Cairo',system-ui,sans-serif; margin:0; font-size:17px; }
   .wrap { max-width:480px; margin:0 auto; padding-top:16px; animation:sIn .25s ease-out; }
   @keyframes sIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
-  .sbox { display:flex; gap:8px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:4px 4px 4px 14px; }
-  .sbox input { flex:1; min-width:0; background:transparent; border:0; outline:0; color:var(--fg); font:inherit; font-size:15px; padding:10px 4px; }
-  .sbox button { height:38px; padding:0 16px; border:0; border-radius:999px; background:var(--orange); color:#111; font:inherit; font-weight:800; cursor:pointer; }
-  .sec { margin-top:24px; }
+  .sbox { display:flex; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:0 6px 0 14px; }
+  .sbox input { flex:1; min-width:0; background:transparent; border:0; outline:0; color:var(--fg); font:inherit; font-size:15px; padding:12px 4px; }
+  .lens { width:38px; height:38px; flex:0 0 38px; border:0; border-radius:50%; background:transparent; color:var(--fg); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .lens svg, .ic svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .sec { margin-top:22px; }
   .sec[hidden] { display:none; }
-  .sec-h { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; }
-  .sec-h a { color:var(--orange); font-size:13px; font-weight:800; text-decoration:none; }
+  .sec-h { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+  .sec-h h2 { font-size:13px; font-weight:700; color:var(--muted); margin:0; }
+  .sec-h a { color:var(--orange); font-size:12px; font-weight:800; text-decoration:none; }
   .sec-h a[hidden] { display:none; }
-  .chips { display:flex; flex-wrap:wrap; gap:8px; }
-  .chip { padding:8px 14px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--fg); text-decoration:none; font-size:14px; }
-  .sg-grid { display:grid; grid-template-rows:repeat(2, auto); grid-auto-flow:column; grid-auto-columns:120px; gap:10px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .chip { padding:7px 13px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--fg); text-decoration:none; font-size:13px; }
+  .ic { width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:var(--card); color:var(--muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+  .confirm { margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; font-size:14px; display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; }
+  .confirm[hidden] { display:none; }
+  .confirm .btns { display:flex; gap:8px; }
+  .confirm button { height:34px; padding:0 14px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--fg); font:inherit; font-weight:800; cursor:pointer; }
+  .confirm button.yes { background:var(--orange); color:#111; border-color:var(--orange); }
+  .sg-grid { display:grid; grid-template-rows:repeat(2, auto); grid-auto-flow:column; grid-auto-columns:116px; gap:10px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
   .sg-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
   .card { display:block; width:100%; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; color:var(--fg); text-decoration:none; }
   .sg-row .card { flex:0 0 116px; }
   .card img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; background:var(--card2); }
   .card span { display:-webkit-box; padding:6px 8px 8px; font-size:12px; line-height:1.4; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-  .empty { color:var(--muted); font-size:14px; margin:0; }
+  .empty { color:var(--muted); font-size:13px; margin:0; }
 </style>
 </head>
 <body data-xbar>
 <div class="wrap">
   <form class="sbox" id="sf" role="search">
-    <input id="sq" type="search" autocomplete="off" autofocus placeholder="ابحث عن منتج" aria-label="بحث">
-    <button type="submit" id="sBtn">بحث</button>
+    <input id="sq" type="search" autocomplete="off" autofocus placeholder="ابحث عن منتج" aria-label="ابحث عن منتج">
+    <button type="submit" class="lens" id="sBtn" aria-label="بحث"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></button>
   </form>
 
   <section class="sec">
     <div class="sec-h"><h2 id="hS">آخر عمليات البحث</h2></div>
     <div class="chips" id="sChips"></div>
+    <div class="confirm" id="confirmBox" hidden>
+      <span id="confTxt">هل تريد حذف سجل البحث بالكامل؟</span>
+      <div class="btns"><button type="button" class="yes" id="cYes">نعم</button><button type="button" id="cNo">لا</button></div>
+    </div>
   </section>
 
-  <section class="sec" id="popSec" hidden>
-    <div class="sec-h"><h2 id="hP">الرائج الآن</h2></div>
+  <section class="sec" id="popSec">
+    <div class="sec-h"><h2 id="hP">الرائج الآن</h2><a href="popular.html" id="aP">عرض الكل</a></div>
     <div class="sg-grid" id="pop"></div>
   </section>
 
   <section class="sec">
-    <div class="sec-h"><h2 id="hR">شفتها مؤخراً</h2><a href="history.html" id="aR">عرض الكل</a></div>
+    <div class="sec-h"><h2 id="hR">سجل مشاهدة المنتجات</h2><a href="history.html" id="aR">عرض الكل</a></div>
     <div class="sg-row" id="rec"></div>
   </section>
 </div>
@@ -65,8 +77,8 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
   const T = {
-    ar: { title:"البحث", ph:"ابحث عن منتج", btn:"بحث", s:"آخر عمليات البحث", p:"الرائج الآن", r:"شفتها مؤخراً", all:"عرض الكل", noS:"ما فيه عمليات بحث بعد", noR:"ما شفت منتجات مؤخراً", dir:"rtl" },
-    en: { title:"Search", ph:"Search products", btn:"Search", s:"Recent searches", p:"Trending now", r:"Recently viewed", all:"View all", noS:"No searches yet", noR:"No recently viewed products", dir:"ltr" }
+    ar: { title:"البحث", ph:"ابحث عن منتج", s:"آخر عمليات البحث", p:"الرائج الآن", r:"سجل مشاهدة المنتجات", all:"عرض الكل", noS:"ما فيه عمليات بحث بعد", noR:"ما شفت منتجات مؤخراً", noP:"ما فيه منتجات الحين", confirm:"هل تريد حذف سجل البحث بالكامل؟", yes:"نعم", no:"لا", del:"حذف سجل البحث", dir:"rtl" },
+    en: { title:"Search", ph:"Search products", s:"Recent searches", p:"Trending now", r:"Product viewing history", all:"View all", noS:"No searches yet", noR:"No recently viewed products", noP:"No products yet", confirm:"Delete the whole search history?", yes:"Yes", no:"No", del:"Delete search history", dir:"ltr" }
   };
   const lang = readState().lang === "en" ? "en" : "ar";
   const L = T[lang];
@@ -74,31 +86,45 @@
   document.documentElement.dir = L.dir;
   document.title = L.title;
   document.getElementById("sq").placeholder = L.ph;
-  document.getElementById("sBtn").textContent = L.btn;
+  document.getElementById("sq").setAttribute("aria-label", L.ph);
   document.getElementById("hS").textContent = L.s;
   document.getElementById("hP").textContent = L.p;
   document.getElementById("hR").textContent = L.r;
+  document.getElementById("aP").textContent = L.all;
   document.getElementById("aR").textContent = L.all;
+  document.getElementById("confTxt").textContent = L.confirm;
+  document.getElementById("cYes").textContent = L.yes;
+  document.getElementById("cNo").textContent = L.no;
 
   const name = (p) => lang === "en" ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn);
   const card = (p) => `<a class="card" href="index.html?open=${encodeURIComponent(p.pid)}"><img src="${esc(p.image || "")}" alt=""><span>${esc(name(p) || "")}</span></a>`;
+  const trashSVG = '<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>';
 
-  // آخر 5 بحوث
-  const searches = readList("showbiz_searches").filter(q => typeof q === "string" && q.trim()).slice(0, 5);
-  document.getElementById("sChips").innerHTML = searches.length
-    ? searches.map(q => `<a class="chip" href="index.html?q=${encodeURIComponent(q)}">${esc(q)}</a>`).join("")
-    : `<p class="empty">${L.noS}</p>`;
-
-  // الرائج الآن: يختفي إذا القائمة فاضية
-  const pop = (Array.isArray(window.SHOWBIZ_POPULAR) ? window.SHOWBIZ_POPULAR : []).slice(0, 7);
-  if (pop.length) {
-    document.getElementById("pop").innerHTML = pop.map(card).join("");
-    document.getElementById("popSec").hidden = false;
+  // آخر 5 بحوث، وفي الآخر زر حذف السجل
+  function renderSearches() {
+    const list = readList("showbiz_searches").filter(q => typeof q === "string" && q.trim()).slice(0, 5);
+    const chips = list.map(q => `<a class="chip" href="index.html?q=${encodeURIComponent(q)}">${esc(q)}</a>`).join("");
+    document.getElementById("sChips").innerHTML = (list.length ? chips : `<p class="empty">${L.noS}</p>`) +
+      (list.length ? `<button type="button" class="ic" id="delS" aria-label="${L.del}" title="${L.del}">${trashSVG}</button>` : "");
+    document.getElementById("confirmBox").hidden = true;
   }
+  document.getElementById("sChips").addEventListener("click", (e) => {
+    if (e.target.closest("#delS")) document.getElementById("confirmBox").hidden = false;
+  });
+  document.getElementById("cNo").addEventListener("click", () => { document.getElementById("confirmBox").hidden = true; });
+  document.getElementById("cYes").addEventListener("click", () => {
+    writeList("showbiz_searches", []);
+    renderSearches();
+  });
+  renderSearches();
 
-  // شفتها مؤخراً: خلال 15 يوم
+  // الرائج الآن (من popular.js، وإلا البديل التجريبي)
+  const pop = window.SHOWBIZ_POPULAR_LIST().slice(0, 7);
+  document.getElementById("pop").innerHTML = pop.length ? pop.map(card).join("") : `<p class="empty">${L.noP}</p>`;
+
+  // سجل المشاهدة: آخر 15 يوم
   const cutoff = Date.now() - 15 * 864e5;
-  const rec = readList("showbiz_recent").filter(r => r && r.p && r.p.pid != null && r.at && r.at >= cutoff).slice(0, 8);
+  const rec = readList("showbiz_recent").filter(r => r && r.p && r.p.pid != null && (r.at || Date.now()) >= cutoff).slice(0, 8);
   document.getElementById("rec").innerHTML = rec.length ? rec.map(r => card(r.p)).join("") : `<p class="empty">${L.noR}</p>`;
   document.getElementById("aR").hidden = !rec.length;
 

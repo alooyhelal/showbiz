@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>الرائج الآن</title>
+<script src="version.js"></script>
+<script src="shared.js"></script>
+<script src="demo-catalog.js"></script>
+<script src="popular.js"></script>
+<style>
+  :root { --bg:#0c1628; --card:#14213a; --card2:#1a2b4a; --line:#2c4168; --fg:#f2f5fa; --muted:#9aa8bf; --orange:#f59e4b; color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--fg); font-family:'Tajawal',system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding:0 max(16px, env(safe-area-inset-left, 0px)) 110px max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width:480px; margin:0 auto; padding-top:16px; }
+  .ttl { margin:18px 0 6px; font-size:20px; font-family:'Cairo',system-ui,sans-serif; }
+  .sub { color:var(--muted); font-size:13px; margin:0 0 6px; }
+  .grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; margin-top:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; color:var(--fg); text-decoration:none; display:block; min-width:0; }
+  .card img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; background:var(--card2); }
+  .card span { display:-webkit-box; padding:8px 10px 10px; font-size:13px; line-height:1.4; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .empty { grid-column:1/-1; background:var(--card); border:1px dashed var(--line); border-radius:14px; padding:22px 16px; text-align:center; color:var(--muted); font-size:14px; }
+</style>
+</head>
+<body data-xbar>
+<div class="wrap">
+  <h1 class="ttl" id="ttl">الرائج الآن</h1>
+  <p class="sub" id="sub">المنتجات اللي الناس تشوفها أكثر</p>
+  <div class="grid" id="pGrid"></div>
+</div>
+<script>
+(() => {
+  const readState = () => { try { return JSON.parse(localStorage.getItem("showbiz_state") || "{}"); } catch (e) { return {}; } };
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const lang = readState().lang === "en" ? "en" : "ar";
+  const en = lang === "en";
+  document.documentElement.lang = lang;
+  document.documentElement.dir = en ? "ltr" : "rtl";
+  document.title = en ? "Trending now" : "الرائج الآن";
+  document.getElementById("ttl").textContent = en ? "Trending now" : "الرائج الآن";
+  document.getElementById("sub").textContent = en ? "Products people look at the most" : "المنتجات اللي الناس تشوفها أكثر";
+
+  const list = window.SHOWBIZ_POPULAR_LIST();
+  document.getElementById("pGrid").innerHTML = list.length
+    ? list.map(p => {
+        const name = en ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn);
+        return `<a class="card" href="index.html?open=${encodeURIComponent(p.pid)}"><img src="${esc(p.image || "")}" alt=""><span>${esc(name || "")}</span></a>`;
+      }).join("")
+    : `<div class="empty">${en ? "No products yet" : "ما فيه منتجات الحين"}</div>`;
+})();
+</script>
+</body>
+</html>
