@@ -225,10 +225,36 @@
   // ===== الشريط العلوي للصفحات الخارجية: رجوع + شعار في النص + زر اللغة =====
   // العربي: الرجوع يمين، واللغة يسار. الإنجليزي: معكوس. الهيدر القديم لكل صفحة يُخفى بـ data-xhide
   var BAR_T = {
-    ar: { back: "رجوع", lang: "English", menu: "القائمة", mStore: "المتجر", mAcct: "معلومات الحساب", mOrders: "طلباتي", mAddr: "عناويني", mDel: "حذف الحساب", mLogout: "تسجيل الخروج" },
-    en: { back: "Back", lang: "العربية", menu: "Menu", mStore: "Store", mAcct: "Account details", mOrders: "My orders", mAddr: "My addresses", mDel: "Delete account", mLogout: "Log out" }
+    ar: { back: "رجوع", lang: "English", menu: "القائمة", mStore: "المتجر", mAcct: "معلومات الحساب", mOrders: "طلباتي", mAddr: "عناويني", mDel: "حذف الحساب", mLogout: "تسجيل الخروج", mLogin: "تسجيل دخول" },
+    en: { back: "Back", lang: "العربية", menu: "Menu", mStore: "Store", mAcct: "Account details", mOrders: "My orders", mAddr: "My addresses", mDel: "Delete account", mLogout: "Log out", mLogin: "Log in" }
   };
   function uiLang() { return readJSON("showbiz_state", {}).lang === "en" ? "en" : "ar"; }
+  // حالة الدخول: الجلسة محفوظة في التخزين المحلي بمفتاح sb-...-auth-token
+  function sbSessionKeys() {
+    try { return Object.keys(localStorage).filter(function (k) { return /^sb-.+-auth-token$/.test(k); }); } catch (e) { return []; }
+  }
+  function isLoggedIn() {
+    return sbSessionKeys().some(function (k) {
+      try { var v = JSON.parse(localStorage.getItem(k) || "null"); return !!(v && (v.access_token || (v.user && v.user.id))); } catch (e) { return false; }
+    });
+  }
+  function signOutLocal() {
+    sbSessionKeys().forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    if (window.ShowbizCore && ShowbizCore.clearLogin) ShowbizCore.clearLogin();
+  }
+  // القائمة: زائر = المتجر وتسجيل الدخول، مسجل = المتجر والحساب والطلبات والعناوين والحذف والخروج
+  function renderMenu(panel, T, here, loggedIn) {
+    var items = [["index.html", T.mStore]];
+    if (loggedIn) items = items.concat([["account.html", T.mAcct], ["orders.html", T.mOrders], ["addresses.html", T.mAddr], ["delete-account.html", T.mDel]]);
+    else items.push(["login.html", T.mLogin]);
+    panel.innerHTML = items.map(function (x) { return '<a href="' + x[0] + '">' + x[1] + "</a>"; }).join("") +
+      (loggedIn ? '<button type="button" class="xb-out">' + T.mLogout + "</button>" : "");
+    panel.querySelectorAll("a[href]").forEach(function (a) {
+      if ((a.getAttribute("href") || "").toLowerCase() === here) a.classList.add("cur");
+    });
+    var out = panel.querySelector(".xb-out");
+    if (out) out.addEventListener("click", function () { signOutLocal(); location.replace("index.html"); });
+  }
   function mountBar() {
     var b = document.body;
     if (!b || !b.hasAttribute("data-xbar") || document.getElementById("xbar")) return;
@@ -254,24 +280,16 @@
       '<button type="button" class="xb-menu" aria-label="' + T.menu + '" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div>';
     b.insertBefore(bar, b.firstChild);
 
-    // القائمة: إذا الصفحة فيها قائمة الحساب (navMenu) تنقل لهنا، وإلا تنبني قائمة افتراضية
-    var panel = document.getElementById("navMenu");
-    if (!panel) {
-      panel = document.createElement("div");
-      panel.id = "xbMenu";
-      var items = [["index.html", T.mStore], ["account.html", T.mAcct], ["orders.html", T.mOrders], ["addresses.html", T.mAddr], ["delete-account.html", T.mDel]];
-      panel.innerHTML = items.map(function (x) { return '<a href="' + x[0] + '">' + x[1] + "</a>"; }).join("") +
-        '<a href="account.html" class="xb-out">' + T.mLogout + "</a>";
-    }
-    panel.classList.add("hidden");
+    // القائمة تُبنى حسب حالة الدخول كل ما تنفتح
+    var panel = document.createElement("div");
+    panel.id = "xbMenu";
+    panel.className = "hidden";
     b.appendChild(panel);
     var here = (location.pathname.split("/").pop() || "index.html").toLowerCase();
-    panel.querySelectorAll("a[href]").forEach(function (a) {
-      if ((a.getAttribute("href") || "").toLowerCase() === here) a.classList.add("cur");
-    });
     var mBtn = bar.querySelector(".xb-menu");
     mBtn.addEventListener("click", function (e) {
       e.stopPropagation();
+      if (panel.classList.contains("hidden")) renderMenu(panel, T, here, isLoggedIn());
       var open = panel.classList.toggle("hidden") === false;
       mBtn.setAttribute("aria-expanded", open ? "true" : "false");
     });
@@ -304,7 +322,9 @@
       "#navMenu a,#xbMenu a{display:block;padding:10px 12px;border-radius:8px;color:#f2f5fa;text-decoration:none;font-size:14px;text-align:start}" +
       "#navMenu a:hover,#xbMenu a:hover{background:#1a2b4a}" +
       "#navMenu a.cur,#xbMenu a.cur{color:#f59e4b;font-weight:700}" +
-      "#navMenu .btn{width:100%;margin-top:4px}";
+      "#navMenu .btn{width:100%;margin-top:4px}" +
+      "#xbMenu .xb-out{display:block;width:100%;margin-top:4px;padding:10px 12px;border:0;border-top:1px solid #2c4168;border-radius:8px;background:transparent;color:#f2f5fa;font:inherit;font-size:14px;text-align:start;cursor:pointer}" +
+      "#xbMenu .xb-out:hover{background:#1a2b4a}";
     try { var st = document.createElement("style"); st.textContent = css; document.head.appendChild(st); } catch (e) {}
   })();
 
