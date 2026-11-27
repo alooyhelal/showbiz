@@ -237,7 +237,8 @@
     m.setAttribute("dir", lang() === "en" ? "ltr" : "rtl");
     m.style.setProperty("--mqw", W + "px");
     m.style.setProperty("--mqt", T + "px");
-    m.style.animationDuration = ((W + T) / 70).toFixed(2) + "s";
+    // نفس سرعة شريط العروض تقريباً (حوالي 26 بكسل بالثانية)
+    m.style.animationDuration = ((W + T) / 26).toFixed(2) + "s";
   }
   window.addEventListener("resize", function () { runAnnounce(); });
 
