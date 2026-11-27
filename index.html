@@ -27,6 +27,15 @@
   .sugg button { display:flex; gap:8px; align-items:center; width:100%; background:transparent; color:var(--fg); font-weight:400; padding:6px 8px; text-align:start; }
   .sugg img { width:36px; height:36px; object-fit:cover; border-radius:8px; background:#f3f4f6; }
   .sugg-h { color:var(--muted); font-size:12px; padding:4px 8px; }
+  .sugg { max-height:70vh; overflow-y:auto; }
+  .sugg .sg-h { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:6px; }
+  .sugg .sg-h a { color:var(--orange); text-decoration:none; font-weight:800; font-size:12px; }
+  .sugg .sg-grid { display:grid; grid-template-rows:repeat(2, auto); grid-auto-flow:column; grid-auto-columns:104px; gap:8px; overflow-x:auto; padding:2px 2px 8px; scrollbar-width:none; }
+  .sugg .sg-row { display:flex; gap:8px; overflow-x:auto; padding:2px 2px 8px; scrollbar-width:none; }
+  .sugg .sg-card { display:block; width:100%; min-width:0; padding:0; background:var(--card2); border:1px solid var(--line); border-radius:12px; overflow:hidden; color:var(--fg); font-weight:400; text-align:start; font-size:12px; }
+  .sugg .sg-row .sg-card { flex:0 0 104px; }
+  .sugg .sg-card img { width:100%; height:auto; aspect-ratio:1/1; object-fit:cover; border-radius:0; display:block; }
+  .sugg .sg-card span { display:-webkit-box; padding:5px 7px 7px; line-height:1.35; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   #sortSel { display:none; }
   .sortwrap { position:relative; display:inline-block; max-width:48vw; flex:0 0 auto; }
   .sortbox { display:block; max-width:48vw; height:42px; padding:0 14px; border-radius:999px; border:1px solid var(--line); background:var(--card2); color:var(--fg); font-size:13px; font-weight:600; overflow-x:auto; overflow-y:hidden; white-space:nowrap; scrollbar-width:none; cursor:pointer; box-sizing:border-box; -webkit-overflow-scrolling:touch; }
@@ -447,7 +456,7 @@
       buildLabel:"النسخة", updatedLabel:"آخر تحديث",
       menuInfo:"معلومات حسابي", menuOrders:"طلباتي", menuAddr:"عناويني", menuDel:"حذف الحساب",
       cats:"الأقسام", allCats:"كل الفئات", allProductsLbl:"كل المنتجات", contactLbl:"تواصل معنا", shareBtn:"مشاركة", shareDone:"تم نسخ الرابط", other:"منتجات أخرى", seeAll:"عرض الكل", clearFilter:"مسح الفلاتر",
-      noResults:"ما لقينا نتائج", searchPh:"ابحث عن منتج", recentSearch:"آخر البحوث", recentlyHead:"آخر ما شفته", historyLink:"سجل التصفح", 
+      noResults:"ما لقينا نتائج", searchPh:"ابحث عن منتج", recentSearch:"آخر البحوث", recentlyHead:"شفتها مؤخراً", historyLink:"عرض الكل", popularHead:"الأكثر بحثاً", 
       sortDef:"الترتيب الافتراضي", sortAsc:"السعر: من الأقل إلى الأعلى", sortDesc:"السعر: من الأعلى إلى الأقل", sortName:"الاسم: من A إلى Z", sortNameDesc:"الاسم: من Z إلى A",
       isNew:"جديد", isBest:"الأكثر مبيعاً", menu:"القائمة", homeLbl:"الصفحة الرئيسية", allProducts:"كل المنتجات", resetSite:"تصفير الموقع",
       saleTitle:"الخصومات", catsHead:"الفئات", chooseColor:"اختر اللون", chooseSize:"اختر المقاس / السعة", chooseBoth:"اختر اللون والمقاس أولاً",
@@ -475,7 +484,7 @@
       buildLabel:"Build", updatedLabel:"Last update",
       menuInfo:"My details", menuOrders:"My orders", menuAddr:"My addresses", menuDel:"Delete account",
       cats:"Categories", allCats:"All categories", allProductsLbl:"All products", contactLbl:"Contact us", shareBtn:"Share", shareDone:"Link copied", other:"Other products", seeAll:"See all", clearFilter:"Clear filters",
-      noResults:"No results", searchPh:"Search products", recentSearch:"Recent searches", recentlyHead:"Recently viewed", historyLink:"Browsing history", 
+      noResults:"No results", searchPh:"Search products", recentSearch:"Recent searches", recentlyHead:"Viewed recently", historyLink:"View all", popularHead:"Most searched", 
       sortDef:"Default order", sortAsc:"Price: low to high", sortDesc:"Price: high to low", sortName:"Name: A to Z", sortNameDesc:"Name: Z to A",
       isNew:"New", isBest:"Best seller", menu:"Menu", homeLbl:"Home", allProducts:"All products", resetSite:"Reset site",
       saleTitle:"Discounts", catsHead:"Categories", chooseColor:"Choose color", chooseSize:"Choose size / capacity", chooseBoth:"Choose color and size first",
@@ -837,17 +846,26 @@
     history.replaceState(null, "", "index.html");
     openProduct(op);
   }
-  // آخر المنتجات اللي شافها الزائر، تظهر في الرئيسية
-  function recentRowHTML() {
+  // آخر المنتجات اللي شافها الزائر (لقطات محفوظة، نطابقها مع الكتالوج الحالي)
+  function recentProducts() {
     let rec = [];
     try { rec = JSON.parse(localStorage.getItem("showbiz_recent") || "[]"); } catch (e) {}
-    rec = (Array.isArray(rec) ? rec : []).filter(r => r && r.p && products.some(x => String(x.pid) === String(r.p.pid)));
-    if (!rec.length) return "";
-    const cards = rec.slice(0, 8).map(r => {
-      const name = state.lang === "en" ? (r.p.nameEn || r.p.nameAr) : (r.p.nameAr || r.p.nameEn);
-      return `<button class="rv" data-openp="${esc(r.p.pid)}"><img src="${esc(r.p.image || "")}" alt=""><span>${esc(name || "")}</span></button>`;
-    }).join("");
-    return `<div class="sec-h"><h3>${t("recentlyHead")}</h3><a class="rv-all" href="history.html">${t("historyLink")}</a></div><div class="hs rv-row">${cards}</div>`;
+    return (Array.isArray(rec) ? rec : [])
+      .filter(r => r && r.p && products.some(x => String(x.pid) === String(r.p.pid)))
+      .slice(0, 8).map(r => products.find(x => String(x.pid) === String(r.p.pid)));
+  }
+  // الأكثر بحثاً من الزوار: قائمة يحددها الموقع (window.SHOWBIZ_POPULAR_PIDS)، أول 7 منتجات
+  function popularProducts() {
+    const ids = Array.isArray(window.SHOWBIZ_POPULAR_PIDS) ? window.SHOWBIZ_POPULAR_PIDS.map(String) : [];
+    return ids.map(id => products.find(x => String(x.pid) === id)).filter(Boolean).slice(0, 7);
+  }
+  function sgCard(p) {
+    return `<button class="sg-card" data-openp="${esc(p.pid)}"><img src="${esc(p.image || "")}" alt=""><span>${esc(pName(p) || "")}</span></button>`;
+  }
+  function recentRowHTML() {
+    const rv = recentProducts();
+    if (!rv.length) return "";
+    return `<div class="sec-h"><h3>${t("recentlyHead")}</h3><a class="rv-all" href="history.html">${t("historyLink")}</a></div><div class="hs rv-row">${rv.map(p => `<button class="rv" data-openp="${esc(p.pid)}"><img src="${esc(p.image || "")}" alt=""><span>${esc(pName(p) || "")}</span></button>`).join("")}</div>`;
   }
 
   function openProduct(pid) {
@@ -1501,10 +1519,14 @@
     const q = filt.q.trim().toLowerCase();
     if (!q) {
       const rec = ShowbizUI.searches();
-      box.innerHTML = rec.length
-        ? `<div class="sugg-h">${t("recentSearch")}</div>` + rec.map(s => `<button data-q="${esc(s)}">${esc(s)}</button>`).join("")
-        : "";
-      box.classList.toggle("hidden", !rec.length);
+      const pop = popularProducts();
+      const rv = recentProducts();
+      let h = "";
+      if (rec.length) h += `<div class="sugg-h">${t("recentSearch")}</div>` + rec.map(s => `<button data-q="${esc(s)}">${esc(s)}</button>`).join("");
+      if (pop.length) h += `<div class="sugg-h sg-h">${t("popularHead")}</div><div class="sg-grid">${pop.map(sgCard).join("")}</div>`;
+      if (rv.length) h += `<div class="sugg-h sg-h">${t("recentlyHead")}<a href="history.html">${t("historyLink")}</a></div><div class="sg-row">${rv.map(sgCard).join("")}</div>`;
+      box.innerHTML = h;
+      box.classList.toggle("hidden", !h);
       return;
     }
     const m = products.filter(p => (String(p.nameEn) + " " + String(p.nameAr || "")).toLowerCase().includes(q)).slice(0, 6);

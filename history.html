@@ -18,8 +18,6 @@
   .sec { margin-top:26px; }
   .sec-h { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; }
   .sec-h h2 { font-size:17px; }
-  .chips { display:flex; flex-wrap:wrap; gap:8px; }
-  .chip { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--fg); text-decoration:none; font-size:14px; }
   .grid { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; color:var(--fg); text-decoration:none; display:block; min-width:0; }
   .card img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; background:var(--card2); }
@@ -32,14 +30,7 @@
 <body data-xbar>
 <div class="wrap">
   <h1 class="ttl" id="ttl">سجل التصفح</h1>
-  <p class="sub" id="sub">آخر منتجات شاهدتها وعمليات البحث</p>
-
-  <section class="sec">
-    <div class="sec-h">
-      <h2 id="hSrch">عمليات البحث الأخيرة</h2>
-    </div>
-    <div class="chips" id="sChips"></div>
-  </section>
+  <p class="sub" id="sub">آخر منتجات شاهدتها</p>
 
   <section class="sec">
     <div class="sec-h">
@@ -60,10 +51,10 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
   const T = {
-    ar: { title:"سجل التصفح", sub:"آخر منتجات شاهدتها وعمليات البحث", srch:"عمليات البحث الأخيرة", prod:"آخر منتجات شاهدتها",
-          noS:"ما فيه عمليات بحث بعد", noP:"ما شفت أي منتج بعد", clear:"مسح السجل", dir:"rtl" },
-    en: { title:"Browsing history", sub:"Recently viewed products and searches", srch:"Recent searches", prod:"Recently viewed",
-          noS:"No searches yet", noP:"You haven't viewed any products yet", clear:"Clear history", dir:"ltr" }
+    ar: { title:"سجل التصفح", sub:"آخر منتجات شاهدتها", prod:"آخر منتجات شاهدتها",
+          noP:"ما شفت أي منتج بعد", clear:"مسح السجل", dir:"rtl" },
+    en: { title:"Browsing history", sub:"Recently viewed products", prod:"Recently viewed",
+          noP:"You haven't viewed any products yet", clear:"Clear history", dir:"ltr" }
   };
 
   let lang = readState().lang === "en" ? "en" : "ar";
@@ -76,15 +67,8 @@
     document.title = L.title;
     document.getElementById("ttl").textContent = L.title;
     document.getElementById("sub").textContent = L.sub;
-    document.getElementById("hSrch").textContent = L.srch;
     document.getElementById("hProd").textContent = L.prod;
     document.getElementById("clr").textContent = L.clear;
-
-    const searches = readList("showbiz_searches").filter(q => typeof q === "string" && q.trim());
-    const sEl = document.getElementById("sChips");
-    sEl.innerHTML = searches.length
-      ? searches.map(q => `<a class="chip" href="index.html?q=${encodeURIComponent(q)}">${esc(q)}</a>`).join("")
-      : `<div class="empty" style="width:100%">${L.noS}</div>`;
 
     const recent = readList("showbiz_recent").filter(r => r && r.p && r.p.pid != null).slice(0, 8);
     const pEl = document.getElementById("pGrid");
@@ -96,11 +80,11 @@
         }).join("")
       : `<div class="empty" style="grid-column:1/-1">${L.noP}</div>`;
 
-    document.getElementById("clr").disabled = !searches.length && !recent.length;
+    document.getElementById("clr").disabled = !recent.length;
   }
 
   document.getElementById("clr").addEventListener("click", () => {
-    try { localStorage.removeItem("showbiz_searches"); localStorage.removeItem("showbiz_recent"); } catch (e) {}
+    try { localStorage.removeItem("showbiz_recent"); } catch (e) {}
     render();
   });
 
