@@ -43,7 +43,8 @@
   .sortlbl { display:inline-block; line-height:40px; }
   .ct-sep { height:1px; background:var(--line); margin:10px 6px; }
   .side-social { margin:6px 0 0; }
-  .sortarr { display:inline-block; margin-inline-start:6px; font-size:13px; line-height:40px; opacity:.85; }
+  .sortarr { display:inline-flex; align-items:center; vertical-align:middle; margin-inline-start:6px; line-height:0; color:var(--fg); opacity:.85; }
+  .sortarr svg { width:11px; height:16px; display:block; }
   /* v42: عناصر نافذة التفضيلات واضحة في الوضعين */
   #prefModal .pref-item { background:var(--card2); border:1px solid var(--line); }
   #prefModal .pref-langs button { background:var(--card2); }
@@ -170,6 +171,9 @@
   .rv span { display:block; padding:6px 8px 0; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .rv-all { font-size:13px; color:var(--orange); font-weight:800; text-decoration:none; }
   .hs.drift { scroll-snap-type: none; }
+  .hs.drift .trk { display:flex; gap:inherit; width:max-content; animation: dtrk linear infinite; will-change: transform; }
+  .hs.drift.paused .trk { animation-play-state: paused; }
+  @keyframes dtrk { from { transform: translateX(0); } to { transform: translateX(-50%); } }
   .price.sale { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; }
   .price.sale .now { display:inline; color:var(--orange,#f59e4b); font-weight:800; font-size:17px; }
   .price.sale .old { display:inline; font-size:12px; color:var(--muted); }
@@ -362,7 +366,7 @@
       <input id="q" type="search" autocomplete="off">
       <div class="sugg hidden" id="sugg"></div>
     </div>
-    <div class="sortwrap" id="sortWrap"><div class="sortbox" id="sortBox" role="button" tabindex="0" aria-haspopup="listbox"><span class="sortlbl" id="sortLbl"></span><span class="sortarr" aria-hidden="true">↕</span></div><div class="sortmenu hidden" id="sortMenu" role="listbox"></div><select id="sortSel" aria-hidden="true" tabindex="-1"></select></div>
+    <div class="sortwrap" id="sortWrap"><div class="sortbox" id="sortBox" role="button" tabindex="0" aria-haspopup="listbox"><span class="sortlbl" id="sortLbl"></span><span class="sortarr" aria-hidden="true"><svg viewBox="0 0 11 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3.5-3.5L9 6"/><path d="M2 10l3.5 3.5L9 10"/></svg></span></div><div class="sortmenu hidden" id="sortMenu" role="listbox"></div><select id="sortSel" aria-hidden="true" tabindex="-1"></select></div>
     <select id="countrySel" class="hidden"></select>
   </div>
 </header>
@@ -1409,7 +1413,7 @@
     html += marqueeHTML();
     let secIdx = 0;
     if (sale.length) {
-      html += `<div class="sec-h"><h3>${t("saleTitle")}</h3><button class="linkbtn" data-cat="${SALE}">${t("seeAll")}</button></div><div class="hs drift">${sortItems(sale).map(p => cardHTML(p, true)).join("")}</div>`;
+      html += `<div class="sec-h"><h3>${t("saleTitle")}</h3><button class="linkbtn" data-cat="${SALE}">${t("seeAll")}</button></div><div class="hs drift"><div class="trk">${sortItems(sale).map(p => cardHTML(p, true)).join("")}${sortItems(sale).map(p => cardHTML(p, true)).join("")}</div></div>`;
       html += bannersHTML(SALE, t("saleTitle"), secIdx++);
     }
     tops.forEach(n => {
@@ -1432,32 +1436,29 @@
   }
   // تحريك بطيء لصف الخصومات: يتوقف عند اللمس أو السحب، ويرجع بعد ثلاث ثوانٍ
   let driftTimer = 0;
-  // حركة بطيئة تلقائية لصف الخصومات: خطوة كل 180 مللي ثانية، تقف عند اللمس أو السحب أو التمرير، وترجع بعد ثلاث ثوانٍ
+  // حركة بطيئة تلقائية لصف الخصومات بحركة CSS (تشتغل على الآيفون مثل شريط العروض): حوالي 6 بكسل بالثانية
+  // تقف عند اللمس أو السحب أو التمرير، وترجع بعد ثلاث ثوانٍ، والسحب اليمين واليسار يشتغل عادي
   function startDrift() {
-    clearInterval(driftTimer);
-    // لا يوقف بسبب تقليل الحركة في الجهاز: الحركة بطيئة وتقف عند اللمس
-    let held = false, pausedUntil = 0, bound = null;
-    driftTimer = setInterval(() => {
-      // نعيد البحث عن الصف في كل خطوة، لأن الصفحة قد تنعاد رسمها
-      const el = document.querySelector("#shopBody .hs.drift");
-      if (!el) return;
-      if (bound !== el) {
-        bound = el; held = false;
-        const hold = () => { held = true; };
-        const release = () => { held = false; pausedUntil = Date.now() + 3000; };
-        el.addEventListener("pointerdown", hold);
-        el.addEventListener("pointerup", release);
-        el.addEventListener("pointerleave", release);
-        el.addEventListener("touchstart", hold, { passive: true });
-        el.addEventListener("touchend", release, { passive: true });
-        el.addEventListener("wheel", () => { pausedUntil = Date.now() + 3000; }, { passive: true });
-      }
-      if (held || document.hidden || Date.now() < pausedUntil) return;
-      const max = el.scrollWidth - el.clientWidth;
-      if (max <= 0) return;
-      const sgn = getComputedStyle(el).direction === "rtl" ? -1 : 1;
-      if (Math.abs(el.scrollLeft) >= max - 1) el.scrollLeft = 0; else el.scrollLeft += sgn;
-    }, 180);
+    document.querySelectorAll("#shopBody .hs.drift").forEach(function (el) {
+      const trk = el.querySelector(".trk");
+      if (!trk) return;
+      const copy = trk.scrollWidth / 2;
+      if (copy > 0) trk.style.animationDuration = Math.max(10, copy / 6).toFixed(1) + "s";
+      if (el.dataset.dr) return;
+      el.dataset.dr = "1";
+      let t = 0;
+      const hold = () => { clearTimeout(t); el.classList.add("paused"); };
+      const release = () => { clearTimeout(t); t = setTimeout(() => el.classList.remove("paused"), 3000); };
+      el.addEventListener("pointerdown", hold);
+      el.addEventListener("pointerup", release);
+      el.addEventListener("pointercancel", release);
+      el.addEventListener("pointerleave", release);
+      el.addEventListener("touchstart", hold, { passive: true });
+      el.addEventListener("touchend", release, { passive: true });
+      el.addEventListener("touchcancel", release, { passive: true });
+      el.addEventListener("wheel", () => { hold(); release(); }, { passive: true });
+      el.addEventListener("scroll", () => { hold(); release(); }, { passive: true });
+    });
   }
   // التذييل الكامل في الصفحة الرئيسية فقط (بدون فئة ولا بحث)، وبقية العروض سطر الحقوق
   function syncFooter() {
