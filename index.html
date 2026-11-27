@@ -43,7 +43,8 @@
   .sortlbl { display:inline-block; line-height:40px; }
   .ct-sep { height:1px; background:var(--line); margin:10px 6px; }
   .side-social { margin:6px 0 0; }
-  .sortarr { display:inline-block; margin-inline-start:6px; font-size:13px; line-height:40px; opacity:.85; }
+  .sortarr { display:inline-flex; align-items:center; vertical-align:middle; margin-inline-start:6px; line-height:0; color:var(--fg); opacity:.85; }
+  .sortarr svg { width:11px; height:16px; display:block; }
   /* v42: عناصر نافذة التفضيلات واضحة في الوضعين */
   #prefModal .pref-item { background:var(--card2); border:1px solid var(--line); }
   #prefModal .pref-langs button { background:var(--card2); }
@@ -365,7 +366,7 @@
       <input id="q" type="search" autocomplete="off">
       <div class="sugg hidden" id="sugg"></div>
     </div>
-    <div class="sortwrap" id="sortWrap"><div class="sortbox" id="sortBox" role="button" tabindex="0" aria-haspopup="listbox"><span class="sortlbl" id="sortLbl"></span><span class="sortarr" aria-hidden="true">↕</span></div><div class="sortmenu hidden" id="sortMenu" role="listbox"></div><select id="sortSel" aria-hidden="true" tabindex="-1"></select></div>
+    <div class="sortwrap" id="sortWrap"><div class="sortbox" id="sortBox" role="button" tabindex="0" aria-haspopup="listbox"><span class="sortlbl" id="sortLbl"></span><span class="sortarr" aria-hidden="true"><svg viewBox="0 0 11 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6l3.5-3.5L9 6"/><path d="M2 10l3.5 3.5L9 10"/></svg></span></div><div class="sortmenu hidden" id="sortMenu" role="listbox"></div><select id="sortSel" aria-hidden="true" tabindex="-1"></select></div>
     <select id="countrySel" class="hidden"></select>
   </div>
 </header>
