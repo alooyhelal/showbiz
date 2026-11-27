@@ -14,7 +14,7 @@
   var L = {
     ar: {
       outOfStock: "غير متوفر", someOut: "بعض المنتجات في سلتك غير متوفرة، أزلها للمتابعة إلى الدفع",
-      cart: "السلة", close: "إغلاق", keep: "متابعة التسوق", checkout: "إتمام الطلب", empty: "سلتك فارغة حالياً",
+      cart: "السلة", close: "إغلاق", keep: "متابعة التسوق", checkout: "إتمام الطلب", empty: "سلتك فارغة حالياً", emptyHint: "أضف منتجات من الموقع", browse: "تصفح المنتجات",
       all: "الكل", otherItems:"منتجات أخرى لم يتم اختيارها", selHint: "المنتجات غير المحددة تبقى في السلة ولا تنحذف",
       remaining: "باقي {x} للتوصيل المجاني", freeDone: "وصلت للتوصيل المجاني",
       freeMsg: "مبروك، شحنك مجاني لهذا الطلب", freeIn: "التوصيل المجاني",
@@ -28,7 +28,7 @@
     },
     en: {
       outOfStock: "Out of stock", someOut: "Some items in your cart are out of stock. Remove them to continue to checkout",
-      cart: "Cart", close: "Close", keep: "Keep shopping", checkout: "Checkout", empty: "Your cart is empty",
+      cart: "Cart", close: "Close", keep: "Keep shopping", checkout: "Checkout", empty: "Your cart is empty", emptyHint: "Add products from the store", browse: "Browse products",
       all: "All", otherItems:"Other items (not selected)", selHint: "Unselected items stay in your cart",
       remaining: "{x} more for free delivery", freeDone: "You reached free delivery",
       freeMsg: "Congrats, your shipping is free on this order", freeIn: "Free delivery",
@@ -449,7 +449,9 @@
     var body, foot = "";
     var outN = lines.filter(function (l) { return l.v.unavailable; }).length;
     if (!lines.length) {
-      body = '<p class="sd-empty">' + tr("empty") + '</p>' + recentBlock();
+      body = '<div class="sd-emp"><div class="sd-emp-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2.2l2.4 11.2h10.4L20.6 7.5H6.1"/><circle cx="9.5" cy="19.2" r="1.4"/><circle cx="17" cy="19.2" r="1.4"/></svg></div>' +
+        '<p class="sd-emp-t">' + tr("empty") + '</p><p class="sd-emp-s">' + tr("emptyHint") + '</p>' +
+        '<a class="sd-go" href="index.html">' + tr("browse") + '</a></div>' + recentBlock();
     } else {
       var allOn = lines.every(function (l) { return sel.indexOf(l.vid) < 0; });
       var selCount = lines.filter(function (l) { return sel.indexOf(l.vid) < 0 && !l.v.unavailable; }).length;
@@ -557,6 +559,12 @@
     ".sd-ok{color:#7ee2a8;font-weight:700}",
     ".sd-total{border-top:1px solid #26334d;margin-top:6px;padding-top:10px;font-size:16px}",
     ".sd-empty{text-align:center;color:#9aa7bd;padding:20px 0}",
+    ".sd-emp{text-align:center;padding:28px 8px 8px}",
+    ".sd-emp-ic{width:64px;height:64px;margin:0 auto 10px;color:#9aa7bd}",
+    ".sd-emp-ic svg{width:100%;height:100%;display:block}",
+    ".sd-emp-t{font-weight:800;font-size:16px;margin:0 0 6px}",
+    ".sd-emp-s{color:#9aa7bd;font-size:13px;line-height:1.7;margin:0 0 16px}",
+    ".sd-emp .sd-go{display:inline-block}",
     ".ui-bar{background:#162033;border:1px solid #26334d;border-radius:14px;padding:10px 12px;margin-bottom:10px}",
     ".ui-msg{font-size:13px;margin-bottom:6px}",
     ".ui-track{height:6px;background:#26334d;border-radius:99px;overflow:hidden}",
