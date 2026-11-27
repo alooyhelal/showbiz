@@ -1401,9 +1401,11 @@
     }
     if (!tops.length) return adHTML() + `<div class="grid">${sortItems(products).map(p => cardHTML(p)).join("")}</div>`;
     // الإعلان، ثم الفئات (شريط يتسحب)، ثم الخصومات أول قسم، وبعدها الأقسام
-    let html = marqueeHTML() + adHTML() + `<div id="recentRow">${recentRowHTML()}</div>`;
+    let html = adHTML() + `<div id="recentRow">${recentRowHTML()}</div>`;
     html += `<div class="sec-h"><h3>${t("catsHead")}</h3><button class="linkbtn" data-cats="all">${t("seeAll")}</button></div>`;
     html += `<div class="tiles">${saleTile}${tops.map(n => tileHTML(n.key, n.id, catLabel(n.id), false)).join("")}</div>`;
+    // شريط العروض بعد الفئات وقبل الخصومات
+    html += marqueeHTML();
     let secIdx = 0;
     if (sale.length) {
       html += `<div class="sec-h"><h3>${t("saleTitle")}</h3><button class="linkbtn" data-cat="${SALE}">${t("seeAll")}</button></div><div class="hs drift">${sortItems(sale).map(p => cardHTML(p, true)).join("")}</div>`;
