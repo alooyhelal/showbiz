@@ -320,6 +320,7 @@
 </style>
 <script src="version.js"></script>
 <script src="shared.js"></script>
+<script src="popular.js"></script>
 <script src="flags.js"></script>
 <script src="ui.js"></script>
 </head>
@@ -848,16 +849,13 @@
   }
   // آخر المنتجات اللي شافها الزائر (لقطات محفوظة، نطابقها مع الكتالوج الحالي)
   function recentProducts() {
-    let rec = [];
-    try { rec = JSON.parse(localStorage.getItem("showbiz_recent") || "[]"); } catch (e) {}
-    return (Array.isArray(rec) ? rec : [])
-      .filter(r => r && r.p && products.some(x => String(x.pid) === String(r.p.pid)))
-      .slice(0, 8).map(r => products.find(x => String(x.pid) === String(r.p.pid)));
+    return ShowbizUI.recentFresh()
+      .map(r => products.find(x => String(x.pid) === String(r.p.pid)))
+      .filter(Boolean).slice(0, 8);
   }
   // الأكثر بحثاً من الزوار: قائمة يحددها الموقع (window.SHOWBIZ_POPULAR_PIDS)، أول 7 منتجات
   function popularProducts() {
-    const ids = Array.isArray(window.SHOWBIZ_POPULAR_PIDS) ? window.SHOWBIZ_POPULAR_PIDS.map(String) : [];
-    return ids.map(id => products.find(x => String(x.pid) === id)).filter(Boolean).slice(0, 7);
+    return (Array.isArray(window.SHOWBIZ_POPULAR) ? window.SHOWBIZ_POPULAR : []).slice(0, 7);
   }
   function sgCard(p) {
     return `<button class="sg-card" data-openp="${esc(p.pid)}"><img src="${esc(p.image || "")}" alt=""><span>${esc(pName(p) || "")}</span></button>`;
@@ -2039,7 +2037,8 @@
   const qEl = document.getElementById("q");
   { const qp = new URLSearchParams(location.search).get("q"); if (qp) { filt.q = qp; qEl.value = qp; } }
   qEl.addEventListener("input", () => { filt.q = qEl.value; refreshShop(); renderSugg(); });
-  qEl.addEventListener("focus", renderSugg);
+  // زر البحث يفتح صفحة البحث الكاملة
+  qEl.addEventListener("focus", () => { qEl.blur(); location.href = "search.html"; });
   qEl.addEventListener("keydown", (e) => { if (e.key === "Enter") { ShowbizUI.pushSearch(qEl.value); document.getElementById("sugg").classList.add("hidden"); } });
   document.getElementById("sortSel").addEventListener("change", (e) => { filt.sort = e.target.value; refreshShop(); syncSortUI(); window.scrollTo(0, 0); });
   // قائمة الترتيب المخصصة: الاسم داخل المربع يتسحب يمين ويسار إذا كان طويل

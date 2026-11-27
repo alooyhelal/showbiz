@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>البحث</title>
+<script src="version.js"></script>
+<script src="shared.js"></script>
+<script src="popular.js"></script>
+<style>
+  :root { --bg:#0c1628; --card:#14213a; --card2:#1a2b4a; --line:#2c4168; --fg:#f2f5fa; --muted:#9aa8bf; --orange:#f59e4b; color-scheme:dark; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:var(--bg); color:var(--fg); font-family:'Tajawal',system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding:0 max(16px, env(safe-area-inset-left, 0px)) 110px max(16px, env(safe-area-inset-right, 0px)); }
+  h2 { font-family:'Cairo',system-ui,sans-serif; margin:0; font-size:17px; }
+  .wrap { max-width:480px; margin:0 auto; padding-top:16px; animation:sIn .25s ease-out; }
+  @keyframes sIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  .sbox { display:flex; gap:8px; align-items:center; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:4px 4px 4px 14px; }
+  .sbox input { flex:1; min-width:0; background:transparent; border:0; outline:0; color:var(--fg); font:inherit; font-size:15px; padding:10px 4px; }
+  .sbox button { height:38px; padding:0 16px; border:0; border-radius:999px; background:var(--orange); color:#111; font:inherit; font-weight:800; cursor:pointer; }
+  .sec { margin-top:24px; }
+  .sec[hidden] { display:none; }
+  .sec-h { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; }
+  .sec-h a { color:var(--orange); font-size:13px; font-weight:800; text-decoration:none; }
+  .sec-h a[hidden] { display:none; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { padding:8px 14px; border-radius:999px; background:var(--card); border:1px solid var(--line); color:var(--fg); text-decoration:none; font-size:14px; }
+  .sg-grid { display:grid; grid-template-rows:repeat(2, auto); grid-auto-flow:column; grid-auto-columns:120px; gap:10px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
+  .sg-row { display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
+  .card { display:block; width:100%; min-width:0; background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; color:var(--fg); text-decoration:none; }
+  .sg-row .card { flex:0 0 116px; }
+  .card img { width:100%; aspect-ratio:1/1; object-fit:cover; display:block; background:var(--card2); }
+  .card span { display:-webkit-box; padding:6px 8px 8px; font-size:12px; line-height:1.4; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .empty { color:var(--muted); font-size:14px; margin:0; }
+</style>
+</head>
+<body data-xbar>
+<div class="wrap">
+  <form class="sbox" id="sf" role="search">
+    <input id="sq" type="search" autocomplete="off" autofocus placeholder="ابحث عن منتج" aria-label="بحث">
+    <button type="submit" id="sBtn">بحث</button>
+  </form>
+
+  <section class="sec">
+    <div class="sec-h"><h2 id="hS">آخر عمليات البحث</h2></div>
+    <div class="chips" id="sChips"></div>
+  </section>
+
+  <section class="sec" id="popSec" hidden>
+    <div class="sec-h"><h2 id="hP">الرائج الآن</h2></div>
+    <div class="sg-grid" id="pop"></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-h"><h2 id="hR">شفتها مؤخراً</h2><a href="history.html" id="aR">عرض الكل</a></div>
+    <div class="sg-row" id="rec"></div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const readState = () => { try { return JSON.parse(localStorage.getItem("showbiz_state") || "{}"); } catch (e) { return {}; } };
+  const readList = (k) => { try { const v = JSON.parse(localStorage.getItem(k) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
+  const writeList = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+  const T = {
+    ar: { title:"البحث", ph:"ابحث عن منتج", btn:"بحث", s:"آخر عمليات البحث", p:"الرائج الآن", r:"شفتها مؤخراً", all:"عرض الكل", noS:"ما فيه عمليات بحث بعد", noR:"ما شفت منتجات مؤخراً", dir:"rtl" },
+    en: { title:"Search", ph:"Search products", btn:"Search", s:"Recent searches", p:"Trending now", r:"Recently viewed", all:"View all", noS:"No searches yet", noR:"No recently viewed products", dir:"ltr" }
+  };
+  const lang = readState().lang === "en" ? "en" : "ar";
+  const L = T[lang];
+  document.documentElement.lang = lang;
+  document.documentElement.dir = L.dir;
+  document.title = L.title;
+  document.getElementById("sq").placeholder = L.ph;
+  document.getElementById("sBtn").textContent = L.btn;
+  document.getElementById("hS").textContent = L.s;
+  document.getElementById("hP").textContent = L.p;
+  document.getElementById("hR").textContent = L.r;
+  document.getElementById("aR").textContent = L.all;
+
+  const name = (p) => lang === "en" ? (p.nameEn || p.nameAr) : (p.nameAr || p.nameEn);
+  const card = (p) => `<a class="card" href="index.html?open=${encodeURIComponent(p.pid)}"><img src="${esc(p.image || "")}" alt=""><span>${esc(name(p) || "")}</span></a>`;
+
+  // آخر 5 بحوث
+  const searches = readList("showbiz_searches").filter(q => typeof q === "string" && q.trim()).slice(0, 5);
+  document.getElementById("sChips").innerHTML = searches.length
+    ? searches.map(q => `<a class="chip" href="index.html?q=${encodeURIComponent(q)}">${esc(q)}</a>`).join("")
+    : `<p class="empty">${L.noS}</p>`;
+
+  // الرائج الآن: يختفي إذا القائمة فاضية
+  const pop = (Array.isArray(window.SHOWBIZ_POPULAR) ? window.SHOWBIZ_POPULAR : []).slice(0, 7);
+  if (pop.length) {
+    document.getElementById("pop").innerHTML = pop.map(card).join("");
+    document.getElementById("popSec").hidden = false;
+  }
+
+  // شفتها مؤخراً: خلال 15 يوم
+  const cutoff = Date.now() - 15 * 864e5;
+  const rec = readList("showbiz_recent").filter(r => r && r.p && r.p.pid != null && r.at && r.at >= cutoff).slice(0, 8);
+  document.getElementById("rec").innerHTML = rec.length ? rec.map(r => card(r.p)).join("") : `<p class="empty">${L.noR}</p>`;
+  document.getElementById("aR").hidden = !rec.length;
+
+  // البحث: يحفظ الكلمة ويرجع للموقع بنتائج البحث
+  document.getElementById("sf").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const q = document.getElementById("sq").value.trim();
+    if (!q) return;
+    writeList("showbiz_searches", [q, ...readList("showbiz_searches").filter(x => x !== q)].slice(0, 5));
+    location.href = "index.html?q=" + encodeURIComponent(q);
+  });
+})();
+</script>
+</body>
+</html>
