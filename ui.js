@@ -396,10 +396,14 @@
       (isOpen ? '<div class="sd-cpn"><input id="sdCpn" placeholder="' + esc(tr("coupon")) + '"><button data-ui="apply">' + tr("apply") + '</button></div><p id="sdCpnMsg" class="sd-hint"></p>' : '') +
       '</div>';
   }
+  // سطور المنتجات المحددة لحساب الشحن من CJ
+  function uiShipLines() {
+    return selLines().map(function (l) { return { vid: l.vid, qty: l.qty }; });
+  }
   function totalsValue() {
     var sub = localPrice(subtotalUSD()), disc = localPrice(discountUSD());
     var free = isFree();
-    var ship = free ? 0 : (selectedAddr() ? shipLocal(shippingCalc().shipBHD) : null);
+    var ship = free ? 0 : (window.ShowbizShip ? ShowbizShip.amount(st().country, uiShipLines()) : null);
     return { sub: sub, disc: disc, ship: ship, free: free, total: sub - disc + (ship || 0) };
   }
   function totalsHTML() {
@@ -414,7 +418,8 @@
     }
     rows += '<div class="sd-row sd-total"><strong>' + tr("grand") + '</strong><strong>' + fmt(v.total) + '</strong></div>';
     if (!v.free) rows += '<p class="sd-hint">' + tr("shipInfo") + '</p>';
-    return '<div class="sd-totals">' + rows + '</div>';
+    var methods = (!v.free && window.ShowbizShip) ? ShowbizShip.html(st().country, uiShipLines()) : '';
+    return '<div class="sd-totals">' + rows + '</div>' + methods;
   }
   function wishHTML() {
     var w = wishList();
@@ -652,6 +657,12 @@ html[dir=rtl] #sortSel{padding:0 12px 0 26px;background-position:left 10px cente
   var styleEl = document.createElement("style");
   styleEl.textContent = CSS;
   document.head.appendChild(styleEl);
+
+  // الشحن من CJ: الصفحة الحالية تعطي الدولة والسلة، والتغيير يعيد رسم السلة
+  if (window.ShowbizShip) {
+    ShowbizShip.setSource(function () { return st().country; }, uiShipLines);
+    ShowbizShip.listen(function () { if (openState) drawRender(); });
+  }
 
   window.ShowbizUI = {
     recentFresh: recentFresh,
