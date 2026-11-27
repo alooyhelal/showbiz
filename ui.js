@@ -106,7 +106,12 @@
       })
       .catch(function () { return []; });
   }
-  function recentList() { return jget("showbiz_recent", []); }
+  function recentList() {
+    var r = jget("showbiz_recent", []), changed = false;
+    r.forEach(function (x) { if (x && x.p && !x.at) { x.at = Date.now(); changed = true; } });
+    if (changed) jset("showbiz_recent", r);
+    return r;
+  }
   var RECENT_DAYS = 15 * 24 * 3600 * 1000;
   // آخر المنتجات المشاهدة خلال 15 يوم فقط
   function recentFresh() { var now = Date.now(); return recentList().filter(function (x) { return x && x.p && x.at && now - x.at <= RECENT_DAYS; }); }

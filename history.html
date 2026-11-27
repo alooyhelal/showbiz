@@ -71,7 +71,7 @@
     document.getElementById("clr").textContent = L.clear;
 
     const cutoff = Date.now() - 15 * 864e5;
-    const recent = readList("showbiz_recent").filter(r => r && r.p && r.p.pid != null && r.at && r.at >= cutoff).slice(0, 8);
+    const recent = readList("showbiz_recent").filter(r => r && r.p && r.p.pid != null && (r.at || Date.now()) >= cutoff).slice(0, 8);
     const pEl = document.getElementById("pGrid");
     pEl.innerHTML = recent.length
       ? recent.map(r => {

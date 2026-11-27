@@ -855,7 +855,7 @@
   }
   // الأكثر بحثاً من الزوار: قائمة يحددها الموقع (window.SHOWBIZ_POPULAR_PIDS)، أول 7 منتجات
   function popularProducts() {
-    return (Array.isArray(window.SHOWBIZ_POPULAR) ? window.SHOWBIZ_POPULAR : []).slice(0, 7);
+    return window.SHOWBIZ_POPULAR_LIST().slice(0, 7);
   }
   function sgCard(p) {
     return `<button class="sg-card" data-openp="${esc(p.pid)}"><img src="${esc(p.image || "")}" alt=""><span>${esc(pName(p) || "")}</span></button>`;
