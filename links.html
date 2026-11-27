@@ -37,6 +37,8 @@
   .btn.main .ic { background:rgba(0,0,0,.08); color:#111; }
   .btn.main .arr { color:#111; }
   .btn:hover { border-color:var(--orange); }
+  .stat-line { display:block; font-size:13px; font-weight:800; margin-top:2px; font-family:'Tajawal',system-ui,sans-serif; }
+  .stat-line.open { color:#4ade80; } .stat-line.closed { color:#fca5a5; }
   .status { font-size:12px; font-weight:800; padding:5px 10px; border-radius:999px; white-space:nowrap; font-family:'Tajawal',system-ui,sans-serif; }
   .status.open { background:rgba(34,197,94,.15); color:#4ade80; }
   .status.closed { background:rgba(248,113,113,.15); color:#fca5a5; }
@@ -116,8 +118,7 @@
 
   <button class="btn" id="hoursBtn" type="button">
     <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span>
-    <span class="tx"><span id="hTtl"></span><span class="sub" id="hSub"></span></span>
-    <span class="status" id="hStat"></span>
+    <span class="tx"><span id="hTtl"></span><span class="stat-line" id="hStat"></span><span class="sub" id="hSub"></span></span>
   </button>
 
   <a class="btn" href="contact.html">
@@ -257,7 +258,7 @@
     const st = openState();
     const hs = document.getElementById("hStat");
     hs.textContent = st.open ? L().open : L().closed;
-    hs.className = "status " + (st.open ? "open" : "closed");
+    hs.className = "stat-line " + (st.open ? "open" : "closed");
     document.getElementById("contactTxt").textContent = L().contact;
     document.getElementById("langBtn").textContent = lang === "ar" ? "AR" : "EN";
     document.getElementById("langBtn").title = L().lang;
