@@ -1435,7 +1435,7 @@
   // حركة بطيئة تلقائية لصف الخصومات: خطوة كل 180 مللي ثانية، تقف عند اللمس أو السحب أو التمرير، وترجع بعد ثلاث ثوانٍ
   function startDrift() {
     clearInterval(driftTimer);
-    if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // لا يوقف بسبب تقليل الحركة في الجهاز: الحركة بطيئة وتقف عند اللمس
     let held = false, pausedUntil = 0, bound = null;
     driftTimer = setInterval(() => {
       // نعيد البحث عن الصف في كل خطوة، لأن الصفحة قد تنعاد رسمها
