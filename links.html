@@ -14,20 +14,24 @@
   body { margin:0; min-height:100vh; background:var(--bg); color:var(--fg); font-family:'Tajawal',system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif; padding:0 max(16px, env(safe-area-inset-left, 0px)) 110px max(16px, env(safe-area-inset-right, 0px)); }
   h1, h2, h3 { font-family:'Cairo',system-ui,sans-serif; margin:0; }
   .wrap { max-width:480px; margin:0 auto; padding-top:16px; }
-  .top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
-  .tbtn { height:40px; min-width:40px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--fg); font:inherit; font-size:13px; font-weight:700; cursor:pointer; padding:0 14px; display:flex; align-items:center; justify-content:center; }
-  .tbtn.round { width:40px; padding:0; border-radius:50%; }
-  .tbtn svg { width:20px; height:20px; }
-  .hero { text-align:center; margin:24px 0 20px; }
+  .top { display:flex; justify-content:space-between; align-items:center; gap:10px; direction:ltr; }
+  .tr { display:flex; align-items:center; gap:8px; }
+  .tbtn { height:36px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--fg); font:inherit; font-size:12px; font-weight:800; cursor:pointer; padding:0 12px; display:flex; align-items:center; justify-content:center; letter-spacing:.5px; }
+  .tbtn.round { width:36px; padding:0; border-radius:50%; }
+  .tbtn.pill { min-width:44px; }
+  .tbtn svg { width:18px; height:18px; }
+  .toast { position:fixed; left:50%; top:16px; transform:translateX(-50%); z-index:60; background:#f2f5fa; color:#111; font-size:13px; font-weight:700; padding:9px 16px; border-radius:999px; box-shadow:0 8px 24px rgba(0,0,0,.3); opacity:0; pointer-events:none; transition:opacity .25s; }
+  .toast.on { opacity:1; }
+  .hero { text-align:center; margin:16px 0 14px; }
   .kick { color:var(--orange); font-size:12px; font-weight:800; letter-spacing:2px; text-transform:uppercase; }
-  .brand { margin:8px 0 6px; font-family:'Cairo',system-ui,sans-serif; font-weight:800; font-size:44px; line-height:1; direction:ltr; }
+  .brand { margin:6px 0 4px; font-family:'Cairo',system-ui,sans-serif; font-weight:800; font-size:36px; line-height:1; direction:ltr; }
   .brand .a { color:var(--orange); } .brand .b { color:var(--teal); }
-  .tag { color:var(--muted); font-size:15px; line-height:1.7; margin:0; }
-  .btn { display:flex; align-items:center; gap:14px; width:100%; padding:17px 18px; border-radius:18px; text-decoration:none; color:var(--fg); font:inherit; font-family:'Cairo',system-ui,sans-serif; font-weight:800; font-size:18px; margin-bottom:12px; border:1px solid var(--line); background:var(--card); cursor:pointer; text-align:start; }
-  .btn .ic { width:44px; height:44px; flex-shrink:0; border-radius:50%; background:rgba(255,255,255,.06); color:var(--orange); display:flex; align-items:center; justify-content:center; }
-  .btn .ic svg { width:22px; height:22px; }
-  .btn .arr { margin-inline-start:auto; font-size:22px; color:var(--muted); }
-  .btn .sub { display:block; font-size:13px; font-weight:400; color:var(--muted); margin-top:2px; font-family:'Tajawal',system-ui,sans-serif; direction:ltr; text-align:start; }
+  .tag { color:var(--muted); font-size:14px; line-height:1.6; margin:0; }
+  .btn { display:flex; align-items:center; gap:12px; width:100%; padding:12px 14px; border-radius:16px; text-decoration:none; color:var(--fg); font:inherit; font-family:'Cairo',system-ui,sans-serif; font-weight:800; font-size:16px; margin-bottom:10px; border:1px solid var(--line); background:var(--card); cursor:pointer; text-align:start; }
+  .btn .ic { width:36px; height:36px; flex-shrink:0; border-radius:50%; background:rgba(255,255,255,.06); color:var(--orange); display:flex; align-items:center; justify-content:center; }
+  .btn .ic svg { width:19px; height:19px; }
+  .btn .arr { margin-inline-start:auto; font-size:20px; color:var(--muted); }
+  .btn .sub { display:block; font-size:12px; font-weight:400; color:var(--muted); margin-top:2px; font-family:'Tajawal',system-ui,sans-serif; direction:ltr; text-align:start; }
   .btn .tx { flex:1; min-width:0; }
   .btn.main { background:var(--orange); border-color:transparent; color:#111; box-shadow:0 12px 28px rgba(245,158,75,.25); }
   .btn.main .ic { background:rgba(0,0,0,.08); color:#111; }
@@ -36,16 +40,16 @@
   .status { font-size:12px; font-weight:800; padding:5px 10px; border-radius:999px; white-space:nowrap; font-family:'Tajawal',system-ui,sans-serif; }
   .status.open { background:rgba(34,197,94,.15); color:#4ade80; }
   .status.closed { background:rgba(248,113,113,.15); color:#fca5a5; }
-  .sec { margin-top:26px; }
+  .sec { margin-top:20px; }
   .sh { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-  .sh h2 { font-size:19px; font-weight:800; }
+  .sh h2 { font-size:17px; font-weight:800; }
   .sh .lbl { color:var(--orange); font-size:12px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; }
   .tabs { display:flex; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:4px; margin-bottom:14px; }
-  .tab { flex:1; border:0; background:transparent; color:var(--muted); font:inherit; font-weight:700; font-size:15px; padding:10px 8px; border-radius:999px; cursor:pointer; }
+  .tab { flex:1; border:0; background:transparent; color:var(--muted); font:inherit; font-weight:700; font-size:14px; padding:8px 8px; border-radius:999px; cursor:pointer; }
   .tab.on { background:var(--orange); color:#111; }
   .car { display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding-bottom:6px; scrollbar-width:none; }
   .car::-webkit-scrollbar { display:none; }
-  .pc { flex:0 0 46%; max-width:200px; scroll-snap-align:start; background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; text-decoration:none; color:var(--fg); position:relative; }
+  .pc { flex:0 0 44%; max-width:180px; scroll-snap-align:start; background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; text-decoration:none; color:var(--fg); position:relative; }
   .pc .im { aspect-ratio:1/1; background:var(--card2); position:relative; }
   .pc .im img { width:100%; height:100%; object-fit:cover; display:block; }
   .pc .badge { position:absolute; top:8px; inset-inline-start:8px; background:#e11d48; color:#fff; font-size:11px; font-weight:800; padding:3px 8px; border-radius:6px; font-family:'Inter',system-ui,sans-serif; }
@@ -60,14 +64,14 @@
   .psearch button { height:44px; border-radius:999px; padding:0 18px; background:var(--card2); color:var(--fg); border:1px solid var(--line); font:inherit; font-weight:700; cursor:pointer; }
   .allbtn { display:block; text-align:center; margin-top:10px; padding:14px; border-radius:14px; border:1px solid var(--line); color:var(--fg); text-decoration:none; font-weight:800; font-family:'Cairo',system-ui,sans-serif; }
   .allbtn:hover { border-color:var(--orange); }
-  .help { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px; margin-bottom:10px; color:var(--fg); text-decoration:none; }
-  .help .ic { width:44px; height:44px; flex-shrink:0; border-radius:50%; background:rgba(255,255,255,.06); color:var(--orange); display:flex; align-items:center; justify-content:center; }
+  .help { display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:11px 12px; margin-bottom:8px; color:var(--fg); text-decoration:none; }
+  .help .ic { width:36px; height:36px; flex-shrink:0; border-radius:50%; background:rgba(255,255,255,.06); color:var(--orange); display:flex; align-items:center; justify-content:center; }
   .help .ic svg { width:22px; height:22px; }
   .help .tx { flex:1; min-width:0; }
-  .help b { display:block; font-size:16px; font-weight:800; font-family:'Cairo',system-ui,sans-serif; }
+  .help b { display:block; font-size:15px; font-weight:800; font-family:'Cairo',system-ui,sans-serif; }
   .help small { display:block; color:var(--muted); font-size:13px; margin-top:3px; }
   .help:hover { border-color:var(--orange); }
-  .copy { text-align:center; color:var(--muted); font-size:12px; margin-top:26px; line-height:1.8; }
+  .copy { text-align:center; color:var(--muted); font-size:12px; margin-top:20px; line-height:1.8; }
   .copy .ver { direction:ltr; opacity:.7; }
   /* الشريط السفلي */
   .dock { position:fixed; left:50%; transform:translateX(-50%); bottom:calc(14px + env(safe-area-inset-bottom,0px)); z-index:30; width:min(calc(100% - 28px),440px); display:flex; gap:4px; padding:8px; border-radius:999px; background:rgba(40,40,44,.92); border:1px solid rgba(255,255,255,.1); box-shadow:0 12px 32px rgba(0,0,0,.4); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
@@ -92,8 +96,11 @@
 <body data-nodock>
 <main class="wrap">
   <div class="top">
-    <button class="tbtn" id="langBtn" type="button"></button>
     <button class="tbtn round" id="themeBtn" type="button"></button>
+    <div class="tr">
+      <button class="tbtn pill" id="langBtn" type="button"></button>
+      <button class="tbtn round" id="shareBtn" type="button"></button>
+    </div>
   </div>
 
   <header class="hero">
@@ -147,6 +154,8 @@
   <div class="copy"><div class="ver" id="ver"></div></div>
 </main>
 
+<div class="toast" id="toast" role="status"></div>
+
 <nav class="dock" aria-label="navigation">
   <a href="index.html" id="dShop"></a>
   <a href="#" id="dWa" target="_blank" rel="noopener"></a>
@@ -171,14 +180,14 @@
       pTtl: "منتجات مختارة", pLbl: "Showbiz", tabNew: "وصل حديثاً", tabSale: "خصومات", search: "ابحث عن منتج...", go: "بحث", all: "عرض كل المنتجات",
       hlp: "كيف نقدر نساعدك؟", sales: "الاستفسارات والمبيعات", salesSub: "معلومات المنتجات والطلبات",
       care: "خدمة العملاء بعد البيع", careSub: "الإرجاع والاستبدال والمتابعة",
-      dShop: "تسوّق", dWa: "واتساب", dCall: "اتصال", mTtl: "أوقات العمل",
+      dShop: "تسوّق", dWa: "واتساب", dCall: "اتصال", mTtl: "أوقات العمل", share: "مشاركة", copied: "تم نسخ الرابط",
       rA: "السبت – الخميس", rB: "الجمعة", close: "إغلاق" },
     en: { kick: "Online store", tag: "An online store for home goods, electronics and more.", hTtl: "Working hours", hTap: "Tap to see the schedule",
       open: "Open now", closed: "Closed now", shop: "Shop now", contact: "Contact us", lang: "العربية", theme: "Change theme",
       pTtl: "Selected products", pLbl: "Showbiz", tabNew: "New arrivals", tabSale: "Discounts", search: "Search products...", go: "Search", all: "View all products",
       hlp: "How can we help?", sales: "Sales and enquiries", salesSub: "Product info and orders",
       care: "After-sales support", careSub: "Returns, exchanges and follow-up",
-      dShop: "Shop", dWa: "WhatsApp", dCall: "Call", mTtl: "Working hours",
+      dShop: "Shop", dWa: "WhatsApp", dCall: "Call", mTtl: "Working hours", share: "Share", copied: "Link copied",
       rA: "Saturday – Thursday", rB: "Friday", close: "Close" }
   };
   const C = ShowbizCore.CONTACT;
@@ -250,7 +259,12 @@
     hs.textContent = st.open ? L().open : L().closed;
     hs.className = "status " + (st.open ? "open" : "closed");
     document.getElementById("contactTxt").textContent = L().contact;
-    document.getElementById("langBtn").textContent = L().lang;
+    document.getElementById("langBtn").textContent = lang === "ar" ? "AR" : "EN";
+    document.getElementById("langBtn").title = L().lang;
+    document.getElementById("langBtn").setAttribute("aria-label", L().lang);
+    const sh = document.getElementById("shareBtn");
+    sh.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7.5 7.5L12 3l4.5 4.5M5 12v7.5h14V12"/></svg>';
+    sh.setAttribute("aria-label", L().share); sh.title = L().share;
     document.getElementById("pTtl").textContent = L().pTtl;
     document.getElementById("tabNew").textContent = L().tabNew;
     document.getElementById("tabSale").textContent = L().tabSale;
@@ -308,6 +322,22 @@
     ShowbizCore.setTheme(ShowbizCore.theme() === "light" ? "dark" : "light", themeBtn);
   });
   document.addEventListener("sbthemechange", syncTheme);
+
+  // مشاركة الصفحة: قائمة المشاركة في الجوال، أو نسخ الرابط إذا ما فيه مشاركة
+  let toastT = 0;
+  function toast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 1800);
+  }
+  document.getElementById("shareBtn").addEventListener("click", async () => {
+    const url = "https://alooyhelal.github.io/showbiz/links.html";
+    if (navigator.share) {
+      try { await navigator.share({ title: "Showbiz", text: lang === "ar" ? "متجر Showbiz" : "Showbiz store", url }); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    try { await navigator.clipboard.writeText(url); toast(L().copied); } catch (e) {}
+  });
 
   // تبويب المنتجات
   document.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => { tab = b.dataset.tab; apply(); }));
