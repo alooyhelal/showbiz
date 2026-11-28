@@ -3,6 +3,7 @@
    - ShowbizShip.amount(country, lines)  -> السعر المختار بعملة الدولة، أو null إذا ما اختير شي
    - ShowbizShip.html(country, lines)    -> قائمة طرق الشحن للعرض
    - ShowbizShip.listen(fn)              -> ينادي fn لما تتغير النتائج أو الاختيار
+   - ShowbizShip.available(country, vids) -> Promise بخريطة { vid: true|false } أو null
    lines: [{ vid, qty }] (المنتجات المحددة فقط)
    الاختيار يتحفظ في localStorage، ويصير غير صالح إذا تغيرت السلة أو الدولة. */
 (function () {
@@ -155,7 +156,33 @@
     document.head.appendChild(s);
   })();
 
+  // توفر الشحن لقائمة منتجات (vid) لدولة معينة. يرجع Promise بخريطة { vid: true|false }، أو null عند الخطأ.
+  function available(country, vids) {
+    var out = {};
+    var list = (vids || []).filter(Boolean);
+    var batches = [];
+    for (var i = 0; i < list.length; i += 10) batches.push(list.slice(i, i + 10));
+    return batches.reduce(function (chain, batch) {
+      return chain.then(function (acc) {
+        if (!acc) return null;
+        return fetch(WORKER + "?action=avail", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: country, vids: batch })
+        })
+          .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+          .then(function (res) {
+            if (!res.ok || !res.d || !res.d.available) return null;
+            Object.keys(res.d.available).forEach(function (k) { acc[k] = !!res.d.available[k]; });
+            return acc;
+          })
+          .catch(function () { return null; });
+      });
+    }, Promise.resolve(out));
+  }
+
   window.ShowbizShip = {
+    available: available,
     status: status,
     amount: amount,
     html: html,
