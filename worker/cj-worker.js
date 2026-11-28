@@ -184,6 +184,27 @@ function normalize(item, detail) {
   };
 }
 
+// ترجمة اسم المنتج للعربي عبر Workers AI (يحتاج ربط AI باسم AI في إعدادات Cloudflare)
+// كل اسم يترجم مرة وحدة، والنتيجة تنحفظ 30 يوم. إذا فشلت الترجمة يرجع فاضي، والموقع يعرض الإنجليزي.
+const NAME_TTL_S = 30 * 24 * 60 * 60;
+async function arabicName(env, text) {
+  if (!text || !env.AI) return "";
+  const cache = caches.default;
+  const key = new Request("https://name-ar.internal/" + encodeURIComponent(text));
+  const hit = await cache.match(key);
+  if (hit) return (await hit.json()).ar || "";
+  try {
+    const r = await env.AI.run("@cf/meta/m2m100-1.2b", { text: text, source_lang: "english", target_lang: "arabic" });
+    const ar = String((r && r.translated_text) || "").trim();
+    await cache.put(key, new Response(JSON.stringify({ ar: ar }), {
+      headers: { "Content-Type": "application/json", "Cache-Control": "max-age=" + NAME_TTL_S },
+    }));
+    return ar;
+  } catch (e) {
+    return "";
+  }
+}
+
 async function handleList(env) {
   if (listCache.body && Date.now() - listCache.at < LIST_TTL) {
     return jsonResponse(listCache.body);
@@ -212,7 +233,9 @@ async function handleList(env) {
         }
       }
     }
-    products.push(normalize(item, detail));
+    const row = normalize(item, detail);
+    row.nameAr = await arabicName(env, row.nameEn);
+    products.push(row);
   }
 
   const body = { products, count: products.length };
