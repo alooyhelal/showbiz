@@ -1097,7 +1097,7 @@
       const opts = p.variants.length > 1
         ? `<label class="muted">${t("chooseOpt")}</label>
            <select id="mVariant"><option value="" ${v ? "" : "selected"}>${t("choosePlaceholder")}</option>${p.variants.map(x =>
-              `<option value="${esc(x.vid)}" ${v && x.vid === v.vid ? "selected" : ""} ${x.unavailable ? "disabled" : ""}>${esc(variantLabel(x))}${x.unavailable ? " · " + t("outOfStock") : ""}</option>`
+              `<option value="${esc(x.vid)}" ${v && x.vid === v.vid ? "selected" : ""} ${x.unavailable ? "disabled" : ""}>${esc(variantLabel(x))}${optDiff(p, x)}${x.unavailable ? " · " + t("outOfStock") : ""}</option>`
             ).join("")}</select>`
         : (v && v.key ? `<div class="muted">${esc(variantLabel(v))}</div>` : "");
       buy = `
@@ -1231,6 +1231,13 @@
   function minUSD(p) { return Math.min(...p.variants.map(v => v.price)); }
   // أرخص سعر للمنتج (الخيار الأساسي) والفرق لكل لون أو مقاس عنه
   function cheapOf(p) { return Math.min(...p.variants.map(v => v.price)); }
+  // الفرق بين الخيار وأقل سعر في المنتج، يظهر جنب الخيار (مثلاً + 0.566)
+  function optDiff(p, x) {
+    const d = x.price - cheapOf(p);
+    if (!(d > 0)) return "";
+    const c = COUNTRIES[state.country] || COUNTRIES.BH;
+    return ` · +${Number(localPrice(d)).toFixed(c.dec)}`;
+  }
   // السعر يتبع المقاس فقط: أقل سعر بين الخيارات اللي فيها المقاس المختار (اللون ما يغيّر السعر)
   function sizePriceUSD(p) {
     if (!modal || !modal.size) return null;
