@@ -862,7 +862,10 @@
   // خيارات المنتج المطلوب اختيارها (الإلكترونيات): الألوان والمقاسات بدون تحديد مسبق
   function optionValues(p) {
     const uniq = (arr) => { const seen = new Map(); arr.forEach(o => { if (!seen.has(o.en)) seen.set(o.en, o); }); return [...seen.values()]; };
-    return { colors: uniq(p.variants.map(v => v.opt.color)), sizes: uniq(p.variants.map(v => v.opt.size)) };
+    // الأرخق أول: أول خيار دائماً بنفس سعر البطاقة (أرخص سعر بعد الزيادة)
+    const minOf = (key) => (o) => Math.min(...p.variants.filter(v => v.opt[key].en === o.en).map(v => v.price));
+    const byPrice = (key, arr) => arr.slice().sort((a, b) => minOf(key)(a) - minOf(key)(b));
+    return { colors: byPrice("color", uniq(p.variants.map(v => v.opt.color))), sizes: byPrice("size", uniq(p.variants.map(v => v.opt.size))) };
   }
   function resolveChoice(p) {
     if (!modal || !modal.color || !modal.size) return null;
@@ -1097,7 +1100,7 @@
     } else {
       const opts = p.variants.length > 1
         ? `<label class="muted">${t("chooseOpt")}</label>
-           <select id="mVariant"><option value="" ${v ? "" : "selected"}>${t("choosePlaceholder")}</option>${p.variants.map(x =>
+           <select id="mVariant"><option value="" ${v ? "" : "selected"}>${t("choosePlaceholder")}</option>${[...p.variants].sort((a, b) => a.price - b.price).map(x =>
               `<option value="${esc(x.vid)}" ${v && x.vid === v.vid ? "selected" : ""} ${x.unavailable ? "disabled" : ""}>${esc(variantLabel(x))}${optDiff(p, x)}${x.unavailable ? " · " + t("outOfStock") : ""}</option>`
             ).join("")}</select>`
         : (v && v.key ? `<div class="muted">${esc(variantLabel(v))}</div>` : "");
