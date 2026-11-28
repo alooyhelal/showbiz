@@ -524,7 +524,9 @@
     const vids = cjProducts.flatMap(p => p.variants.map(v => v.vid));
     ShowbizShip.available(c, vids).then(map => {
       cjAvailBusy[c] = false;
-      if (map) cjAvail[c] = map; else cjAvailErr[c] = true;
+      // إذا فشل فحص التوفر (مثلاً الوسيط ما انشر بعد) نعرض كل المنتجات، والطلب يتحقق منها عند الإرسال
+      cjAvail[c] = map || {};
+      cjAvailErr[c] = !map;
       if (cjMode) refreshShop();
     });
   }
@@ -1415,9 +1417,8 @@
     if (cjMode) {
       if (cjLoading) return `<p class="muted">${esc(t("cjLoading"))}</p>`;
       if (!cjProducts || !cjProducts.length) return `<p>${esc(t("cjEmpty"))}</p>`;
-      if (cjAvailErr[state.country]) return `<p>${esc(t("cjEmpty"))}</p>`;
       if (!cjAvail[state.country]) { checkCjAvail(); return `<p class="muted">${esc(t("cjLoading"))}</p>`; }
-      const shown = cjForCountry();
+      const shown = cjAvailErr[state.country] ? cjProducts : cjForCountry();
       if (!shown.length) return `<p>${esc(t("cjNone"))}</p>`;
       return `<div class="cjnote">${esc(t("cjNote"))}</div><div class="grid">${sortItems(shown).map(p => cardHTML(p)).join("")}</div>`;
     }
