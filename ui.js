@@ -448,7 +448,7 @@
     if (!openState || !document.getElementById("sd")) return;
     if (mode === "wish") { wishHTML(); return; }
     var s = st(), lines = cartLines(), sel = s.unsel || [];
-    var n = lines.reduce(function (a, l) { return a + l.qty; }, 0);
+    var n = (s.cart || []).reduce(function (a, l) { return a + l.qty; }, 0);
     document.getElementById("sdHead").innerHTML =
       '<strong>' + tr("cart") + ' : ' + n + '</strong>' +
       '<button class="sd-link" data-ui="close">' + tr("keep") + '</button>' +

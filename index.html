@@ -596,7 +596,8 @@
       .map(i => { const f = findVariant(i.vid); return f ? { vid: i.vid, qty: i.qty, p: f.p, v: f.v } : null; })
       .filter(Boolean);
   }
-  const cartCount = () => cartLines().reduce((s, l) => s + l.qty, 0);
+  // العدد من السلة نفسها (state.cart)، حتى لو منتج ما انحمل الحين، عشان كل الصفحات تعطي نفس الرقم
+  const cartCount = () => state.cart.reduce((s, i) => s + i.qty, 0);
   // المنتجات غير المحددة في السلة تبقى فيها لكن ما تدخل في الحساب
   const isSelected = (l) => !(state.unsel || []).includes(l.vid);
   const selLines = () => cartLines().filter(l => isSelected(l) && !l.v.unavailable);
@@ -1764,13 +1765,18 @@
   }
   // لقطة السلة لصفحة cart.html: تفاصيل المنتجات والأوزان والأسعار (تُكتب عند كل عرض)
   function saveSnap() {
-    if (!products.length) return;
     try {
-      localStorage.setItem("showbiz_cart_snap", JSON.stringify(cartLines().map(l => ({
+      // نحفظ تفاصيل كل منتج في السلة، وإذا ما انحمل الحين (مثلاً منتجات CJ) نحتفظ بتفاصيله القديمة
+      let old = [];
+      try { old = JSON.parse(localStorage.getItem("showbiz_cart_snap") || "[]"); } catch (e) {}
+      const fresh = cartLines().map(l => ({
         vid: l.vid,
         p: { pid: l.p.pid, nameEn: l.p.nameEn, nameAr: l.p.nameAr || "", image: l.p.image, weightG: l.p.weightG, dimsCm: l.p.dimsCm, choose: !!l.p.choose },
         v: { vid: l.vid, key: l.v.key, keyAr: l.v.keyAr || "", sku: l.v.sku, price: l.v.price, image: l.v.image, weightG: l.v.weightG, dimsCm: l.v.dimsCm, unavailable: !!l.v.unavailable }
-      }))));
+      }));
+      const have = new Set(fresh.map(x => x.vid));
+      const kept = old.filter(x => !have.has(x.vid) && state.cart.some(c => c.vid === x.vid));
+      localStorage.setItem("showbiz_cart_snap", JSON.stringify([...fresh, ...kept]));
     } catch (e) {}
   }
 
