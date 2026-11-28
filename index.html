@@ -2136,6 +2136,10 @@
   document.getElementById("sideOv").addEventListener("click", closeMenus);
   const qEl = document.getElementById("q");
   { const qp = new URLSearchParams(location.search).get("q"); if (qp) { filt.q = qp; qEl.value = qp; } }
+  // رابط مباشر لمنتجات CJ: index.html?cj=1 (أو #cj)، يفتح القسم بعد ما تنحمل المنتجات الأساسية
+  if (new URLSearchParams(location.search).get("cj") === "1" || location.hash === "#cj") {
+    const waitCj = setInterval(() => { if (loaded) { clearInterval(waitCj); enterCj(); } }, 200);
+  }
   qEl.addEventListener("input", () => { filt.q = qEl.value; refreshShop(); renderSugg(); });
   // زر البحث يفتح صفحة البحث الكاملة
   qEl.addEventListener("focus", () => { qEl.blur(); location.href = "search.html"; });
