@@ -269,11 +269,13 @@ async function handleFreight(request, env) {
   const minFee = MIN_FEE_BHD[country] * bhdToLocal;
 
   const origin = env.CJ_ORIGIN || "CN";
-  const d = await cjPost(env, "/logistic/freightCalculate", {
-    startCountryCode: origin,
-    endCountryCode: country,
-    products: lines,
-  });
+  const freightBody = { startCountryCode: origin, endCountryCode: country, products: lines };
+  let d = await cjPost(env, "/logistic/freightCalculate", freightBody);
+  if (!Array.isArray(d.data)) {
+    // محاولة ثانية بعد وقت قصير (CJ يرفض الطلبات السريعة أحياناً)
+    await sleep(CJ_GAP_MS);
+    d = await cjPost(env, "/logistic/freightCalculate", freightBody);
+  }
   if (!Array.isArray(d.data)) {
     return jsonResponse({ error: "cj: " + (d.message || "no freight data") }, 502);
   }

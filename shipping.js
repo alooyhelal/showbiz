@@ -14,10 +14,10 @@
   var listeners = [];
 
   var T = {
-    ar: { title: "طرق الشحن", loading: "جاري حساب الشحن...", err: "تعذر حساب الشحن الآن، حاول مرة ثانية",
+    ar: { title: "طرق الشحن", loading: "جاري حساب الشحن...", err: "تعذر حساب الشحن الآن، حاول مرة ثانية", retry: "إعادة المحاولة",
           none: "أضف منتجات لحساب الشحن", pickHint: "اختر طريقة الشحن", aging: "المدة", days: "",
           rates: "أسعار الصرف من Exchange Rate API" },
-    en: { title: "Shipping methods", loading: "Calculating shipping...", err: "Could not calculate shipping, try again",
+    en: { title: "Shipping methods", loading: "Calculating shipping...", err: "Could not calculate shipping, try again", retry: "Retry",
           none: "Add products to calculate shipping", pickHint: "Choose a shipping method", aging: "Delivery", days: "",
           rates: "Exchange rates by Exchange Rate API" }
   };
@@ -113,7 +113,7 @@
     var s = status(country, lines);
     if (s.state === "none") return '<p class="shipnote">' + esc(tr("none")) + "</p>";
     if (s.state === "loading") return '<p class="shipnote">' + esc(tr("loading")) + "</p>";
-    if (s.state === "err") return '<p class="shipnote">' + esc(tr("err")) + "</p>";
+    if (s.state === "err") return '<div class="shipbox"><p class="shipnote">' + esc(tr("err")) + '</p><button type="button" class="shipopt" data-ship-retry="1">' + esc(tr("retry")) + "</button></div>";
     var dec = s.decimals;
     var list = s.methods.map(function (m, i) {
       var on = s.pick && s.pick.carrier === m.carrier && s.pick.price === m.price;
@@ -123,12 +123,22 @@
         '<strong class="shipprice">' + Number(m.price).toFixed(dec) + " " + esc(s.currency) + "</strong>" +
         "</button>";
     }).join("");
-    if (!s.methods.length) return '<p class="shipnote">' + esc(tr("err")) + "</p>";
+    if (!s.methods.length) return '<div class="shipbox"><p class="shipnote">' + esc(tr("err")) + '</p><button type="button" class="shipopt" data-ship-retry="1">' + esc(tr("retry")) + "</button></div>";
     return '<div class="shipbox"><p class="shipnote">' + esc(tr("pickHint")) + "</p>" + list +
       '<p class="shipnote shiprate">' + esc(tr("rates")) + "</p></div>";
   }
 
   // اختيار طريقة الشحن من الصفحة (الزر فيه data-ship = رقم الطريقة)
+  // إعادة حساب الشحن بعد الخطأ: نمسح النتيجة الفاشلة ونطلب من جديد
+  document.addEventListener("click", function (e) {
+    var r = e.target.closest && e.target.closest("[data-ship-retry]");
+    if (!r || !window.ShowbizShip || !window.ShowbizShip._countryFn) return;
+    var c = window.ShowbizShip._countryFn(), l = window.ShowbizShip._linesFn ? window.ShowbizShip._linesFn() : null;
+    if (!c || !l || !l.length) return;
+    delete cache[keyOf(c, l)];
+    status(c, l);
+    notify();
+  });
   document.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("[data-ship]");
     if (!b) return;
