@@ -515,6 +515,7 @@
   // منتجات CJ للتجربة: قسم منفصل، والمنتجات الوهمية تبقى كما هي
   const CJ_WORKER = "https://shrill-math-8abeshowbiz-api.alooyhelal.workers.dev/";
   let mainProducts = null, cjProducts = null, cjLoading = false, cjMode = false;
+  const CJ_MARGIN = 0.15; // هامش الربح على منتجات CJ
   // توفر منتجات CJ لكل دولة (تنحفظ بالذاكرة، والوسيط يحفظ النتيجة 6 ساعات)
   const cjAvail = {}, cjAvailBusy = {}, cjAvailErr = {};
   function checkCjAvail() {
@@ -1524,7 +1525,9 @@
         const res = await fetch(CJ_WORKER + "?action=list", { cache: "no-store" });
         const d = await res.json();
         const list = Array.isArray(d.products) ? d.products : [];
-        cjProducts = list.map(normalizeProduct).filter(p => p.variants.length > 0).map(p => ({ ...p, test: true }));
+        // هامش ثابت 15% فوق سعر CJ (التكلفة تنحفظ في cost)، قبل تحويل العملة
+        cjProducts = list.map(normalizeProduct).filter(p => p.variants.length > 0)
+          .map(p => ({ ...p, test: true, variants: p.variants.map(v => ({ ...v, cost: v.price, price: +(v.price * (1 + CJ_MARGIN)).toFixed(2) })) }));
       } catch (e) { cjProducts = []; }
       cjLoading = false;
     }
