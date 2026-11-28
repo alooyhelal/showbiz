@@ -201,13 +201,14 @@ async function handleList(env) {
     const pid = item.productId || item.pid;
     let detail = null;
     if (pid) {
-      for (let attempt = 0; attempt < 2 && !detail; attempt++) {
+      // CJ يحدد عدد الطلبات بالثانية، فنستنى بين الطلبات، ونعيد المحاولة بوقت أطول
+      for (let attempt = 0; attempt < 3 && !detail; attempt++) {
+        await sleep(CJ_GAP_MS * (attempt + 1));
         try {
           const dd = await cjGet(env, "/product/query?pid=" + encodeURIComponent(pid));
           if (dd.data) detail = dd.data;
-          else await sleep(400);
         } catch (e) {
-          await sleep(400);
+          // نعيد المحاولة
         }
       }
     }
@@ -300,6 +301,7 @@ async function handleFreight(request, env) {
 // في ذاكرة Cloudflare (Cache API) فكل الزوار يستخدمون نفس النتيجة ما يستهلكون الرصيد.
 const AVAIL_TTL_S = 6 * 60 * 60;
 const AVAIL_MAX_VIDS = 10;
+const CJ_GAP_MS = 1100; // فاصل بين نداءات CJ (حد الطلبات بالثانية)
 
 async function availFor(env, country, vid) {
   const cacheKey = new Request("https://avail.internal/" + country + "/" + encodeURIComponent(vid));
@@ -334,8 +336,9 @@ async function handleAvail(request, env) {
   if (!vids.length || vids.length > AVAIL_MAX_VIDS) return jsonResponse({ error: "bad vids" }, 400);
 
   const available = {};
-  for (const vid of vids) {
-    available[vid] = await availFor(env, country, vid);
+  for (let i = 0; i < vids.length; i++) {
+    if (i > 0) await sleep(CJ_GAP_MS);
+    available[vids[i]] = await availFor(env, country, vids[i]);
   }
   return jsonResponse({ country, available });
 }
