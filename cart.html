@@ -213,7 +213,7 @@
       goLogin:"تسجيل الدخول", cartEmpty:"سلتك فارغة حالياً", snapMissing:"افتح الصفحة الرئيسية مرة وحدة عشان تتحدث السلة", emptyHint:"أضف منتجات من الموقع وترجع لها هنا", goStore:"تصفح المنتجات",
       s1:"السلة", s2:"العنوان", s3:"الدفع والتأكيد",
       productsVal:"قيمة المنتجات", outOfStock:"غير متوفر", someOut:"بعض المنتجات في سلتك غير متوفرة، أزلها للمتابعة إلى الدفع", discount:"الخصم", shipping:"الشحن", shipLater:"يُحسب بعد اختيار العنوان",
-      freeMsg:"مبروك، شحنك مجاني لهذا الطلب", needShip:"اختر طريقة الشحن أولاً", grand:"الإجمالي", coupon:"عندي كود خصم", apply:"تطبيق", removeCoupon:"إزالة",
+      freeMsg:"مبروك، شحنك مجاني لهذا الطلب", needShip:"اختر طريقة الشحن أولاً", unavail:"بعض المنتجات في سلتك غير متاحة للتوصيل إلى بلدك، احذفها أو غيّر البلد", availErr:"تعذر التحقق من توفر التوصيل، حاول مرة ثانية", grand:"الإجمالي", coupon:"عندي كود خصم", apply:"تطبيق", removeCoupon:"إزالة",
       badCoupon:"الكود غير صحيح", toAddr:"متابعة للعنوان", toPay:"متابعة للدفع", keep:"متابعة التسوق", back2:"رجوع",
       addrTitle:"عنوان التوصيل", addrSelected:"دولة الطلب", addrOther:"عناوين دول أخرى",
       noAddr:"ما عندك عناوين محفوظة بعد", addAddr:"إضافة عنوان جديد", manageAddr:"إدارة العناوين",
@@ -235,7 +235,7 @@
       goLogin:"Sign in", cartEmpty:"Your cart is empty", snapMissing:"Open the home page once so the cart can refresh", emptyHint:"Add products from the store and come back here", goStore:"Browse products",
       s1:"Cart", s2:"Address", s3:"Payment & confirm",
       productsVal:"Products", outOfStock:"Out of stock", someOut:"Some items in your cart are out of stock. Remove them to continue to checkout", discount:"Discount", shipping:"Shipping", shipLater:"Calculated after choosing an address",
-      freeMsg:"Congrats, your shipping is free on this order", needShip:"Choose a shipping method first", grand:"Total", coupon:"Have a discount code?", apply:"Apply", removeCoupon:"Remove",
+      freeMsg:"Congrats, your shipping is free on this order", needShip:"Choose a shipping method first", unavail:"Some items in your cart do not ship to your country. Remove them or change the country", availErr:"Could not verify delivery availability, please try again", grand:"Total", coupon:"Have a discount code?", apply:"Apply", removeCoupon:"Remove",
       badCoupon:"Invalid code", toAddr:"Continue to address", toPay:"Continue to payment", keep:"Keep shopping", back2:"Back",
       addrTitle:"Delivery address", addrSelected:"Order country", addrOther:"Other countries",
       noAddr:"You have no saved addresses yet", addAddr:"Add new address", manageAddr:"Manage addresses",
@@ -549,6 +549,20 @@
       busy = false;
       if (btn) { btn.disabled = false; btn.textContent = t("send"); }
       $("payMsg").textContent = t("needShip");
+      return;
+    }
+    // فحص أخير قبل الطلب: كل منتج في السلة لازم يتشحن لبلد العميل (الوسيط يحفظ النتيجة 6 ساعات)
+    const avMap = await ShowbizShip.available(addr.country, lines.map(l => l.vid));
+    if (!avMap) {
+      busy = false;
+      if (btn) { btn.disabled = false; btn.textContent = t("send"); }
+      $("payMsg").textContent = t("availErr");
+      return;
+    }
+    if (lines.some(l => avMap[l.vid] === false)) {
+      busy = false;
+      if (btn) { btn.disabled = false; btn.textContent = t("send"); }
+      $("payMsg").textContent = t("unavail");
       return;
     }
     const subtotal = localPrice(subtotalUSD());

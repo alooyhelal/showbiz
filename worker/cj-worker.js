@@ -8,6 +8,8 @@
 //   GET  ?pid=...                تفاصيل منتج واحد
 //   POST ?action=freight         طرق الشحن وأسعارها بعملة الدولة (تكلفة CJ، بدون مخاطرة)
 //        body: { "country": "BH", "items": [ { "vid": "...", "qty": 2 } ] }
+//   POST ?action=avail           هل كل منتج يتشحن للدولة (حتى 10 منتجات، نتيجة كل منتج 6 ساعات)
+//        body: { "country": "BH", "vids": [ "..." ] }  ->  { "available": { "vid": true|false } }
 //
 // أسعار الصرف من open.er-api.com (تتحدث يومياً، والمصدر يطلب ذكره في الموقع).
 
@@ -294,6 +296,50 @@ async function handleFreight(request, env) {
   return jsonResponse(result);
 }
 
+// توفر الشحن لكل منتج ولكل دولة: نداء واحد لـ CJ لكل منتج، ونتيجته تنحفظ 6 ساعات
+// في ذاكرة Cloudflare (Cache API) فكل الزوار يستخدمون نفس النتيجة ما يستهلكون الرصيد.
+const AVAIL_TTL_S = 6 * 60 * 60;
+const AVAIL_MAX_VIDS = 10;
+
+async function availFor(env, country, vid) {
+  const cacheKey = new Request("https://avail.internal/" + country + "/" + encodeURIComponent(vid));
+  const cache = caches.default;
+  const hit = await cache.match(cacheKey);
+  if (hit) return (await hit.json()).ok;
+
+  const origin = env.CJ_ORIGIN || "CN";
+  const d = await cjPost(env, "/logistic/freightCalculate", {
+    startCountryCode: origin,
+    endCountryCode: country,
+    products: [{ vid: vid, quantity: 1 }],
+  });
+  if (!Array.isArray(d.data)) throw new Error("cj: " + (d.message || "no freight data"));
+  const ok = d.data.length > 0;
+  await cache.put(cacheKey, new Response(JSON.stringify({ ok: ok }), {
+    headers: { "Content-Type": "application/json", "Cache-Control": "max-age=" + AVAIL_TTL_S },
+  }));
+  return ok;
+}
+
+async function handleAvail(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return jsonResponse({ error: "bad json" }, 400);
+  }
+  const country = String(body.country || "").toUpperCase();
+  if (!COUNTRY_CURRENCY[country]) return jsonResponse({ error: "unsupported country" }, 400);
+  const vids = Array.isArray(body.vids) ? body.vids.map(String).filter(Boolean) : [];
+  if (!vids.length || vids.length > AVAIL_MAX_VIDS) return jsonResponse({ error: "bad vids" }, 400);
+
+  const available = {};
+  for (const vid of vids) {
+    available[vid] = await availFor(env, country, vid);
+  }
+  return jsonResponse({ country, available });
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") {
@@ -305,6 +351,7 @@ export default {
     try {
       if (request.method === "POST") {
         if (url.searchParams.get("action") === "freight") return await handleFreight(request, env);
+        if (url.searchParams.get("action") === "avail") return await handleAvail(request, env);
         return jsonResponse({ error: "not found" }, 404);
       }
 
